@@ -55,8 +55,8 @@
 
 ////sram
 /home/liuyunqi/xuemy/vector_cache/rtl/sram_group/loop_back.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/mem_block_update.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/xy_switch_update.sv
+/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/mem_block.sv
+/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/xy_switch.sv
 /home/liuyunqi/xuemy/vector_cache/rtl/sram_group/sram_2inst.sv
 /home/liuyunqi/xuemy/vector_cache/rtl/sram_group/sram_inst.sv
 /home/liuyunqi/xuemy/vector_cache/rtl/sram_group/sram_bank.sv
