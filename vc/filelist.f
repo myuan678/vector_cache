@@ -1,68 +1,67 @@
 
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_pkg.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/vector_cache_top.sv
+$VEC_CACHE_PATH/rtl/vector_cache_pkg.sv
+//$VEC_CACHE_PATH/rtl/vector_cache_top.sv
+$VEC_CACHE_PATH/rtl/vec_cache_ctrl.sv
 
-//caceh_ctrl
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/vec_cache_ctrl.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/vec_cache_tag_ctrl.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/vec_cache_mshr.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/ten_to_two_arb_v2.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/vec_cache_mshr_entry.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/read_req_xbar.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/write_req_xbar.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/eigntto2_req_arbiter.sv
+//tag_ctrl
+$VEC_CACHE_PATH/rtl/tag_ctrl/vec_cache_tag_ctrl.sv
+$VEC_CACHE_PATH/rtl/tag_ctrl/eigntto2_req_arbiter.sv
 
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/read_cmd_sel.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/write_cmd_sel.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/rdb_data_sel.sv
+//mshr
+$VEC_CACHE_PATH/rtl/mshr/vec_cache_mshr.sv
+$VEC_CACHE_PATH/rtl/mshr/vec_cache_mshr_entry.sv
+$VEC_CACHE_PATH/rtl/mshr/ten_to_two_arb_v2.sv
+$VEC_CACHE_PATH/rtl/mshr/onehot2bin2.sv
+$VEC_CACHE_PATH/rtl/mshr/n_to_2_arb.sv
+$VEC_CACHE_PATH/rtl/mshr/pre_alloc_two.sv
 
+
+//req_xbar
+$VEC_CACHE_PATH/rtl/req_xbar/read_req_xbar.sv
+$VEC_CACHE_PATH/rtl/req_xbar/write_req_xbar.sv
+$VEC_CACHE_PATH/rtl/req_xbar/nto4_xbar.sv
+
+//channel map
+$VEC_CACHE_PATH/rtl/channel_map/read_cmd_sel.sv
+$VEC_CACHE_PATH/rtl/channel_map/write_cmd_sel.sv
+$VEC_CACHE_PATH/rtl/channel_map/rdb_data_sel.sv
 
 //DB
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/evictDB.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/linefillDB.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/rdb_agent.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/readDB.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/write_DB_agent.sv
+$VEC_CACHE_PATH/rtl/data_buffer/evictDB.sv
+$VEC_CACHE_PATH/rtl/data_buffer/linefillDB.sv
+$VEC_CACHE_PATH/rtl/data_buffer/rdb_agent.sv
+$VEC_CACHE_PATH/rtl/data_buffer/readDB.sv
+$VEC_CACHE_PATH/rtl/data_buffer/write_DB_agent.sv
+$VEC_CACHE_PATH/rtl/data_buffer/pre_alloc_one.sv
 
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/nto4_xbar.sv
-
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/v_1toN_decode.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/wr_resp_direction_decode.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/wr_resp_master_decode.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/onehot2bin2.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/m_to_n_xbar.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/n_to_2_arb.sv
-
-
+//resp
+$VEC_CACHE_PATH/rtl/resp/v_1toN_decode.sv
+$VEC_CACHE_PATH/rtl/resp/wr_resp_direction_decode.sv
+$VEC_CACHE_PATH/rtl/resp/wr_resp_master_decode.sv
+$VEC_CACHE_PATH/rtl/resp/rd_data_decode.sv
 
 //cmn
-/home/liuyunqi/xuemy/vector_cache/rtl/cmn/cmn_lead_one.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/cmn/cmn_bin2onehot.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/cmn/cmn_lead_two.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/cmn/cmn_onehot2bin.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/cmn/cmn_real_mux_onehot.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/pre_alloc_one.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/vector_cache_ctrl/pre_alloc_two.sv
+$VEC_CACHE_PATH/rtl/cmn/cmn_lead_one.sv
+$VEC_CACHE_PATH/rtl/cmn/cmn_bin2onehot.sv
+$VEC_CACHE_PATH/rtl/cmn/cmn_lead_two.sv
+$VEC_CACHE_PATH/rtl/cmn/cmn_onehot2bin.sv
+$VEC_CACHE_PATH/rtl/cmn/cmn_real_mux_onehot.sv
+$VEC_CACHE_PATH/rtl/cmn/m_to_n_xbar.sv
+$VEC_CACHE_PATH/rtl/cmn/v_en_decode.sv
+$VEC_CACHE_PATH/rtl/cmn/vrp_arb.sv
+$VEC_CACHE_PATH/rtl/cmn/fifo.sv
+$VEC_CACHE_PATH/rtl/cmn/toy_mem_model_bit.sv
 
-/home/liuyunqi/xuemy/vector_cache/rtl/cmn/v_en_decode.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/cmn/vrp_arb.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/cmn/fifo.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/cmn/toy_mem_model_bit.sv
-
-
-
-
-
-////sram
-/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/loop_back.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/mem_block.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/xy_switch.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/sram_2inst.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/sram_inst.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/sram_bank.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/sram_bank_group.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/sram_group.sv
-/home/liuyunqi/xuemy/vector_cache/rtl/sram_group/mem_model.sv
+//sram
+$VEC_CACHE_PATH/rtl/sram_group/loop_back.sv
+$VEC_CACHE_PATH/rtl/sram_group/mem_block.sv
+$VEC_CACHE_PATH/rtl/sram_group/xy_switch.sv
+$VEC_CACHE_PATH/rtl/sram_group/sram_2inst.sv
+$VEC_CACHE_PATH/rtl/sram_group/sram_inst.sv
+$VEC_CACHE_PATH/rtl/sram_group/sram_bank.sv
+$VEC_CACHE_PATH/rtl/sram_group/sram_bank_group.sv
+$VEC_CACHE_PATH/rtl/sram_group/sram_group.sv
+$VEC_CACHE_PATH/rtl/sram_group/mem_model.sv
 
 
 
