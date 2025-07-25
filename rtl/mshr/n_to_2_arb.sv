@@ -24,9 +24,10 @@ module n_to_2_arb #(
     cmn_lead_one #(
         .ENTRY_NUM(N)
     ) u_first_lead_one (
-        .v_entry_vld(req_vld & ((grant_rdy[0] || !grant_vld[0]) ? {N{1'b1}} : {N{1'b0}})),
-        .v_free_idx_oh(first_grant_oh),
-        .v_free_vld(grant_vld[0])
+        .v_entry_vld    (req_vld & ((grant_rdy[0] || !grant_vld[0]) ? {N{1'b1}} : {N{1'b0}})),
+        .v_free_idx_oh  (first_grant_oh),
+        .v_free_idx_bin (),
+        .v_free_vld     (grant_vld[0])
     );
     
     // 排除第一优先级后的剩余请求
@@ -36,9 +37,10 @@ module n_to_2_arb #(
     cmn_lead_one #(
         .ENTRY_NUM(N)
     ) u_second_lead_one (
-        .v_entry_vld(remaining_reqs & ((grant_rdy[1] || !grant_vld[1]) ? {N{1'b1}} : {N{1'b0}})),
-        .v_free_idx_oh(second_grant_oh),
-        .v_free_vld(grant_vld[1])
+        .v_entry_vld    (remaining_reqs & ((grant_rdy[1] || !grant_vld[1]) ? {N{1'b1}} : {N{1'b0}})),
+        .v_free_idx_oh  (second_grant_oh),
+        .v_free_idx_bin (),
+        .v_free_vld     (grant_vld[1])
     );
     
 

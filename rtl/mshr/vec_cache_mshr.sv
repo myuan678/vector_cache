@@ -3,7 +3,6 @@ module vec_cache_mshr
     (
     input  logic                                        clk                       ,
     input  logic                                        rst_n                     ,    
-    input  logic                                        prefetch_enable           ,
 
     input  logic                                        mshr_update_en            ,
     input  mshr_entry_t                                 mshr_update_pld_A         ,
@@ -96,7 +95,7 @@ module vec_cache_mshr
     output logic                                        e_rd_alloc_rdy      ,
     output logic                                        s_rd_alloc_rdy      ,
     output logic                                        n_rd_alloc_rdy      ,
-    output logic [MSHR_ENTRY_NUM-1:0]                   linefill_alloc_rdy  ,
+    output logic                                        linefill_alloc_rdy  ,
     output logic                                        evit_alloc_rdy
 
 
@@ -232,14 +231,14 @@ module vec_cache_mshr
 
     pre_alloc_two #(
         .ENTRY_NUM(MSHR_ENTRY_NUM    ),
-        .ENTRY_ID_WIDTH(INDEX_WIDTH)
+        .ENTRY_ID_WIDTH($clog2(MSHR_ENTRY_NUM))
     ) u_pre_allocator (
         .clk        (clk          ),
         .rst_n      (rst_n        ),
-        .v_in_vld   (v_in_vld     ),
-        .v_in_rdy   (v_in_rdy     ),
-        .out_vld    (out_vld      ),
-        .out_rdy    (out_rdy      ),
+        .v_in_vld   (v_alloc_vld  ),
+        .v_in_rdy   (v_alloc_rdy  ),
+        .out_vld    (alloc_vld    ),
+        .out_rdy    (alloc_rdy    ),
         .out_index_1(alloc_index_1),
         .out_index_2(alloc_index_2));
 
@@ -248,13 +247,13 @@ module vec_cache_mshr
         .WIDTH          (MSHR_ENTRY_NUM )
     )   u_update_entry_dec1 (
         .enable         (mshr_update_en    ),
-        .enable_index   (mshr_update_alloc_idx1     ),
+        .enable_index   (mshr_update_alloc_idx1),
         .v_out_en       (v_mshr_update_en_1));
     v_en_decode #(
         .WIDTH          (MSHR_ENTRY_NUM )
     )   u_update_entry_dec2 (
         .enable         (mshr_update_en    ),
-        .enable_index   (mshr_update_alloc_idx2     ),
+        .enable_index   (mshr_update_alloc_idx2),
         .v_out_en       (v_mshr_update_en_2));
     assign v_mshr_update_en = v_mshr_update_en_1 | v_mshr_update_en_2;
 
@@ -344,13 +343,13 @@ module vec_cache_mshr
 
 ////entry_release_done  index
     onehot2bin2  #(
-            .ONEHOT_WIDTH   (MSHR_ENTRY_NUM      )
+        .ONEHOT_WIDTH   (MSHR_ENTRY_NUM      )
     ) u_release_done_index(
         .onehot_in      (v_release_en            ),
         .bin_out        (entry_release_done_index));
     
     onehot2bin2   #(
-           .ONEHOT_WIDTH   (MSHR_ENTRY_NUM      )
+        .ONEHOT_WIDTH   (MSHR_ENTRY_NUM      )
     ) u_ds_req_entry_index(
         .onehot_in      (v_downstream_txreq_rdy  ),
         .bin_out        (downstream_release_index));
@@ -605,7 +604,8 @@ module vec_cache_mshr
         ten_to_two_arb #(
             .RD_REQ_NUM (5),
             .WR_REQ_NUM (5),
-            .SHIFT_REG_WIDTH (15),
+            .CHANNEL_SHIFT_REG_WIDTH (20),
+            .RAM_SHIFT_REG_WIDTH (20),
             .REQ_NUM (10)
         ) u_10to2_arb (
             .clk            (clk                      ),
@@ -625,7 +625,6 @@ module vec_cache_mshr
 
 
  //arbiter 选出的2个请求做decode，确定是哪个方向的读或写，
-//输出应该是8个，只不过是8个只有2个会同时有效
 //输出应该是10个？
 
     always_comb begin

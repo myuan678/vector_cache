@@ -9,7 +9,6 @@ package vector_cache_pkg;
     localparam integer unsigned RAM_DEPTH  = 512;
     localparam integer unsigned RAM_NUM    = 4;
     localparam integer unsigned ADDR_WIDTH = $clog2(RAM_DEPTH);
-    localparam integer unsigned DATA_WIDTH = 32;
     localparam integer unsigned SEL= $clog2(RAM_WIDTH/8);
 
     parameter integer unsigned CHANNEL   = 8    ;
@@ -67,6 +66,24 @@ package vector_cache_pkg;
     parameter integer unsigned SW_REQ_NUM  = 8; //south write req_num
     parameter integer unsigned SB_REQ_NUM  = 8; //south bresp num
     parameter integer unsigned SRD_REQ_NUM = 8; //south rdata num
+
+    parameter integer unsigned DATA_WIDTH           = 1024  ;
+    parameter integer unsigned READ_SRAM_DELAY      = 10    ; 
+    parameter integer unsigned EVICT_CLEAN_DELAY    = 15    ; 
+    parameter integer unsigned EVICT_DOWN_DELAY     = 20    ;
+    //parameter integer unsigned ARB_TO_LFDB_DELAY    = 5     ;
+    parameter integer unsigned LF_DONE_DELAY        = 10    ;
+    parameter integer unsigned RDB_DATA_RDY_DELAY   = 15    ; //是指sram中的数据已经被读到了RDB中，现在可以发起对RDB的读请求，将数据给US
+    parameter integer unsigned TO_US_DONE_DELAY     =20     ;
+
+    //parameter integer unsigned WRITE_DONE_DELAY     = 20    ; 
+    //parameter integer unsigned ARB_TO_WDB_DELAY     = 5     ;
+    parameter integer unsigned WR_CMD_DELAY_WEST    = 2     ;//arb出到开始占用channel的延迟
+    parameter integer unsigned WR_CMD_DELAY_EAST    = 3     ;//arb出到开始占用channel的延迟
+    parameter integer unsigned WR_CMD_DELAY_SOUTH   = 6     ;//arb出到开始占用channel的延迟
+    parameter integer unsigned WR_CMD_DELAY_NORTH   = 4     ;//arb出到开始占用channel的延迟
+    parameter integer unsigned WR_CMD_DELAY_LF      = 8     ;//arb出到开始占用channel的延迟
+
     //地址高2bit作为hash id
     typedef struct packed{
         logic [TAG_WIDTH-1      :0] tag     ;
@@ -98,7 +115,7 @@ package vector_cache_pkg;
         logic [INDEX_WIDTH-1       :0] index     ;
         logic [OFFSET_WIDTH-1      :0] offset    ;
         logic [TAG_WIDTH-1         :0] tag       ;
-        logic [WAY_NUM-1           :0] way       ; //way id 
+        logic [$clog2(WAY_NUM)-1   :0] way       ; //way id 
     } wr_buf_pld_t;
 
     typedef struct packed {
@@ -237,7 +254,7 @@ package vector_cache_pkg;
         logic       mode       ;
         logic [1:0] byte_sel   ;
         //logic [1:0] req_num    ; //linefill/evict时的传输次数编号
-        //logic       opcode     ; //read: 0read; 1 evict read
+        logic       opcode     ; //read: 0read; 1 evict read
     } sram_inst_cmd_t;          // write: 0 write; 1linefill
 
     

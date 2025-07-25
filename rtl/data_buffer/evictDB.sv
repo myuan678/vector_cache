@@ -1,16 +1,6 @@
 module evictDB 
     import vector_cache_pkg::*;
-    #(
-    parameter integer unsigned ENTRY_NUM        = 64,
-    parameter integer unsigned ENTRY_ID_WIDTH   = $clog2(ENTRY_NUM),
-    parameter integer unsigned DATA_WIDTH       = 1024,
-    parameter integer unsigned DEPTH            = 64,
-    parameter integer unsigned READ_SRAM_DELAY = 10,
-    parameter integer unsigned EVICT_CLEAN_DELAY= 15,
-    parameter integer unsigned EVICT_DOWN_DELAY = 20
-
-
-)(
+    (
     input  logic                            clk,
     input  logic                            rst_n,
 
@@ -21,7 +11,8 @@ module evictDB
     input  logic                            evict_req_vld   ,
     output logic                            evict_req_rdy   ,
 
-    input  logic [1023:0]                   ram_to_evdb_data_in,
+    input  group_data_pld_t                 ram_to_evdb_data_in,
+    input  logic                            ram_to_evdb_data_vld,
 
     output logic                            alloc_vld       ,
     output [$clog2(EVDB_ENTRY_NUM/4)-1:0]   alloc_idx       ,
@@ -36,9 +27,9 @@ module evictDB
     logic                          db_mem_en       ;
     logic [1023              :0]   data_out        ;
     logic                          db_wr_en        ;
-    logic [ENTRY_ID_WIDTH-1  :0]   db_addr         ; //entry_id
+    logic [DB_ENTRY_IDX_WIDTH-1:0]  db_addr         ; //entry_id
     logic [EVDB_ENTRY_NUM/4-1:0]   v_evdb_entry_vld;
-    logic [EVDB_ENTRY_NUM-1  :0]   v_evdb_entry_rdy;
+    logic [EVDB_ENTRY_NUM/4-1:0]   v_evdb_entry_rdy;
     arb_out_req_t                  write_evdb_pld  ;
     logic                          write_evdb_vld  ;
     logic                          write_evdb_rdy  ;
@@ -136,7 +127,7 @@ module evictDB
     );
 
     toy_mem_model_bit #(
-        .ADDR_WIDTH  ($clog2(ENTRY_NUM)),
+        .ADDR_WIDTH  ($clog2(RW_DB_ENTRY_NUM)),
         .DATA_WIDTH  (DATA_WIDTH)
     ) u_evict_data_buffer (
         .clk    (clk        ),

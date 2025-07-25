@@ -1,9 +1,6 @@
 module readDB 
     import vector_cache_pkg::*;
-    #(
-    parameter integer unsigned DEPTH= 32,
-    parameter integer unsigned DATA_WIDTH = 1024
-) (
+    (
     input  logic            clk                 ,
     input  logic            rst_n               ,
     input  read_rdb_addr_t  rdb_addr            ,
@@ -34,14 +31,13 @@ module readDB
 
 
     toy_mem_model_bit #(
-        .ADDR_WIDTH  ($clog2(DEPTH)),
+        .ADDR_WIDTH  ($clog2(RW_DB_ENTRY_NUM)),
         .DATA_WIDTH  (DATA_WIDTH)
     ) u_read_data_buffer (
         .clk    (clk        ),
-        //.rst_n  (rst_n      ),
         .en     (rdb_mem_en ),
         .wr_en  (rdb_wr_en  ),
-        .addr   (rdb_addr   ),
+        .addr   (rdb_addr.db_entry_id),
         .wr_data(data_in    ),
         .rd_data(data_out   )
     );

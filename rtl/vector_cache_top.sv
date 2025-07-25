@@ -352,6 +352,8 @@ import vector_cache_pkg::*;
     group_data_pld_t                    south_data_out_to_rdb  [3:0]        ;   
     logic [3:0]                         north_data_out_vld_to_rdb           ;
     group_data_pld_t                    north_data_out_to_rdb [3:0]         ; 
+    logic [3:0]                         evict_data_out_vld_to_evdb          ;
+    group_data_pld_t                    evict_data_out_to_evdb [3:0]        ;    
 
     
     
@@ -748,7 +750,9 @@ import vector_cache_pkg::*;
 
 generate
     for(genvar i=0;i<4;i=i+1)begin:four_hash_linefillDB_gen
-        linefillDB u_linefill_data_buffer(
+        linefillDB # ( 
+            .ARB_TO_LFDB_DELAY(WR_CMD_DELAY_LF))
+         u_linefill_data_buffer(
             .clk                     (clk                          ),
             .rst_n                   (rst_n                        ),
             .linefill_data_done      (v_linefill_data_done[i]      ),
@@ -780,7 +784,8 @@ generate
             .evict_req_pld      (v_evict_req_pld[i]     ),
             .evict_req_vld      (v_evict_req_vld[i]     ),
             .evict_req_rdy      (v_evict_req_rdy[i]     ),
-            .ram_to_evdb_data_in(),//sram input data
+            .ram_to_evdb_data_in(evict_data_out_to_evdb ),//sram input data
+            .ram_to_evdb_data_vld(evict_data_out_vld_to_evdb),   
             .alloc_vld          (v_evict_alloc_vld[i]   ),
             .alloc_idx          (v_evict_alloc_idx[i]   ),
             .alloc_rdy          (v_evict_alloc_rdy[i]   ),
@@ -814,8 +819,8 @@ generate
             .rdb_addr           (west_rdb_addr[i]               ),
             .rdb_mem_en         (west_rdb_mem_en[i]             ),
             .rdb_wr_en          (west_rdb_wr_en[i]              ),
-            .ram_to_rdb_data_in (west_data_out_todb[i]          ),//from sram array
-            .ram_to_rdb_data_vld(west_data_out_vld_todb[i]      ),//from sram
+            .ram_to_rdb_data_in (west_data_out_to_rdb[i]        ),//from sram array
+            .ram_to_rdb_data_vld(west_data_out_vld_to_rdb[i]    ),//from sram
             .rdb_to_us_data_vld (v_west_rdb_to_us_data_vld[i]   ),
             .rdb_to_us_data_pld (v_west_rdb_to_us_data_pld[i]   ));// top output 
 
@@ -840,8 +845,8 @@ generate
             .rdb_addr           (east_rdb_addr[i]               ),
             .rdb_mem_en         (east_rdb_mem_en[i]             ),
             .rdb_wr_en          (east_rdb_wr_en                 ),
-            .ram_to_rdb_data_in (east_data_out_todb[i]          ),//from sram array
-            .ram_to_rdb_data_vld(east_data_out_vld_todb[i]      ),//from sram
+            .ram_to_rdb_data_in (east_data_out_to_rdb[i]        ),//from sram array
+            .ram_to_rdb_data_vld(east_data_out_vld_to_rdb[i]    ),//from sram
             .rdb_to_us_data_vld (v_east_rdb_to_us_data_vld[i]   ),
             .rdb_to_us_data_pld (v_east_rdb_to_us_data_pld[i]   ));// top output
             
@@ -866,8 +871,8 @@ generate
             .rdb_addr           (south_rdb_addr[i]              ),
             .rdb_mem_en         (south_rdb_mem_en[i]            ),
             .rdb_wr_en          (south_rdb_wr_en[i]             ),
-            .ram_to_rdb_data_in (south_data_out_todb[i]         ),//from sram array
-            .ram_to_rdb_data_vld(south_data_out_vld_todb[i]     ),//from sram
+            .ram_to_rdb_data_in (south_data_out_to_rdb[i]       ),//from sram array
+            .ram_to_rdb_data_vld(south_data_out_vld_to_rdb[i]   ),//from sram
             .rdb_to_us_data_vld (v_south_rdb_to_us_data_vld[i]  ),
             .rdb_to_us_data_pld (v_south_rdb_to_us_data_pld[i]  ));// top output 
 
@@ -892,8 +897,8 @@ generate
             .rdb_addr           (north_rdb_addr[i]              ),
             .rdb_mem_en         (north_rdb_mem_en[i]            ),
             .rdb_wr_en          (north_rdb_wr_en[i]             ),
-            .ram_to_rdb_data_in (north_data_out_todb[i]         ),//from sram array
-            .ram_to_rdb_data_vld(north_data_out_vld_todb[i]     ),//from sram
+            .ram_to_rdb_data_in (north_data_out_to_rdb[i]       ),//from sram array
+            .ram_to_rdb_data_vld(north_data_out_vld_to_rdb[i]   ),//from sram
             .rdb_to_us_data_vld (v_north_rdb_to_us_data_vld[i]  ),
             .rdb_to_us_data_pld (v_north_rdb_to_us_data_pld[i]  ));// top output 
     end
@@ -949,7 +954,10 @@ endgenerate
 //WDB
     generate
         for(genvar i=0;i<4;i=i+1)begin:four_hash_WDB_gen
-            write_DB_agent u_west_write_DB_agent(
+            write_DB_agent #( 
+                .ARB_TO_WDB_DELAY(WR_CMD_DELAY_WEST),
+                .WRITE_DONE_DELAY())
+            u_west_write_DB_agent(
                 .clk            (clk                         ),
                 .rst_n          (rst_n                       ),
                 .alloc_vld      (v_west_write_alloc_vld[i]   ),
@@ -967,7 +975,10 @@ endgenerate
                 .write_sram_pld (west_write_cmd_pld_in[i]    ),//output to sram
                 .write_sram_rdy (west_write_cmd_rdy[i]       ));
 
-            write_DB_agent u_east_write_DB_agent(
+            write_DB_agent  #( 
+                .ARB_TO_WDB_DELAY(WR_CMD_DELAY_EAST),
+                .WRITE_DONE_DELAY())
+            u_east_write_DB_agent(
                 .clk            (clk                         ),
                 .rst_n          (rst_n                       ),
                 .alloc_vld      (v_east_write_alloc_vld[i]   ),
@@ -985,7 +996,10 @@ endgenerate
                 .write_sram_pld (east_write_cmd_pld_in[i]    ),
                 .write_sram_rdy (east_write_cmd_rdy[i]       ));
         
-            write_DB_agent u_south_DB_agent(
+            write_DB_agent #( 
+                .ARB_TO_WDB_DELAY(WR_CMD_DELAY_SOUTH),
+                .WRITE_DONE_DELAY())
+             u_south_write_DB_agent(
                 .clk            (clk                         ),
                 .rst_n          (rst_n                       ),
                 .alloc_vld      (v_south_write_alloc_vld[i]  ),
@@ -1003,7 +1017,10 @@ endgenerate
                 .write_sram_pld (south_write_cmd_pld_in[i]   ),
                 .write_sram_rdy (south_write_cmd_rdy[i]      ));
         
-            write_DB_agent u_north_DB_agent(
+            write_DB_agent #( 
+                .ARB_TO_WDB_DELAY(WR_CMD_DELAY_NORTH),
+                .WRITE_DONE_DELAY())
+            u_north_write_DB_agent(
                 .clk            (clk                         ),
                 .rst_n          (rst_n                       ),
                 .alloc_vld      (v_north_write_alloc_vld[i]  ),
@@ -1072,6 +1089,8 @@ endgenerate
         .west_data_out_to_rdb     (west_data_out_to_rdb     ),
         .south_data_out_vld_to_rdb(south_data_out_vld_to_rdb),
         .south_data_out_to_rdb    (south_data_out_to_rdb    ),
+        .evict_data_out_vld_to_evdb(evict_data_out_vld_to_evdb),
+        .evict_data_out_to_evdb    (evict_data_out_to_evdb    ),
         .north_data_out_vld_to_rdb(north_data_out_vld_to_rdb),
         .north_data_out_to_rdb    (north_data_out_to_rdb    ));
 

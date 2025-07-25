@@ -1,12 +1,9 @@
 module linefillDB 
     import vector_cache_pkg::*;
-    #(
-    parameter integer unsigned ENTRY_NUM        = 64,
-    parameter integer unsigned ENTRY_ID_WIDTH   = $clog2(ENTRY_NUM),
-    parameter integer unsigned DATA_WIDTH       = 1024,
-    parameter integer unsigned ARB_TO_LFDB_DELAY= 5,
-    parameter integer unsigned LF_DONE_DELAY    = 10
-) (
+    #( 
+        parameter integer unsigned ARB_TO_LFDB_DELAY    = 5
+    )
+    (
     input  logic                            clk                     ,
     input  logic                            rst_n                   ,
 
@@ -187,7 +184,7 @@ module linefillDB
 
     pre_alloc_one #(
         .ENTRY_NUM(LFDB_ENTRY_NUM/4),
-        .ENTRY_ID_WIDTH(ENTRY_ID_WIDTH)
+        .ENTRY_ID_WIDTH($clog2(LFDB_ENTRY_NUM/4))
     ) u_pre_alloc_lfdb (
         .clk        (clk             ),
         .rst_n      (rst_n           ),

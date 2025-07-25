@@ -5,12 +5,6 @@ module ten_to_two_arb
     parameter integer unsigned WR_REQ_NUM = 5,
     parameter integer unsigned CHANNEL_SHIFT_REG_WIDTH = 10,
     parameter integer unsigned RAM_SHIFT_REG_WIDTH = 20,
-    parameter integer unsigned WR_CMD_DELAY_WEST  = 2,
-    parameter integer unsigned WR_CMD_DELAY_EAST  = 3,
-    parameter integer unsigned WR_CMD_DELAY_SOUTH = 6,
-    parameter integer unsigned WR_CMD_DELAY_NORTH = 4,
-    parameter integer unsigned WR_CMD_DELAY_LF    = 8,
-    
     parameter integer unsigned REQ_NUM = RD_REQ_NUM + WR_REQ_NUM
     ) (
     input  logic                    clk                     ,

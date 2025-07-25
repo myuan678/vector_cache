@@ -105,25 +105,30 @@ module vec_cache_ctrl
     logic                                               tag_req_rdy                            ;
     logic [MSHR_ENTRY_IDX_WIDTH-1:0]                    tag_req_index                          ;
     mshr_entry_t                                        v_mshr_entry_pld[MSHR_ENTRY_NUM-1:0]   ;
+    logic [MSHR_ENTRY_IDX_WIDTH-1:0]                    mshr_alloc_index_1;
+    logic [MSHR_ENTRY_IDX_WIDTH-1:0]                    mshr_alloc_index_2;
+    logic [MSHR_ENTRY_IDX_WIDTH  :0]                    entry_release_done_index;
+    mshr_entry_t                                        mshr_update_pld_A;
+    mshr_entry_t                                        mshr_update_pld_B;
 
     eightto2_req_arbiter #(
         .REQ_NUM        (8),
-        .ENTRY_IDX_WIDTH(),
+        .ENTRY_IDX_WIDTH(MSHR_ENTRY_IDX_WIDTH),
         .PLD_WIDTH      ($bits(input_req_pld_t))
     ) u_8to2_req_arb (
-        .clk                (clk                      ),
-        .rst_n              (rst_n                    ),
-        .v_req_vld          (hash_req_vld[7:0]        ),
-        .v_req_pld          (hash_req_pld[7:0]        ),
-        .v_req_rdy          (hash_req_rdy             ),
-        .mshr_alloc_vld     (mshr_alloc_vld           ),
-        .mshr_alloc_idx_1   (mshr_alloc_index_1       ),
-        .mshr_alloc_idx_1   (mshr_alloc_index_2       ),
-        .mshr_alloc_rdy     (mshr_alloc_rdy           ),
-        .out_grant_vld      (tag_req_vld              ),
+        .clk                (clk                          ),
+        .rst_n              (rst_n                        ),
+        .v_req_vld          (hash_req_vld[7:0]            ),
+        .v_req_pld          (hash_req_pld[7:0]            ),
+        .v_req_rdy          (hash_req_rdy                 ),
+        .mshr_alloc_vld     (mshr_alloc_vld               ),
+        .mshr_alloc_idx_1   (mshr_alloc_index_1           ),
+        .mshr_alloc_idx_2   (mshr_alloc_index_2           ),
+        .mshr_alloc_rdy     (mshr_alloc_rdy               ),
+        .out_grant_vld      (tag_req_vld                  ),
         .out_grant_pld_1    (tag_req_input_arb_grant1_pld ),
         .out_grant_pld_2    (tag_req_input_arb_grant2_pld ),
-        .out_grant_rdy      (tag_req_rdy              ) //from tag_ctrl
+        .out_grant_rdy      (tag_req_rdy                  ) //from tag_ctrl
     );
 
     vec_cache_tag_ctrl u_tag_pipe(
@@ -133,10 +138,10 @@ module vec_cache_ctrl
         .v_wr_resp_pld_1             (v_wr_resp_pld_1           ),
         .v_wr_resp_vld_2             (v_wr_resp_vld_2           ),
         .v_wr_resp_pld_2             (v_wr_resp_pld_2           ),
-        .wr_resp_rdy                 (wr_resp_rdy               ),
+        .wr_resp_rdy                 (1'b1                      ),
         .tag_req_vld                 (tag_req_vld               ),
-        .tag_req_input_arb_grant1_pld(req_input_arb_grant1_pld  ),//8to2
-        .tag_req_input_arb_grant2_pld(req_input_arb_grant2_pld  ),
+        .tag_req_input_arb_grant1_pld(tag_req_input_arb_grant1_pld  ),//8to2
+        .tag_req_input_arb_grant2_pld(tag_req_input_arb_grant2_pld  ),
         .tag_req_rdy                 (tag_req_rdy               ),
         .tag_req_index               (tag_req_index             ),
         .mshr_alloc_idx_1            (mshr_alloc_index_1        ),
@@ -146,22 +151,21 @@ module vec_cache_ctrl
         .entry_release_done_index    (entry_release_done_index  ),
         .stall                       (mshr_stall                ),
         .mshr_update_pld_A           (mshr_update_pld_A         ),
-        .mshr_update_pld_B           (mshr_update_pld_B         ),
-        .tag_mem_en                  (tag_mem_en                ),
-        .tag_ram_A_wr_en             (tag_ram_A_wr_en           ),
-        .tag_ram_A_addr              (tag_ram_A_addr            ),
-        .tag_ram_A_din               (tag_ram_A_din             ),
-        .tag_ram_A_dout              (tag_ram_A_dout            ),
-        .tag_ram_B_wr_en             (tag_ram_B_wr_en           ),
-        .tag_ram_B_addr              (tag_ram_B_addr            ),
-        .tag_ram_B_din               (tag_ram_B_din             ),
-        .tag_ram_B_dout              (tag_ram_B_dout            )
+        .mshr_update_pld_B           (mshr_update_pld_B         )
+        //.tag_mem_en                  (tag_mem_en                ),
+        //.tag_ram_A_wr_en             (tag_ram_A_wr_en           ),
+        //.tag_ram_A_addr              (tag_ram_A_addr            ),
+        //.tag_ram_A_din               (tag_ram_A_din             ),
+        //.tag_ram_A_dout              (tag_ram_A_dout            ),
+        //.tag_ram_B_wr_en             (tag_ram_B_wr_en           ),
+        //.tag_ram_B_addr              (tag_ram_B_addr            ),
+        //.tag_ram_B_din               (tag_ram_B_din             ),
+        //.tag_ram_B_dout              (tag_ram_B_dout            )
     );
 
     vec_cache_mshr u_mshr(
         .clk                         (clk                      ),          
         .rst_n                       (rst_n                    ),
-        .prefetch_enable             (prefetch_enable          ),
         .mshr_update_en              (mshr_update_en           ),
         .mshr_update_pld_A           (mshr_update_pld_A        ),
         .mshr_update_pld_B           (mshr_update_pld_B        ),
@@ -192,10 +196,11 @@ module vec_cache_ctrl
         .lf_wrreq_vld                (lf_wrreq_vld             ),
         .lf_wrreq_rdy                (lf_wrreq_rdy             ),
 
-        .dataram_rdy                 (dataram_rdy              ),
-        .downstream_txreq_rdy        (downstream_txreq_rdy     ),
-        .downstream_txreq_vld        (downstream_txreq_vld     ),
-        .downstream_txreq_pld        (downstream_txreq_pld     ),
+        //.dataram_rdy                 (dataram_rdy              ),
+        .dataram_rdy                 (1'b1              ),
+        .downstream_txreq_rdy        (down_txreq_rdy           ),
+        .downstream_txreq_vld        (down_txreq_vld           ),
+        .downstream_txreq_pld        (down_txreq_pld           ),
         
         .linefill_data_done          (linefill_data_done       ),
         .linefill_data_done_idx      (linefill_data_done_idx   ),

@@ -75,12 +75,14 @@ import vector_cache_pkg::*;
             assign read_ram_cmd[i].byte_sel    = west_read_cmd_pld_in[i].txnid.byte_sel ;
             assign read_ram_cmd[i].dest_ram_id = west_read_cmd_pld_in[i].dest_ram_id    ;
             assign read_ram_cmd[i].txnid       = west_read_cmd_pld_in[i].txnid          ;
+            assign read_ram_cmd[i].opcode      = west_read_cmd_pld_in[i].opcode;
 
             assign write_ram_cmd[i].addr        = {east_write_cmd_pld_in[i].req_cmd_pld.index,east_write_cmd_pld_in[i].req_cmd_pld.way};
             assign write_ram_cmd[i].mode        = east_write_cmd_pld_in[i].req_cmd_pld.txnid.mode    ;
             assign write_ram_cmd[i].byte_sel    = east_write_cmd_pld_in[i].req_num                   ;
             assign write_ram_cmd[i].dest_ram_id = east_write_cmd_pld_in[i].req_cmd_pld.dest_ram_id   ;
             assign write_ram_cmd[i].txnid       = east_write_cmd_pld_in[i].req_cmd_pld.txnid         ;
+            assign write_ram_cmd[i].opcode      = east_write_cmd_pld_in[i].req_cmd_pld.opcode;
         end
     endgenerate
 

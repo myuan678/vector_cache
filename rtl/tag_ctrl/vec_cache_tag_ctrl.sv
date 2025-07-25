@@ -25,26 +25,36 @@ module vec_cache_tag_ctrl
     input  mshr_entry_t                         v_mshr_entry_pld[MSHR_ENTRY_NUM-1:0]  ,
 
     output logic                                mshr_update_en                        ,
-    input  logic [MSHR_ENTRY_IDX_WIDTH  :0]     entry_release_done_index              ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH    :0]   entry_release_done_index              ,
     input  logic                                stall                                 ,
     output mshr_entry_t                         mshr_update_pld_A                     ,
-    output mshr_entry_t                         mshr_update_pld_B                     ,
+    output mshr_entry_t                         mshr_update_pld_B                     
 
-    output logic                                tag_mem_en                            ,
-    output logic                                tag_ram_A_wr_en                       ,
-    output logic [INDEX_WIDTH-1     :0]         tag_ram_A_addr                        ,
-    output logic [TAG_RAM_WIDTH-1   :0]         tag_ram_A_din                         ,
-    input  logic [TAG_RAM_WIDTH-1   :0]         tag_ram_A_dout                        ,
-    output logic                                tag_ram_B_wr_en                       ,
-    output logic [INDEX_WIDTH-1     :0]         tag_ram_B_addr                        ,
-    output logic [TAG_RAM_WIDTH-1   :0]         tag_ram_B_din                         ,
-    input  logic [TAG_RAM_WIDTH-1   :0]         tag_ram_B_dout                        
+    //output logic                                tag_mem_en                            ,
+    //output logic                                tag_ram_A_wr_en                       ,
+    //output logic [INDEX_WIDTH-1     :0]         tag_ram_A_addr                        ,
+    //output logic [TAG_RAM_WIDTH-1   :0]         tag_ram_A_din                         ,
+    //input  logic [TAG_RAM_WIDTH-1   :0]         tag_ram_A_dout                        ,
+    //output logic                                tag_ram_B_wr_en                       ,
+    //output logic [INDEX_WIDTH-1     :0]         tag_ram_B_addr                        ,
+    //output logic [TAG_RAM_WIDTH-1   :0]         tag_ram_B_din                         ,
+    //input  logic [TAG_RAM_WIDTH-1   :0]         tag_ram_B_dout                        
 
     //---------------------------------------------
     //add change
     //---------------------------------------------
 
     );
+    logic                                tag_mem_en      ;
+    logic                                tag_ram_A_wr_en ;
+    logic [INDEX_WIDTH-1     :0]         tag_ram_A_addr  ;
+    logic [TAG_RAM_WIDTH-1   :0]         tag_ram_A_din   ;
+    logic [TAG_RAM_WIDTH-1   :0]         tag_ram_A_dout  ;
+    logic                                tag_ram_B_wr_en ;
+    logic [INDEX_WIDTH-1     :0]         tag_ram_B_addr  ;
+    logic [TAG_RAM_WIDTH-1   :0]         tag_ram_B_din   ;
+    logic [TAG_RAM_WIDTH-1   :0]         tag_ram_B_dout  ;
+    
     
     logic [MSHR_ENTRY_NUM-1 :0] v_A_hazard_bitmap       ;
     logic [MSHR_ENTRY_NUM-1 :0] v_B_hazard_bitmap       ;
@@ -60,8 +70,8 @@ module vec_cache_tag_ctrl
     logic                       wr_tag_buf_B_vld        ;
     //logic [TAG_WIDTH+1      :0] wr_tag_buf_A_pld        ;
     //logic [TAG_WIDTH+1      :0] wr_tag_buf_B_pld        ;
-    wr_buf_pld_t  wr_tag_buf_A_pld        ;
-    wr_buf_pld_t  wr_tag_buf_B_pld        ;
+    wr_buf_pld_t                wr_tag_buf_A_pld        ;
+    wr_buf_pld_t                wr_tag_buf_B_pld        ;
     logic [INDEX_WIDTH-1    :0] wr_tag_buf_A_index      ;
     logic [INDEX_WIDTH-1    :0] wr_tag_buf_B_index      ;
 
@@ -115,6 +125,8 @@ module vec_cache_tag_ctrl
     logic                       B_miss                          ;
     logic                       A_hzd_checkpass                 ;
     logic                       B_hzd_checkpass                 ;
+    logic [WAY_NUM-1        :0] A_wr_tag_buf_way_oh;
+    logic [WAY_NUM-1        :0] B_wr_tag_buf_way_oh;
 
     assign tag_req_rdy = (wr_buf_vld==1'b0) && (stall==1'b0);
 
@@ -233,6 +245,7 @@ module vec_cache_tag_ctrl
         wr_tag_buf_B_pld.way   <= B_evict_way               ;
     end
 
+
     cmn_bin2onehot #(
         .BIN_WIDTH   ($clog2(WAY_NUM)),
         .ONEHOT_WIDTH(WAY_NUM)
@@ -251,6 +264,27 @@ module vec_cache_tag_ctrl
 //========================================================
 //        tag  ram
 //========================================================
+    toy_mem_model_bit #(
+        .ADDR_WIDTH  (INDEX_WIDTH),
+        .DATA_WIDTH  (TAG_RAM_WIDTH)
+    ) u_tag_ramA (
+        .clk    (clk                ),
+        .en     (tag_mem_en         ),
+        .wr_en  (tag_ram_A_wr_en    ),
+        .addr   (tag_ram_A_addr     ),
+        .wr_data(tag_ram_A_din      ),
+        .rd_data(tag_ram_A_dout     ));
+    toy_mem_model_bit #(
+        .ADDR_WIDTH  (INDEX_WIDTH),
+        .DATA_WIDTH  (TAG_RAM_WIDTH)
+    ) u_tag_ramB (
+        .clk    (clk                ),
+        .en     (tag_mem_en         ),
+        .wr_en  (tag_ram_B_wr_en    ),
+        .addr   (tag_ram_B_addr     ),
+        .wr_data(tag_ram_B_din      ),
+        .rd_data(tag_ram_B_dout     ));
+
     assign tag_ram_A_wr_en = wr_buf_vld;
     assign tag_ram_B_wr_en = wr_buf_vld;
     //assign tag_mem_en          = wr_buf_vld | cre_tag_req_vld_A | cre_tag_req_vld_B;
@@ -293,12 +327,12 @@ module vec_cache_tag_ctrl
 //==========================================================
     generate
         for(genvar i=0;i<WAY_NUM;i=i+1)begin
-            assign A_dirty[i] = tag_ram_A_dout[i*TAG_RAM_WIDTH];//每个tag的最低位为dirty bit
+            assign A_dirty[i] = tag_ram_A_dout[i*TAG_WIDTH];//每个tag的最低位为dirty bit
         end
     endgenerate
     generate
         for(genvar i=0;i<WAY_NUM;i=i+1)begin
-            assign A_valid[i] = tag_ram_A_dout[i*TAG_RAM_WIDTH+1];//每个tag的第二低位为vld bit
+            assign A_valid[i] = tag_ram_A_dout[i*TAG_WIDTH+1];//每个tag的第二低位为vld bit
         end
     endgenerate
 

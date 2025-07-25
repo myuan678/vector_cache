@@ -49,8 +49,7 @@ import vector_cache_pkg::*;
     endgenerate
 
     nto4_xbar #(
-        .IN_NUM (W_REQ_NUM),//input num
-        .OUT_NUM(4),//output num
+        .N (W_REQ_NUM),//input num
         .PLD_WIDTH($bits(input_wrreq_pld_t))
     ) u_west_wr_xbar(
         .clk        (clk                ),

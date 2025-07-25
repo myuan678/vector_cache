@@ -1,12 +1,6 @@
 module rdb_agent 
     import vector_cache_pkg::*;
-    #(
-    parameter integer unsigned ENTRY_NUM = 16,
-    parameter integer unsigned ENTRY_ID_WIDTH = $clog2(ENTRY_NUM),
-    parameter integer unsigned READ_SRAM_DELAY = 10,
-    parameter integer unsigned RDB_DATA_RDY_DELAY = 15, //是指sram中的数据已经被读到了RDB中，现在可以发起对RDB的读请求，将数据给US
-    parameter integer unsigned TO_US_DONE_DELAY   =20 
-) (
+    (
     input  logic                            clk             ,
     input  logic                            rst_n           ,
     output logic                            to_us_done      , //means rob entry release
@@ -59,7 +53,7 @@ module rdb_agent
         end
     end
     //-----------------------------------------------------------------------------------
-    
+
     //agent 内部产生读完sram 数据要写入rdb的vld请求 “写RDB”
     //1.访问sram的延迟，数据需要写入rdb
     assign ram_write_rdb_vld = shift_reg[READ_SRAM_DELAY-1];//dataram_rd_vld加上访问sram的延迟，认为数据可以写入到RDB了
@@ -104,8 +98,8 @@ module rdb_agent
     end
 
     pre_alloc_one #(
-        .ENTRY_NUM      (ENTRY_NUM     ),
-        .ENTRY_ID_WIDTH (ENTRY_ID_WIDTH)
+        .ENTRY_NUM      (RW_DB_ENTRY_NUM   ),
+        .ENTRY_ID_WIDTH (DB_ENTRY_IDX_WIDTH)
     ) u_pre_alloc_rdb (
         .clk        (clk             ),
         .rst_n      (rst_n           ),

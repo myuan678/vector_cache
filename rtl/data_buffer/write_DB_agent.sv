@@ -1,18 +1,15 @@
 module write_DB_agent 
     import vector_cache_pkg::*;
-    #(
-    parameter integer unsigned WIDTH = 10,
-    parameter integer unsigned ENTRY_NUM = 32,
-    parameter integer unsigned ARB_TO_WDB_DELAY = 5,
-    parameter integer unsigned US_TO_WDB_DATA_RDY_DELAY = 10,
-    parameter integer unsigned WRITE_DONE_DELAY = 20
-
-) (
+    #( 
+        parameter integer unsigned ARB_TO_WDB_DELAY     = 5     ,
+        parameter integer unsigned WRITE_DONE_DELAY     = 20    
+    )
+    (
     input  logic                            clk             ,
     input  logic                            rst_n           ,
 
     output logic                            alloc_vld       ,
-    output logic [$clog2(ENTRY_NUM)-1:0]    alloc_idx       ,
+    output logic [$clog2(RW_DB_ENTRY_NUM)-1:0]    alloc_idx       ,
     input  logic                            alloc_rdy       ,
 
     input  wdb_pld_t                        write_wdb_pld   , //data + wdb_entry_id
@@ -31,7 +28,7 @@ module write_DB_agent
     output logic [MSHR_ENTRY_IDX_WIDTH-1:0] write_done_idx  //write done idx
 );
 
-    logic [ENTRY_NUM-1          :0]         v_wdb_entry_vld ;
+    logic [RW_DB_ENTRY_NUM-1    :0]         v_wdb_entry_vld ;
     logic [WRITE_DONE_DELAY-1   :0]         delay_shift_reg ;
     arb_out_req_t                           pld_shift_reg[WRITE_DONE_DELAY-1:0] ;
     logic                                   read_wdb_vld    ;//read WDB 高优先级
@@ -41,6 +38,7 @@ module write_DB_agent
     logic                                   wdb_wr_en       ;
     logic [DB_ENTRY_IDX_WIDTH-1 :0]         wdb_addr        ;
     logic [1023                 :0]         data_out        ;
+    logic [1023                 :0]         data_in         ;
     logic                                   WDB_rdy         ;
     assign WDB_rdy = 1'b1;
 
@@ -104,10 +102,9 @@ module write_DB_agent
     //WDB ram
     toy_mem_model_bit #(
         .ADDR_WIDTH  ($clog2(RW_DB_ENTRY_NUM)  ),
-        .DATA_WIDTH (DATA_WIDTH )
+        .DATA_WIDTH (1024 )
     ) u_write_data_buffer (
         .clk    (clk        ),
-        //.rst_n  (rst_n      ),
         .en     (wdb_mem_en ),
         .wr_en  (wdb_wr_en  ),
         .addr   (wdb_addr   ),
