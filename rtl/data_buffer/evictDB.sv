@@ -14,22 +14,21 @@ module evictDB
     input  logic                            clk,
     input  logic                            rst_n,
 
-    //output logic                           evict_done      ,//evict_to_ds done signal
     output logic                            evict_clean     ,//ram_to_evict_db done signal
     output logic                            evict_clean_idx ,
 
-    input  arb_out_req_t                    evict_req_pld,
-    input  logic                            evict_req_vld,
-    output logic                            evict_req_rdy,
+    input  arb_out_req_t                    evict_req_pld   ,
+    input  logic                            evict_req_vld   ,
+    output logic                            evict_req_rdy   ,
 
     input  logic [1023:0]                   ram_to_evdb_data_in,
 
-    output logic                            alloc_vld,
-    output [$clog2(EVDB_ENTRY_NUM/4)-1:0]   alloc_idx,
-    input  logic                            alloc_rdy,
+    output logic                            alloc_vld       ,
+    output [$clog2(EVDB_ENTRY_NUM/4)-1:0]   alloc_idx       ,
+    input  logic                            alloc_rdy       ,
 
-    output logic                            evict_to_ds_vld,
-    output evict_to_ds_pld_t                evict_to_ds_pld,
+    output logic                            evict_to_ds_vld ,
+    output evict_to_ds_pld_t                evict_to_ds_pld ,
     input  logic                            evict_to_ds_rdy
 );
 
@@ -51,6 +50,7 @@ module evictDB
     logic [DB_ENTRY_IDX_WIDTH-3:0] evdb_entry_release_idx;
 
     //rob arbiter evict_req_vld
+    //-----------------DELAY----------------------------------------------------------------
     logic [EVICT_DOWN_DELAY-1  :0] shift_reg;
     arb_out_req_t                  delay_pld_reg[EVICT_DOWN_DELAY-1:0];
     
@@ -95,7 +95,7 @@ module evictDB
 
 
 
-    //TODO：有点问题，evict_to_ds的数据从sram读，其他的比如txnid怎么获得，直接打一拍好像不对
+    //TODO：打一拍好像不对
     always_ff@(posedge clk )begin
         read_evdb_pld_d <= read_evdb_pld ;
     end
@@ -108,6 +108,7 @@ module evictDB
     assign evict_to_ds_pld.rob_entry_id= read_evdb_pld_d.rob_entry_id;
     assign evict_to_ds_pld.sideband    = read_evdb_pld_d.sideband;
     assign evict_to_ds_pld.txnid       = read_evdb_pld_d.txnid;
+    assign evict_to_ds_pld.addr        = {read_evdb_pld_d.tag,read_evdb_pld_d.index,read_evdb_pld_d.offset};
     assign evict_req_rdy               = read_evdb_rdy;//TODO
     //assign evict_to_ds_vld = read_evdb_vld && evict_to_ds_rdy;
     assign evdb_entry_release     = evict_to_ds_vld && evict_to_ds_rdy && evict_to_ds_pld.last;
@@ -115,10 +116,10 @@ module evictDB
 
    
     always_ff@(posedge clk or negedge rst_n) begin
-        if(!rst_n)                          v_evdb_entry_vld            <= 'b1;
-        else if(alloc_vld && alloc_rdy)     v_evdb_entry_vld[alloc_idx] <= 1'b0;
+        if(!rst_n)                          v_evdb_entry_vld                         <= 'b1;
+        else if(alloc_vld && alloc_rdy)     v_evdb_entry_vld[alloc_idx]              <= 1'b0;
         else if(evdb_entry_release)         v_evdb_entry_vld[evdb_entry_release_idx] <= 1'b1;
-        else                                v_evdb_entry_vld <= v_evdb_entry_vld;
+        else                                v_evdb_entry_vld                         <= v_evdb_entry_vld;
     end
 
     pre_alloc_one #(

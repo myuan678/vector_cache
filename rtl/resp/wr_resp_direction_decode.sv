@@ -3,11 +3,11 @@ import vector_cache_pkg::*;
 #(
     parameter integer unsigned WIDTH = 4//四个方向
 )(
-    input  logic           clk              ,
-    input  logic           rst_n            ,
-    input  logic           req_vld          ,
-    input  input_req_pld_t req_pld          ,
-    output logic [WIDTH-1:0] v_wresp_vld    ,
+    input  logic             clk              ,
+    input  logic             rst_n            ,
+    input  logic             req_vld          ,
+    input  input_req_pld_t   req_pld          ,
+    output logic [WIDTH-1:0] v_wresp_vld      ,
     output wr_resp_pld_t     v_wresp_pld [WIDTH-1:0]
 
 );

@@ -75,10 +75,11 @@ package vector_cache_pkg;
     } addr_t;
 
     typedef struct packed {
-        logic [1                   :0] direction_id;//txnid的低2bit表示方向：00：west；01：east；10：south；11：north
-        logic [$clog2(MASTER_NUM)-1:0] master_id;
-        logic                          mode;    //读写时时操作连续的32bit，还是每个32bit中选一个byte，组成32bit。mode=0表示连续，mode=1表示4个byte
-        logic [1                   :0] byte_sel;//表示读32bit中的哪一个byte
+        logic [1                   :0] direction_id ;//txnid的低2bit表示方向：00：west；01：east；10：south；11：north
+        logic [$clog2(MASTER_NUM)-1:0] master_id    ;
+        logic [3:0]                    req_id       ;//每个master可以发N个，假设16个
+        logic                          mode         ;    //读写时时操作连续的32bit，还是每个32bit中选一个byte，组成32bit。mode=0表示连续，mode=1表示4个byte
+        logic [1                   :0] byte_sel     ;//表示读32bit中的哪一个byte
     } txnid_t;
 
 
@@ -123,8 +124,8 @@ package vector_cache_pkg;
         logic [$clog2(MSHR_ENTRY_NUM)-1 :0] rob_entry_id    ;
         logic [$clog2(RW_DB_ENTRY_NUM)-1:0] db_entry_id     ;
         logic [SIDEBAND_WIDTH-1         :0] sideband        ; 
-        logic                               last        ;
-        logic [$clog2(DS_N)-1           :0] req_num     ; 
+        logic                               last            ;
+        //logic [$clog2(DS_N)-1           :0] req_num         ; 
     } arb_out_req_t;
 
     typedef struct packed {
@@ -218,6 +219,7 @@ package vector_cache_pkg;
 
     typedef struct packed {
         logic  [BUS_WIDTH-1             :0] data        ;
+        addr_t                              addr        ;
         logic                               last        ;
         logic  [MSHR_ENTRY_IDX_WIDTH-1  :0] rob_entry_id;
         logic  [DB_ENTRY_IDX_WIDTH-1    :0] db_entry_id ;
@@ -234,8 +236,8 @@ package vector_cache_pkg;
         logic [4:0] dest_ram_id; //最高2bit为hash id，接下来的3bit为dest ram id，5bit确定是哪一个block的哪一个hash的哪一个ram
         logic       mode       ;
         logic [1:0] byte_sel   ;
-        logic [1:0] req_num    ; //linefill/evict时的传输次数编号
-        logic       opcode     ; //read: 0read; 1 evict read
+        //logic [1:0] req_num    ; //linefill/evict时的传输次数编号
+        //logic       opcode     ; //read: 0read; 1 evict read
     } sram_inst_cmd_t;          // write: 0 write; 1linefill
 
     

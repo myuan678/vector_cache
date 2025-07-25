@@ -146,12 +146,10 @@ module linefillDB
 
 
     //linefill_data_done表示数据写入了LFDB，应该是ds_to_lfdb_vld
-    //arb出的linefill_wrreq，去读LFDB，将数据写入SRAM。linefill_wrreq_vld延迟LF_DONE_DELAY表示数据已经
+    //arb出的linefill_wrreq，读LFDB
     
     assign linefill_data_done       = ds_to_lfdb_rdy && ds_to_lfdb_vld && ds_to_lfdb_pld.last;
     assign linefill_data_done_idx   = ds_to_lfdb_pld.linefill_cmd.rob_entry_id;
-    //assign linefill_to_ram_done     = delay_shift_reg[LF_DONE_DELAY-1];
-    //assign linefill_to_ram_done_idx = delay_pld_reg[LF_DONE_DELAY-1].rob_entry_id;
     assign linefill_to_ram_done     = lfdb_to_ram_vld && lfdb_to_ram_rdy && read_lfdb_pld.last;
     assign linefill_to_ram_done_idx = read_lfdb_pld.req_cmd_pld.rob_entry_id;
     
@@ -171,9 +169,7 @@ module linefillDB
         .rd_data(data_out   )
     );
 
-//TODO:修改pre allocate的逻辑，一次pre_alloc 4个，并且读出4个后才release lfdb entry
-    //pre_allocate 4个，用counter作为地址低两位，确定写入的entry地址
-
+//一次pre_alloc 4个，并且读出4个后才release lfdb entry
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n)begin
             v_lfdb_entry_vld = 'b1;
@@ -181,7 +177,7 @@ module linefillDB
         else if(db_mem_en && db_wr_en)begin
             v_lfdb_entry_vld[db_addr] = 1'b0;
         end
-        else if(db_mem_en && (db_wr_en==1'b0) &&lfdb_to_ram_pld.write_cmd.last)begin
+        else if(db_mem_en && (db_wr_en==1'b0) && lfdb_to_ram_pld.write_cmd.last)begin
             v_lfdb_entry_vld[lfdb_to_ram_pld.write_cmd.req_cmd_pld.db_entry_id] = 1'b1;
         end
         else begin
@@ -196,7 +192,7 @@ module linefillDB
         .clk        (clk             ),
         .rst_n      (rst_n           ),
         .v_in_vld   (v_lfdb_entry_vld),
-        .v_in_rdy   (                ),
+        .v_in_rdy   (                ),//TODO
         .out_vld    (alloc_vld       ),
         .out_rdy    (alloc_rdy       ),
         .out_index  (alloc_idx       )

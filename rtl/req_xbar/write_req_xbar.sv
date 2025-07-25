@@ -3,10 +3,10 @@ import vector_cache_pkg::*;
 #(
     parameter integer unsigned W_REQ_NUM = 8
 ) (
-    input  logic                              clk                                 ,
-    input  logic                              rst_n                               ,
-    input  logic [W_REQ_NUM-1         :0]     wr_cmd_vld                          ,
-    output logic [W_REQ_NUM-1         :0]     wr_cmd_rdy                          ,
+    input  logic                              clk                                ,
+    input  logic                              rst_n                              ,
+    input  logic [W_REQ_NUM-1         :0]     wr_cmd_vld                         ,
+    output logic [W_REQ_NUM-1         :0]     wr_cmd_rdy                         ,
     input  logic [63                  :0]     wr_addr           [W_REQ_NUM-1:0]  ,
     input  logic [1023                :0]     wr_data           [W_REQ_NUM-1:0]  ,
     input  logic [TXNID_WIDTH-1       :0]     wr_cmd_txnid      [W_REQ_NUM-1:0]  ,
@@ -14,7 +14,7 @@ import vector_cache_pkg::*;
     input  logic [SIDEBAND_WIDTH-1    :0]     wr_sideband       [W_REQ_NUM-1:0]  ,
 
     input  logic [3                   :0]     alloc_vld                          ,
-    input  logic [DB_ENTRY_IDX_WIDTH-1:0]     alloc_idx[3:0]                     ,
+    input  logic [DB_ENTRY_IDX_WIDTH-1:0]     alloc_idx         [3:0]            ,
     output logic [3:0]                        alloc_rdy                          ,
 
     output logic [3                   :0]     sel_wr_vld                         ,
@@ -22,6 +22,7 @@ import vector_cache_pkg::*;
     output wdb_pld_t                          sel_wr_data_pld [3:0]              , //data + db_entry_id 
     input  logic [3                   :0]     sel_wr_rdy     
 );
+
     input_wrreq_pld_t                         in_wr_pld       [W_REQ_NUM-1:0]    ;
     input_wrreq_pld_t                         sel_full_wr_pld [4-1        :0]    ;
     logic [1          :0]                     in_select       [W_REQ_NUM-1:0]    ;//nto4 select width = $clog2(4)=2,地址高2bit作为select
@@ -50,7 +51,7 @@ import vector_cache_pkg::*;
     nto4_xbar #(
         .IN_NUM (W_REQ_NUM),//input num
         .OUT_NUM(4),//output num
-        .PLD_WIDTH($bits(input_req_pld_t))
+        .PLD_WIDTH($bits(input_wrreq_pld_t))
     ) u_west_wr_xbar(
         .clk        (clk                ),
         .rst_n      (rst_n              ),
@@ -60,7 +61,7 @@ import vector_cache_pkg::*;
         .in_select  (in_select          ),
         .out_vld    (pre_sel_wr_vld     ),
         .out_pld    (sel_full_wr_pld    ),
-        .out_rdy    (sel_wr_rdy        ));
+        .out_rdy    (sel_wr_rdy         ));
 
 
     generate

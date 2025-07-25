@@ -3,7 +3,7 @@ module m_to_n_xbar #(
     parameter int N = 16,
     parameter int PLD_WIDTH = 32
 )(
-    input  logic [M-1:0]                      in_vld,
+    input  logic [M-1:0]                     in_vld,
     input  logic [PLD_WIDTH-1:0]             in_pld [M-1:0],
     input  logic [$clog2(N)-1:0]             select [M-1:0],
 

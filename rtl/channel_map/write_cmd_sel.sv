@@ -24,6 +24,7 @@ module write_cmd_sel
 
     logic [3:0]         south_wr_cmd_vld;
     write_ram_pld_t     south_wr_cmd_pld[3:0];
+    
     generate
         for(genvar i=0;i<4;i=i+1)begin
             assign south_wr_cmd_vld[i] = v_lfdb_to_ram_vld[i] | south_write_cmd_vld_in[i];
@@ -80,6 +81,7 @@ module write_cmd_sel
             end
         end
     endgenerate
+
     generate
         for(genvar i=0;i<4;i=i+1)begin
             always_comb begin
@@ -100,6 +102,7 @@ module write_cmd_sel
             end
         end
     endgenerate
+
     generate
         for(genvar i=0;i<4;i=i+1)begin
             always_comb begin

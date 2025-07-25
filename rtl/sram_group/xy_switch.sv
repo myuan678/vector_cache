@@ -21,23 +21,23 @@ import vector_cache_pkg::*;
 
 
     input  logic [7         :0] west_write_cmd_in_vld                ,
-    input  arb_out_req_t        west_write_cmd_in_pld        [7 :0]  ,
+    input  write_ram_cmd_t      west_write_cmd_in_pld        [7 :0]  ,
     input  logic [7         :0] east_write_cmd_in_vld                ,
-    input  arb_out_req_t        east_write_cmd_in_pld        [7 :0]  ,
+    input  write_ram_cmd_t      east_write_cmd_in_pld        [7 :0]  ,
     input  logic [7         :0] south_write_cmd_in_vld               ,
-    input  arb_out_req_t        south_write_cmd_in_pld       [7 :0]  ,
+    input  write_ram_cmd_t      south_write_cmd_in_pld       [7 :0]  ,
     input  logic [7         :0] north_write_cmd_in_vld               ,
-    input  arb_out_req_t        north_write_cmd_in_pld       [7 :0]  ,
+    input  write_ram_cmd_t      north_write_cmd_in_pld       [7 :0]  ,
 
     output logic [7         :0] west_write_cmd_out_vld                ,
-    output arb_out_req_t        west_write_cmd_out_pld        [7 :0]  ,
+    output write_ram_cmd_t      west_write_cmd_out_pld        [7 :0]  ,
     output logic [7         :0] east_write_cmd_out_vld                ,
-    output arb_out_req_t        east_write_cmd_out_pld        [7 :0]  ,
+    output write_ram_cmd_t      east_write_cmd_out_pld        [7 :0]  ,
         
     output logic [7         :0] south_write_cmd_out_vld               ,
-    output arb_out_req_t        south_write_cmd_out_pld       [7 :0]  ,
+    output write_ram_cmd_t      south_write_cmd_out_pld       [7 :0]  ,
     output logic [7         :0] north_write_cmd_out_vld               ,
-    output arb_out_req_t        north_write_cmd_out_pld       [7 :0]  ,
+    output write_ram_cmd_t      north_write_cmd_out_pld       [7 :0]  ,
 
     input  logic [7         :0] west_data_in_vld                      ,
     input  data_pld_t           west_data_in                  [7  :0] ,
@@ -61,94 +61,51 @@ import vector_cache_pkg::*;
 
 );
 
+//read cmd
     generate
         for(genvar i=0;i<8;i=i+1)begin
             always_ff@(posedge clk or negedge rst_n)begin
-                if(!rst_n)begin
-                    west_read_cmd_out_vld[i]    <= 'b0;
-                    west_read_cmd_out_pld[i]    <= 'b0;
-                    east_read_cmd_out_vld[i]    <= 'b0;
-                    east_read_cmd_out_pld[i]    <= 'b0;
+                if(!rst_n)begin 
+                    west_read_cmd_out_vld[i] <= 'b0 ;
+                    west_read_cmd_out_pld[i] <= 'b0 ;
+                    east_read_cmd_out_vld[i] <= 'b0 ;
+                    east_read_cmd_out_pld[i] <= 'b0 ;
                 end
                 else begin
-                    west_read_cmd_out_vld[i]    <= east_read_cmd_in_vld[i];
-                    west_read_cmd_out_pld[i]    <= east_read_cmd_in_pld[i];
-                    east_read_cmd_out_vld[i]    <= west_read_cmd_in_vld[i];
-                    east_read_cmd_out_pld[i]    <= west_read_cmd_in_pld[i];
+                    west_read_cmd_out_vld[i] <= east_read_cmd_in_vld[i];
+                    west_read_cmd_out_pld[i] <= east_read_cmd_in_pld[i];
+                    east_read_cmd_out_vld[i] <= west_read_cmd_in_vld[i];
+                    east_read_cmd_out_pld[i] <= west_read_cmd_in_pld[i];
                 end
             end
         end
     endgenerate
 
+    //write cmd
     generate
         for(genvar i=0;i<8;i=i+1)begin
             always_ff@(posedge clk or negedge rst_n) begin
-                if(!rst_n)begin
-                    west_write_cmd_out_vld[i]   <= east_write_cmd_in_vld[i];
-                    west_write_cmd_out_pld[i]   <= east_write_cmd_in_pld[i];
+                west_write_cmd_out_vld[i]   <= east_write_cmd_in_vld[i];
+                west_write_cmd_out_pld[i]   <= east_write_cmd_in_pld[i];
+                if(!rst_n)begin 
                     east_write_cmd_out_vld[i]   <= 'b0;
-                    east_write_cmd_out_pld[i]   <= 'b0;
-
+                    east_write_cmd_out_pld[i]   <= 'b0;  
+                    south_write_cmd_out_vld[i]  <= 'b0;
+                    south_write_cmd_out_pld[i]  <= 'b0;
+                    north_write_cmd_out_vld[i]  <= 'b0;
+                    north_write_cmd_out_pld[i]  <= 'b0; 
+                end
+                else if(BLOCK_ID == ROW_ID)begin//对角线的block
                     south_write_cmd_out_vld[i]  <= 'b0;
                     south_write_cmd_out_pld[i]  <= 'b0;
                     north_write_cmd_out_vld[i]  <= 'b0;
                     north_write_cmd_out_pld[i]  <= 'b0;
-                end
-                else if(BLOCK_ID == ROW_ID)begin//对角线的block
-                    if(west_write_cmd_in_vld[i]) begin//west 方向write
-                        west_write_cmd_out_vld[i]  <= east_write_cmd_in_vld[i];
-                        west_write_cmd_out_pld[i]  <= east_write_cmd_in_pld[i];
-                        east_write_cmd_out_vld[i]  <= west_write_cmd_in_vld[i];
-                        east_write_cmd_out_pld[i]  <= west_write_cmd_in_pld[i];
-                        south_write_cmd_out_vld[i] <= north_write_cmd_in_vld[i];
-                        south_write_cmd_out_pld[i] <= north_write_cmd_in_pld[i];
-                        north_write_cmd_out_vld[i] <= south_write_cmd_in_vld[i];
-                        north_write_cmd_out_pld[i] <= south_write_cmd_in_pld[i];
-                    end
-                    else if(east_write_cmd_in_vld[i] )begin//east 方向来的write
-                        west_write_cmd_out_vld[i]   <= east_write_cmd_in_vld[i];
-                        west_write_cmd_out_pld[i]   <= east_write_cmd_in_pld[i];
-                        east_write_cmd_out_vld[i]   <= west_write_cmd_in_vld[i];
-                        east_write_cmd_out_pld[i]   <= west_write_cmd_in_pld[i];
-                        south_write_cmd_out_vld[i]  <= 'b0;
-                        south_write_cmd_out_pld[i]  <= 'b0;
-                        north_write_cmd_out_vld[i]  <= 'b0;
-                        north_write_cmd_out_pld[i]  <= 'b0;
-                    end
-                    else if(north_write_cmd_in_vld[i] )begin//north 方向来的write
-                        west_write_cmd_out_vld[i]   <= east_write_cmd_in_vld[i];
-                        west_write_cmd_out_pld[i]   <= east_write_cmd_in_pld[i];
-                        east_write_cmd_out_vld[i]   <= north_write_cmd_in_vld[i];
-                        east_write_cmd_out_pld[i]   <= north_write_cmd_in_pld[i];
-                        south_write_cmd_out_vld[i]  <= 'b0;
-                        south_write_cmd_out_pld[i]  <= 'b0;
-                        north_write_cmd_out_vld[i]  <= 'b0;
-                        north_write_cmd_out_pld[i]  <= 'b0;
-                    end
-                    else if(south_write_cmd_in_vld[i] )begin//south 方向来的write        
-                        west_write_cmd_out_vld[i]  <= east_write_cmd_in_vld[i];
-                        west_write_cmd_out_pld[i]  <= east_write_cmd_in_pld[i];
-                        east_write_cmd_out_vld[i]  <= south_write_cmd_in_vld[i];
-                        east_write_cmd_out_pld[i]  <= south_write_cmd_in_pld[i];
-                        south_write_cmd_out_vld[i] <= 'b0;
-                        south_write_cmd_out_pld[i] <= 'b0;
-                        north_write_cmd_out_vld[i] <= 'b0;
-                        north_write_cmd_out_pld[i] <= 'b0;
-                    end
-                    else begin
-                        west_write_cmd_out_vld[i]  <= east_write_cmd_in_vld[i];
-                        west_write_cmd_out_pld[i]  <= east_write_cmd_in_pld[i];
-                        east_write_cmd_out_vld[i]  <= west_write_cmd_in_vld[i];
-                        east_write_cmd_out_pld[i]  <= west_write_cmd_in_pld[i];
-                        south_write_cmd_out_vld[i] <= north_write_cmd_in_vld[i];
-                        south_write_cmd_out_pld[i] <= north_write_cmd_in_pld[i];
-                        north_write_cmd_out_vld[i] <= south_write_cmd_in_vld[i];
-                        north_write_cmd_out_pld[i] <= south_write_cmd_in_pld[i];
-                    end
+                    east_write_cmd_out_vld[i]   <= west_write_cmd_in_vld[i] | north_write_cmd_in_vld[i] | south_write_cmd_in_vld[i];
+                    east_write_cmd_out_pld[i]   <= west_write_cmd_in_vld[i] ? west_write_cmd_in_pld[i] :
+                                                   north_write_cmd_in_vld[i]? north_write_cmd_in_pld[i]:
+                                                                              south_write_cmd_in_pld[i];
                 end
                 else begin//不在对角线的block，west-east && north-south
-                    west_write_cmd_out_vld[i]  <= east_write_cmd_in_vld[i];
-                    west_write_cmd_out_pld[i]  <= east_write_cmd_in_pld[i];
                     east_write_cmd_out_vld[i]  <= west_write_cmd_in_vld[i];
                     east_write_cmd_out_pld[i]  <= west_write_cmd_in_pld[i];
                     south_write_cmd_out_vld[i] <= north_write_cmd_in_vld[i];
@@ -161,18 +118,19 @@ import vector_cache_pkg::*;
     endgenerate
 
     //=====================================================================
+    //data
     generate
         for(genvar i=0;i<8;i=i+1)begin
             always_ff@(posedge clk or negedge rst_n) begin
                 if(!rst_n)begin
-                    west_data_out[i]       <= 'b0;
-                    west_data_out_vld[i]   <= 1'b0;
-                    east_data_out[i]       <= 'b0;
-                    east_data_out_vld[i]   <= 1'b0;
-                    south_data_out[i]      <= 'b0;
-                    south_data_out_vld[i]  <= 1'b0;
-                    north_data_out[i]      <= 'b0;
-                    north_data_out_vld[i]  <= 1'b0;
+                    west_data_out[i]       <= 'b0  ;
+                    west_data_out_vld[i]   <= 'b0  ;
+                    east_data_out[i]       <= 'b0  ;
+                    east_data_out_vld[i]   <= 'b0  ;
+                    south_data_out[i]      <= 'b0  ;
+                    south_data_out_vld[i]  <= 'b0  ;
+                    north_data_out[i]      <= 'b0  ;
+                    north_data_out_vld[i]  <= 'b0  ;
                 end
                 //if(group_id_row[i]==group_id_col[i])begin//对角线的block
                 else if(BLOCK_ID == ROW_ID)begin//对角线的block
@@ -181,22 +139,22 @@ import vector_cache_pkg::*;
                                             south_data_in_vld[i] ? south_data_in[i] : west_data_in[i] ;
 ;
                     west_data_out_vld[i] <=  east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==2'd0);
-                    west_data_out[i]     <= (east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==2'd0)) ? east_data_in[i] : 'b0;
+                    west_data_out[i]     <= east_data_in[i] ;
 
                     north_data_out_vld[i]<=  east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==2'd3);//north
-                    north_data_out[i]    <= (east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==2'd0)) ? east_data_in[i] : 'b0;
+                    north_data_out[i]    <= east_data_in[i] ;
 
                     south_data_out_vld[i]<=  east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==2'd2);//south
-                    south_data_out[i]    <= (east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==2'd0)) ? east_data_in[i] : 'b0;
+                    south_data_out[i]    <=  east_data_in[i] ;
                 end
                 else begin
-                    west_data_out[i]      <= east_data_in[i];
-                    west_data_out_vld[i]  <= east_data_in_vld[i];
-                    east_data_out[i]      <= west_data_in[i];
-                    east_data_out_vld[i]  <= west_data_in_vld[i];
-                    south_data_out[i]     <= north_data_in[i];
+                    west_data_out[i]      <= east_data_in[i]     ;
+                    west_data_out_vld[i]  <= east_data_in_vld[i] ;
+                    east_data_out[i]      <= west_data_in[i]     ;
+                    east_data_out_vld[i]  <= west_data_in_vld[i] ;
+                    south_data_out[i]     <= north_data_in[i]    ;
                     south_data_out_vld[i] <= north_data_in_vld[i];
-                    north_data_out[i]     <= south_data_in[i];
+                    north_data_out[i]     <= south_data_in[i]    ;
                     north_data_out_vld[i] <= south_data_in_vld[i];
                 end
             end

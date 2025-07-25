@@ -45,9 +45,9 @@ module vec_cache_mshr
     output downstream_txreq_pld_t                       downstream_txreq_pld      ,
 
     input  logic                                        linefill_data_done        ,//linefill ack
-    input  logic [MSHR_ENTRY_IDX_WIDTH    :0]           linefill_data_done_idx    ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1  :0]           linefill_data_done_idx    ,
     input  logic                                        linefill_done             ,
-    input  logic [MSHR_ENTRY_IDX_WIDTH    :0]           linefill_done_idx         ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1  :0]           linefill_done_idx         ,
 
     input  logic                                        west_rd_done     ,
     input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             west_rd_done_idx ,
@@ -68,7 +68,7 @@ module vec_cache_mshr
     input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             north_wr_done_idx,
 
     input  logic                                        evict_clean               ,//evict ack
-    input  logic [MSHR_ENTRY_IDX_WIDTH    :0]           evict_clean_idx           ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1  :0]           evict_clean_idx           ,
     input  logic                                        bresp_vld                 ,//Bresp evict done
     input  bresp_pld_t                                  bresp_pld                 ,//Bresp //txnid+sideband+rob_id
     output logic                                        bresp_rdy                 ,//Bresp
@@ -88,9 +88,9 @@ module vec_cache_mshr
     input  logic [$clog2(RW_DB_ENTRY_NUM)-1:0]          n_rd_alloc_idx      ,
 
     input  logic                                        linefill_alloc_vld  ,
-    input  logic [$clog2(LFDB_ENTRY_NUM)-1:0]           linefill_alloc_idx  ,
+    input  logic [$clog2(LFDB_ENTRY_NUM/4)-1:0]         linefill_alloc_idx  ,
     input  logic                                        evict_alloc_vld     ,
-    input  logic [$clog2(EVDB_ENTRY_NUM)-1:0]           evict_alloc_idx     ,
+    input  logic [$clog2(EVDB_ENTRY_NUM/4)-1:0]         evict_alloc_idx     ,
 
     output logic                                        w_rd_alloc_rdy      ,//TODO:
     output logic                                        e_rd_alloc_rdy      ,
@@ -164,21 +164,32 @@ module vec_cache_mshr
     logic [MSHR_ENTRY_NUM-1         :0]                 v_linefill_done                                ;
     logic [MSHR_ENTRY_NUM-1         :0]                 v_linefill_data_done                           ;
     //logic [MSHR_ENTRY_NUM-1         :0]                 v_rd_done                                      ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_west_rd_done       ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_east_rd_done       ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_south_rd_done      ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_north_rd_done      ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_west_wr_done       ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_east_wr_done       ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_south_wr_done      ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_north_wr_done      ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_done                                   ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_clean                                  ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_west_rd_done                                  ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_east_rd_done                                  ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_south_rd_done                                 ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_north_rd_done                                 ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_west_wr_done                                  ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_east_wr_done                                  ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_south_wr_done                                 ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_north_wr_done                                 ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_done                                    ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_clean                                   ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_mshr_entry_pld_valid                          ;
 
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_mshr_entry_pld_valid                         ;
+    logic [MSHR_ENTRY_IDX_WIDTH-1   :0]                 mshr_update_alloc_idx1;
+    logic [MSHR_ENTRY_IDX_WIDTH-1   :0]                 mshr_update_alloc_idx2;
 
-    logic [MSHR_ENTRY_IDX_WIDTH   :0]                  mshr_update_alloc_idx1;
-    logic [MSHR_ENTRY_IDX_WIDTH   :0]                  mshr_update_alloc_idx2;
+
+    arb_out_req_t   linefill_req_pld;
+    arb_out_req_t   w_dataram_wr_pld;
+    arb_out_req_t   e_dataram_wr_pld;
+    arb_out_req_t   s_dataram_wr_pld;
+    arb_out_req_t   n_dataram_wr_pld;
+    arb_out_req_t   evict_rd_pld;
+    arb_out_req_t   w_dataram_rd_pld;
+    arb_out_req_t   e_dataram_rd_pld;
+    arb_out_req_t   s_dataram_rd_pld;
+    arb_out_req_t   n_dataram_rd_pld;
 
     assign mshr_update_alloc_idx1 = mshr_update_pld_A.alloc_idx;
     assign mshr_update_alloc_idx2 = mshr_update_pld_B.alloc_idx;
@@ -568,7 +579,7 @@ module vec_cache_mshr
         .v_rdy_s(v_evict_rd_rdy   ),
         .v_pld_s(v_evict_rd_pld   ),
         .vld_m  (evict_rd_vld     ),
-        .rdy_m  (v_rd_rdy[0] ),
+        .rdy_m  (v_rd_rdy[0]      ),
         .pld_m  (evict_rd_pld     ));
 //------------------------------------------------------------------------
 
@@ -581,7 +592,7 @@ module vec_cache_mshr
         .v_rdy_s(v_linefill_req_rdy   ),
         .v_pld_s(v_linefill_req_pld   ),
         .vld_m  (linefill_req_vld     ),
-        .rdy_m  (v_wr_rdy[0]     ),
+        .rdy_m  (v_wr_rdy[0]          ),
         .pld_m  (linefill_req_pld     ));
 
 //------------------------------------------------------------------------
@@ -597,19 +608,19 @@ module vec_cache_mshr
             .SHIFT_REG_WIDTH (15),
             .REQ_NUM (10)
         ) u_10to2_arb (
-            .clk            (clk          ),
-            .rst_n          (rst_n        ),
+            .clk            (clk                      ),
+            .rst_n          (rst_n                    ),
             .rd_vld         ({w_dataram_rd_vld,e_dataram_rd_vld,s_dataram_rd_vld,n_dataram_rd_vld,evict_rd_vld}),
             .rd_pld         ({w_dataram_rd_pld,e_dataram_rd_pld,s_dataram_rd_pld,n_dataram_rd_pld,evict_rd_pld}),
-            .rd_rdy         (v_rd_rdy     ),
+            .rd_rdy         (v_rd_rdy                 ),
             .wr_vld         ({w_dataram_wr_vld,e_dataram_wr_vld,s_dataram_wr_vld,n_dataram_wr_vld,linefill_req_vld}),
             .wr_pld         ({w_dataram_wr_pld,e_dataram_wr_pld,s_dataram_wr_pld,n_dataram_wr_pld,linefill_req_pld}),
-            .wr_rdy         (v_wr_rdy     ),
-            .grant_req_vld_0(req_ram_vld_0),
-            .grant_req_pld_0(req_ram_pld_0),
-            .grant_req_vld_1(req_ram_vld_1),
-            .grant_req_pld_1(req_ram_pld_1),
-            .grant_req_rdy  (dataram_rdy  )    //sram 输入的rdy信号
+            .wr_rdy         (v_wr_rdy                 ),
+            .grant_req_vld_0(req_ram_vld_0            ),
+            .grant_req_pld_0(req_ram_pld_0            ),
+            .grant_req_vld_1(req_ram_vld_1            ),
+            .grant_req_pld_1(req_ram_pld_1            ),
+            .grant_req_rdy  ({dataram_rdy,dataram_rdy})    //sram 输入的rdy信号
         );
 
 

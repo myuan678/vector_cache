@@ -22,6 +22,7 @@ module sram_2inst
 );
 
     logic                 read_sel        ;  //cross sel
+    logic                 read_sel_d      ;  //cross sel delay
     logic                 write_sel       ;
     logic [31         :0] sram1_wr_data   ;
     logic [31         :0] sram1_rd_data   ;
@@ -37,9 +38,6 @@ module sram_2inst
     logic                 sram2_write_vld ;
     sram_inst_cmd_t       sram2_write_cmd ;
 
-
-    //assign read_sel = read_cmd_a.addr[9];//地址最高位作为2块sram的选择
-    //assign write_sel = write_cmd_a.addr[9];
     assign read_sel  = read_cmd_a.dest_ram_id[0];
     assign write_sel = write_cmd_a.dest_ram_id[0];
     
@@ -91,7 +89,7 @@ module sram_2inst
     end
     
    
-
+    
     
     sram_inst u_sram_inst_a (
         .clk      (clk              ),
@@ -115,9 +113,13 @@ module sram_2inst
     );
 
 
+    always_ff@(posedge clk or negedge rst_n)begin
+        if(!rst_n)  read_sel_d <= 'b0;
+        else        read_sel_d <= read_sel;
+    end
 
     always_comb begin
-        if (read_sel) begin
+        if (read_sel_d) begin
             rd_data_a = sram1_rd_data;
             rd_data_b = sram2_rd_data;
         end else begin

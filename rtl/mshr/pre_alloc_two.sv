@@ -47,7 +47,7 @@ module pre_alloc_two
     assign mshr_id_rd = out_vld && out_rdy                  ;
 
     fifo#(
-        .DATA_WIDTH(ENTRY_ID_WIDTH),
+        .DATA_WIDTH(ENTRY_ID_WIDTH*2),
         .ADDR_WIDTH(PRE_ALLO_NUM   )
     )u_fifo(
         .clk   (clk                  ),

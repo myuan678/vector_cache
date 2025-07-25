@@ -191,7 +191,7 @@ import vector_cache_pkg::*;
 
     generate
         for(genvar i=0;i<8;i=i+1)begin
-            assign west_data_out_vld[i] = &fanout_west_data_out_vld[i];
+            assign west_data_out_vld[i] =  fanout_west_data_out_vld[0];
             assign west_data_out[i].cmd_pld = fanout_west_data_out[i][0].cmd_pld;
             assign west_data_out[i].data ={fanout_west_data_out[i][7].data,
                                            fanout_west_data_out[i][6].data,
@@ -201,7 +201,7 @@ import vector_cache_pkg::*;
                                            fanout_west_data_out[i][2].data,
                                            fanout_west_data_out[i][1].data,
                                            fanout_west_data_out[i][0].data};
-            assign east_data_out_vld[i] = &fanout_east_data_out_vld[i];
+            assign east_data_out_vld[i] =  fanout_east_data_out_vld[0];
             assign east_data_out[i].cmd_pld =fanout_east_data_out[i][0].cmd_pld;
             assign east_data_out[i].data ={fanout_east_data_out[i][7].data,
                                            fanout_east_data_out[i][6].data,
@@ -211,7 +211,7 @@ import vector_cache_pkg::*;
                                            fanout_east_data_out[i][2].data,
                                            fanout_east_data_out[i][1].data,
                                            fanout_east_data_out[i][0].data};
-            assign south_data_out_vld[i] =&fanout_south_data_out_vld[i];
+            assign south_data_out_vld[i] = fanout_south_data_out_vld[0];
             assign south_data_out[i].cmd_pld = fanout_south_data_out[i][0].cmd_pld;
             assign south_data_out[i].data={fanout_south_data_out[i][7].data,
                                            fanout_south_data_out[i][6].data,
@@ -221,7 +221,7 @@ import vector_cache_pkg::*;
                                            fanout_south_data_out[i][2].data,
                                            fanout_south_data_out[i][1].data,
                                            fanout_south_data_out[i][0].data};
-            assign north_data_out_vld[i] =&fanout_north_data_out_vld[i];
+            assign north_data_out_vld[i] =fanout_north_data_out_vld[0];
             assign north_data_out[i].cmd_pld =fanout_north_data_out[i][0].cmd_pld;
             assign north_data_out[i].data={fanout_north_data_out[i][7].data,
                                            fanout_north_data_out[i][6].data,

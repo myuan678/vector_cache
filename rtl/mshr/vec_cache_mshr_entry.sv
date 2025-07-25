@@ -52,12 +52,10 @@ module vec_cache_mshr_entry
     input  logic                               linefill_done              ,
     input  logic                               evict_clean                ,
     input  logic                               evict_done                 ,
-    //input  logic                               rd_done                    ,
     input  logic                               west_rd_done               ,
     input  logic                               east_rd_done               ,
     input  logic                               south_rd_done              ,
     input  logic                               north_rd_done              ,
-    //input  logic                               wr_done                    ,
     input  logic                               west_wr_done               ,
     input  logic                               east_wr_done               ,
     input  logic                               south_wr_done              ,
@@ -190,49 +188,61 @@ module vec_cache_mshr_entry
     end
     //
     //assign evict_alloc_rdy              = evict_rd_vld && evict_rdy;
-    assign evict_rd_vld_0               = evict_alloc_vld && hazard_free && ~state_evict_sent;//evict is read, readout data, write into Evict data buffer
-    assign evict_rd_pld_0.txnid         = mshr_entry_pld.txnid            ;
-    assign evict_rd_pld_0.opcode        = 2'd2                            ;// evict opcode
-    assign evict_rd_pld_0.way           = mshr_entry_pld.way              ;
-    assign evict_rd_pld_0.index         = mshr_entry_pld.index            ; 
-    assign evict_rd_pld_0.dest_ram_id   = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];//最高2bit为hash id，接下来的3bit为dest ram id，5bit确定是哪一个block的哪一个hash的哪一个ram
-    assign evict_rd_pld_0.rob_entry_id  = mshr_entry_pld.alloc_idx        ;
-    assign evict_rd_pld_0.db_entry_id   = {evict_alloc_idx,2'b00}         ;
-    assign evict_rd_pld_0.last          = 1'b0;
-    assign evict_rd_pld_0.req_num       = 2'd0;
+    assign evict_rd_vld_0                   = evict_alloc_vld && hazard_free && ~state_evict_sent;//evict is read, readout data, write into Evict data buffer
+    assign evict_rd_pld_0.txnid.direction_id= mshr_entry_pld.txnid.direction_id ;
+    assign evict_rd_pld_0.txnid.master_id   = mshr_entry_pld.txnid.master_id    ;
+    assign evict_rd_pld_0.txnid.mode        = mshr_entry_pld.txnid.mode         ;
+    assign evict_rd_pld_0.txnid.byte_sel    = 2'd0                              ;
+    assign evict_rd_pld_0.opcode            = 2'd2                              ;// evict opcode
+    assign evict_rd_pld_0.way               = mshr_entry_pld.way                ;
+    assign evict_rd_pld_0.index             = mshr_entry_pld.index              ; 
+    assign evict_rd_pld_0.dest_ram_id       = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];//最高2bit为hash id，接下来的3bit为dest ram id，5bit确定是哪一个block的哪一个hash的哪一个ram
+    assign evict_rd_pld_0.rob_entry_id      = mshr_entry_pld.alloc_idx          ;
+    assign evict_rd_pld_0.db_entry_id       = {evict_alloc_idx,2'b00}           ;
+    assign evict_rd_pld_0.last              = 1'b0;
+    //assign evict_rd_pld_0.req_num           = 2'd0;
     //
-    assign evict_rd_vld_1               = evict_alloc_vld && hazard_free && ~state_evict_sent;
-    assign evict_rd_pld_1.txnid         = mshr_entry_pld.txnid            ;
-    assign evict_rd_pld_1.opcode        = 2'd2                            ;
-    assign evict_rd_pld_1.way           = mshr_entry_pld.way              ;
-    assign evict_rd_pld_1.index         = mshr_entry_pld.index            ; 
-    assign evict_rd_pld_1.dest_ram_id   = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];
-    assign evict_rd_pld_1.rob_entry_id  = mshr_entry_pld.alloc_idx        ;
-    assign evict_rd_pld_1.db_entry_id   = {evict_alloc_idx,2'b01}         ;
-    assign evict_rd_pld_1.last          = 1'b0;
-    assign evict_rd_pld_1.req_num       = 2'd1;
+    assign evict_rd_vld_1                   = evict_alloc_vld && hazard_free && ~state_evict_sent;
+    assign evict_rd_pld_1.txnid.direction_id= mshr_entry_pld.txnid.direction_id ;
+    assign evict_rd_pld_1.txnid.master_id   = mshr_entry_pld.txnid.master_id    ;
+    assign evict_rd_pld_1.txnid.mode        = mshr_entry_pld.txnid.mode         ;
+    assign evict_rd_pld_1.txnid.byte_sel    = 2'd1                              ;
+    assign evict_rd_pld_1.opcode            = 2'd2                              ;
+    assign evict_rd_pld_1.way               = mshr_entry_pld.way                ;
+    assign evict_rd_pld_1.index             = mshr_entry_pld.index              ; 
+    assign evict_rd_pld_1.dest_ram_id       = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];
+    assign evict_rd_pld_1.rob_entry_id      = mshr_entry_pld.alloc_idx          ;
+    assign evict_rd_pld_1.db_entry_id       = {evict_alloc_idx,2'b01}           ;
+    assign evict_rd_pld_1.last              = 1'b0;
+    //assign evict_rd_pld_1.req_num       = 2'd1;
     //
-    assign evict_rd_vld_2               = evict_alloc_vld && hazard_free && ~state_evict_sent;
-    assign evict_rd_pld_2.txnid         = mshr_entry_pld.txnid            ;
-    assign evict_rd_pld_2.opcode        = 2'd2                            ;
-    assign evict_rd_pld_2.way           = mshr_entry_pld.way              ;
-    assign evict_rd_pld_2.index         = mshr_entry_pld.index            ; 
-    assign evict_rd_pld_2.dest_ram_id   = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];
-    assign evict_rd_pld_2.rob_entry_id  = mshr_entry_pld.alloc_idx        ;
-    assign evict_rd_pld_2.db_entry_id   = {evict_alloc_idx,2'b10}         ;
-    assign evict_rd_pld_2.last          = 1'b0;
-    assign evict_rd_pld_2.req_num       = 2'd2;
+    assign evict_rd_vld_2                   = evict_alloc_vld && hazard_free && ~state_evict_sent;
+    assign evict_rd_pld_2.txnid.direction_id= mshr_entry_pld.txnid.direction_id ;
+    assign evict_rd_pld_2.txnid.master_id   = mshr_entry_pld.txnid.master_id    ;
+    assign evict_rd_pld_2.txnid.mode        = mshr_entry_pld.txnid.mode         ;
+    assign evict_rd_pld_2.txnid.byte_sel    = 2'd2                              ;
+    assign evict_rd_pld_2.opcode            = 2'd2                              ;
+    assign evict_rd_pld_2.way               = mshr_entry_pld.way                ;
+    assign evict_rd_pld_2.index             = mshr_entry_pld.index              ; 
+    assign evict_rd_pld_2.dest_ram_id       = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];
+    assign evict_rd_pld_2.rob_entry_id      = mshr_entry_pld.alloc_idx          ;
+    assign evict_rd_pld_2.db_entry_id       = {evict_alloc_idx,2'b10}           ;
+    assign evict_rd_pld_2.last              = 1'b0;
+    //assign evict_rd_pld_2.req_num       = 2'd2;
     //
-    assign evict_rd_vld_3               = evict_alloc_vld && hazard_free && ~state_evict_sent;
-    assign evict_rd_pld_3.txnid         = mshr_entry_pld.txnid            ;
-    assign evict_rd_pld_3.opcode        = 2'd2                            ;
-    assign evict_rd_pld_3.way           = mshr_entry_pld.way              ;
-    assign evict_rd_pld_3.index         = mshr_entry_pld.index            ; 
-    assign evict_rd_pld_3.dest_ram_id   = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];
-    assign evict_rd_pld_3.rob_entry_id  = mshr_entry_pld.alloc_idx        ;
-    assign evict_rd_pld_3.db_entry_id   = {evict_alloc_idx,2'b11}         ;
-    assign evict_rd_pld_3.last          = 1'b1;
-    assign evict_rd_pld_3.req_num       = 2'd3;
+    assign evict_rd_vld_3                   = evict_alloc_vld && hazard_free && ~state_evict_sent;
+    assign evict_rd_pld_3.txnid.direction_id= mshr_entry_pld.txnid.direction_id ;
+    assign evict_rd_pld_3.txnid.master_id   = mshr_entry_pld.txnid.master_id    ;
+    assign evict_rd_pld_3.txnid.mode        = mshr_entry_pld.txnid.mode         ;
+    assign evict_rd_pld_3.txnid.byte_sel    = 2'd3                              ;
+    assign evict_rd_pld_3.opcode            = 2'd2                              ;
+    assign evict_rd_pld_3.way               = mshr_entry_pld.way                ;
+    assign evict_rd_pld_3.index             = mshr_entry_pld.index              ; 
+    assign evict_rd_pld_3.dest_ram_id       = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];
+    assign evict_rd_pld_3.rob_entry_id      = mshr_entry_pld.alloc_idx          ;
+    assign evict_rd_pld_3.db_entry_id       = {evict_alloc_idx,2'b11}           ;
+    assign evict_rd_pld_3.last              = 1'b1;
+    //assign evict_rd_pld_3.req_num           = 2'd3;
 
     vrp_arb #(
         .WIDTH     (4 ),

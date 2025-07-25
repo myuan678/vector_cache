@@ -58,6 +58,8 @@ module rdb_agent
             end
         end
     end
+    //-----------------------------------------------------------------------------------
+    
     //agent 内部产生读完sram 数据要写入rdb的vld请求 “写RDB”
     //1.访问sram的延迟，数据需要写入rdb
     assign ram_write_rdb_vld = shift_reg[READ_SRAM_DELAY-1];//dataram_rd_vld加上访问sram的延迟，认为数据可以写入到RDB了

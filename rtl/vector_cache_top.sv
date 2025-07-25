@@ -116,9 +116,9 @@ import vector_cache_pkg::*;
     output logic                        bresp_rdy
 );
 
-    logic [7    :0]                     v_hash_req_vld [3:0]            ;
-    input_req_pld_t                     v_hash_req_pld [3:0][7:0]       ;
-    logic [7    :0]                     v_hash_req_rdy [3:0]            ;
+    logic [7    :0]                     v_hash_req_vld [3:0]           ;
+    input_req_pld_t                     v_hash_req_pld [3:0][7:0]      ;
+    logic [7    :0]                     v_hash_req_rdy [3:0]           ;
 
     logic [3:0]                         w_rd_vld                       ;
     input_req_pld_t                     w_rd_pld[3:0]                  ;
@@ -183,7 +183,7 @@ import vector_cache_pkg::*;
     logic [3:0]                         v_evict_to_ds_rdy              ;
 
     logic [3:0]                         v_linefill_alloc_vld           ;
-    logic [$clog2(LFDB_ENTRY_NUM)-1 :0] v_linefill_alloc_idx[3:0]      ;
+    logic [$clog2(LFDB_ENTRY_NUM/4)-1 :0] v_linefill_alloc_idx[3:0]      ;
     logic [3:0]                         v_linefill_alloc_rdy           ;
 
     logic [3:0]                         vv_rd_alloc_vld[3:0]           ;
@@ -191,7 +191,7 @@ import vector_cache_pkg::*;
     logic [3:0]                         vv_rd_alloc_rdy[3:0]           ;
 
     logic [3:0]                         v_evict_alloc_vld              ;
-    logic [$clog2(EVDB_ENTRY_NUM)-1:0]  v_evict_alloc_idx[3:0]         ;
+    logic [$clog2(EVDB_ENTRY_NUM/4)-1:0] v_evict_alloc_idx[3:0]         ;
     logic [3:0]                         v_evict_alloc_rdy              ; 
 
     logic [3:0]                         v_evict_clean                  ;
@@ -312,46 +312,46 @@ import vector_cache_pkg::*;
     write_ram_pld_t                     north_write_cmd_pld_in[3:0]     ;//sram的write cmd pld 带了write data，从WDB到SRAM
     logic [3:0]                         north_write_cmd_rdy             ;
 
-    logic [7:0]         toram_west_rd_cmd_vld               ;
-    arb_out_req_t       toram_west_rd_cmd_pld [7:0]         ;
-    logic [7:0]         toram_west_write_cmd_vld_in         ;
-    logic [7:0]         toram_east_write_cmd_vld_in         ;
-    logic [7:0]         toram_south_write_cmd_vld_in        ;
-    logic [7:0]         toram_north_write_cmd_vld_in        ;
-    write_ram_pld_t     toram_west_write_cmd_pld_in [7:0]   ;
-    write_ram_pld_t     toram_east_write_cmd_pld_in [7:0]   ;
-    write_ram_pld_t     toram_south_write_cmd_pld_in[7:0]   ;
-    write_ram_pld_t     toram_north_write_cmd_pld_in[7:0]   ;
-    write_ram_cmd_t     east_write_cmd_pld_out [7:0]        ;   
-    logic [7:0]         east_write_cmd_vld_out              ;
-    arb_out_req_t       east_read_cmd_pld_out  [7:0]        ;    
-    logic [7:0]         east_read_cmd_vld_out               ;   
-    logic [7:0]         east_data_out_vld_toloop            ;
-    group_data_pld_t    east_data_out_toloop  [7:0]         ;  
-    write_ram_cmd_t     west_write_cmd_pld_out [7:0]        ;
-    logic [7:0]         west_write_cmd_vld_out              ;
+    logic [7:0]                         toram_west_rd_cmd_vld               ;
+    arb_out_req_t                       toram_west_rd_cmd_pld [7:0]         ;
+    logic [7:0]                         toram_west_write_cmd_vld_in         ;
+    logic [7:0]                         toram_east_write_cmd_vld_in         ;
+    logic [7:0]                         toram_south_write_cmd_vld_in        ;
+    logic [7:0]                         toram_north_write_cmd_vld_in        ;
+    write_ram_pld_t                     toram_west_write_cmd_pld_in [7:0]   ;
+    write_ram_pld_t                     toram_east_write_cmd_pld_in [7:0]   ;
+    write_ram_pld_t                     toram_south_write_cmd_pld_in[7:0]   ;
+    write_ram_pld_t                     toram_north_write_cmd_pld_in[7:0]   ;
+    write_ram_cmd_t                     east_write_cmd_pld_out [7:0]        ;   
+    logic [7:0]                         east_write_cmd_vld_out              ;
+    arb_out_req_t                       east_read_cmd_pld_out  [7:0]        ;    
+    logic [7:0]                         east_read_cmd_vld_out               ;   
+    logic [7:0]                         east_data_out_vld_toloop            ;
+    group_data_pld_t                    east_data_out_toloop  [7:0]         ;  
+    write_ram_cmd_t                     west_write_cmd_pld_out [7:0]        ;
+    logic [7:0]                         west_write_cmd_vld_out              ;
 
-    arb_out_req_t       west_read_cmd_pld_out [7:0]         ;
-    logic [7:0]         west_read_cmd_vld_out               ;
-    logic [7:0]         west_data_out_vld                   ;
-    group_data_pld_t    west_data_out [7:0]                 ;   
-    logic [7:0]         east_data_out_vld_todb              ;
-    group_data_pld_t    east_data_out_todb[7:0]             ;    
-    logic [7:0]         west_data_out_vld_todb              ;
-    group_data_pld_t    west_data_out_todb  [7:0]           ;       
-    logic [7:0]         south_data_out_vld_todb             ;
-    group_data_pld_t    south_data_out_todb  [7:0]          ;   
-    logic [7:0]         north_data_out_vld_todb             ;
-    group_data_pld_t    north_data_out_todb [7:0]           ;  
+    arb_out_req_t                       west_read_cmd_pld_out [7:0]         ;
+    logic [7:0]                         west_read_cmd_vld_out               ;
+    logic [7:0]                         west_data_out_vld                   ;
+    group_data_pld_t                    west_data_out [7:0]                 ;   
+    logic [7:0]                         east_data_out_vld_todb              ;
+    group_data_pld_t                    east_data_out_todb[7:0]             ;    
+    logic [7:0]                         west_data_out_vld_todb              ;
+    group_data_pld_t                    west_data_out_todb  [7:0]           ;       
+    logic [7:0]                         south_data_out_vld_todb             ;
+    group_data_pld_t                    south_data_out_todb  [7:0]          ;   
+    logic [7:0]                         north_data_out_vld_todb             ;
+    group_data_pld_t                    north_data_out_todb [7:0]           ;  
     
-    logic [3:0]         east_data_out_vld_to_rdb            ;
-    group_data_pld_t    east_data_out_to_rdb[3:0]           ;    
-    logic [3:0]         west_data_out_vld_to_rdb            ;
-    group_data_pld_t    west_data_out_to_rdb  [3:0]         ;       
-    logic [3:0]         south_data_out_vld_to_rdb           ;
-    group_data_pld_t    south_data_out_to_rdb  [3:0]        ;   
-    logic [3:0]         north_data_out_vld_to_rdb           ;
-    group_data_pld_t    north_data_out_to_rdb [3:0]         ; 
+    logic [3:0]                         east_data_out_vld_to_rdb            ;
+    group_data_pld_t                    east_data_out_to_rdb[3:0]           ;    
+    logic [3:0]                         west_data_out_vld_to_rdb            ;
+    group_data_pld_t                    west_data_out_to_rdb  [3:0]         ;       
+    logic [3:0]                         south_data_out_vld_to_rdb           ;
+    group_data_pld_t                    south_data_out_to_rdb  [3:0]        ;   
+    logic [3:0]                         north_data_out_vld_to_rdb           ;
+    group_data_pld_t                    north_data_out_to_rdb [3:0]         ; 
 
     
     
@@ -901,7 +901,7 @@ endgenerate
 
 
 //============= data to us decode===========================
-    m_to_n_xbar #( 
+    rd_data_master_decode #( 
         .M(4),
         .N(WRD_REQ_NUM),
         .PLD_WIDTH($bits(us_data_pld_t))
@@ -911,7 +911,7 @@ endgenerate
         .select  (v_west_rdb_to_us_data_pld.txnid.master_id),
         .out_vld (w_rd_data_vld            ),
         .out_pld (w_rd_data_pld            ));
-    m_to_n_xbar #( 
+    rd_data_master_decode #( 
         .M(4),
         .N(ERD_REQ_NUM),
         .PLD_WIDTH($bits(us_data_pld_t))
@@ -922,7 +922,7 @@ endgenerate
         .out_vld (e_rd_data_vld            ),
         .out_pld (e_rd_data_pld            ));
 
-    m_to_n_xbar #( 
+    rd_data_master_decode #( 
         .M(4),
         .N(SRD_REQ_NUM),
         .PLD_WIDTH($bits(us_data_pld_t))
@@ -933,7 +933,7 @@ endgenerate
         .out_vld (s_rd_data_vld             ),
         .out_pld (s_rd_data_pld             ));
 
-    m_to_n_xbar #( 
+    rd_data_master_decode #( 
         .M(4),
         .N(NRD_REQ_NUM),
         .PLD_WIDTH($bits(us_data_pld_t))

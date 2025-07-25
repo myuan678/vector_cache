@@ -49,10 +49,10 @@ module vec_cache_ctrl
     output downstream_txreq_pld_t                       down_txreq_pld                          ,// down_txreq_entry_id into pld
 
     input  logic                                        linefill_alloc_vld    ,
-    input  logic [$clog2(RW_DB_ENTRY_NUM)-1:0]          linefill_alloc_idx    ,
+    input  logic [$clog2(RW_DB_ENTRY_NUM/4)-1:0]        linefill_alloc_idx    ,
     output logic                                        linefill_alloc_rdy    ,
     input  logic                                        evict_alloc_vld       ,
-    input  logic [$clog2(RW_DB_ENTRY_NUM)-1:0]          evict_alloc_idx       ,
+    input  logic [$clog2(RW_DB_ENTRY_NUM/4)-1:0]        evict_alloc_idx       ,
     output logic                                        evict_alloc_rdy       ,
 
     input  logic                                        w_rd_alloc_vld        ,

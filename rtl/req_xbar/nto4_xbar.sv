@@ -52,14 +52,6 @@ module nto4_xbar #(
         end
     endgenerate
 
-    //generate
-    //    for (genvar i = 0; i < N; i++) begin : GEN_IN_RDY
-    //        always_comb begin
-    //            in_rdy[i] = sel_rdy[0][i] | sel_rdy[1][i] | sel_rdy[2][i] | sel_rdy[3][i];
-    //        end
-    //    end
-    //endgenerate
-
 
     generate
         for(genvar i=0;i<N;i=i+1)begin:GEN_IN_RDY
@@ -67,7 +59,7 @@ module nto4_xbar #(
                 in_rdy[i] = 1'b0; // 默认值为0
                 for (int j = 0; j < 4; j++) begin
                     if (in_select[i] == j && out_rdy[j]) begin
-                        in_rdy[i] = 1'b1; // 如果匹配到输出端口且输出端口就绪，则设置为1
+                        in_rdy[i] = 1'b1; // 
                     end
                 end
             end

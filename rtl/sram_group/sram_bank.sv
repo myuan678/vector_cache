@@ -7,9 +7,6 @@ module sram_bank
     input  logic                clk_div                         ,
     input  logic                rst_n                           ,
 
-    //input  logic [1:0] group_id_col[7:0],
-    //input  logic [1:0] group_id_row[7:0],
-
     input  arb_out_req_t        west_read_cmd_pld_in         [7:0]   ,
     input  logic [7:0]          west_read_cmd_vld_in                 ,
     output arb_out_req_t        west_read_cmd_pld_out        [7:0]   ,
@@ -27,11 +24,6 @@ module sram_bank
     input  logic [7:0]          east_write_cmd_vld_in                ,
     output write_ram_cmd_t      east_write_cmd_pld_out       [7:0]   ,
     output logic [7:0]          east_write_cmd_vld_out               ,
-
-    //output arb_out_req_t        south_read_cmd_pld_out       [7:0]   ,
-    //output logic [7:0]          south_read_cmd_vld_out               ,
-    //output arb_out_req_t        north_read_cmd_pld_out       [7:0]   ,
-    //output logic [7:0]          north_read_cmd_vld_out               ,
 
     input  write_ram_cmd_t      south_write_cmd_pld_in       [7:0]   ,
     input  logic [7:0]          south_write_cmd_vld_in               ,
@@ -78,9 +70,9 @@ module sram_bank
     logic [7    :0] mem_east_read_cmd_out_vld               ;
     arb_out_req_t   mem_east_read_cmd_out_pld       [7:0]   ;
     logic [7    :0] switch_west_write_cmd_out_vld           ;
-    arb_out_req_t   switch_west_write_cmd_out_pld   [7:0]   ;
+    write_ram_cmd_t switch_west_write_cmd_out_pld   [7:0]   ;
     logic [7    :0] mem_east_write_cmd_out_vld              ;
-    arb_out_req_t   mem_east_write_cmd_out_pld      [7:0]   ;
+    write_ram_cmd_t mem_east_write_cmd_out_pld      [7:0]   ;
     logic [7    :0] switch_west_data_out_vld                ;
     data_pld_t      switch_west_data_out            [7:0]   ;   
     logic [7    :0] mem_east_data_out_vld                   ; 
@@ -131,8 +123,8 @@ module sram_bank
             .group_id_row             (group_id_row                 ),
             .west_read_cmd_in_vld     (mem_east_read_cmd_out_vld    ),
             .west_read_cmd_in_pld     (mem_east_read_cmd_out_pld    ),
-            .east_read_cmd_out_vld    (east_read_cmd_out_vld        ),
-            .east_read_cmd_out_pld    (east_read_cmd_out_pld        ),
+            .east_read_cmd_out_vld    (east_read_cmd_vld_out        ),
+            .east_read_cmd_out_pld    (east_read_cmd_pld_out        ),
             .west_read_cmd_out_vld    (switch_west_read_cmd_out_vld ),
             .west_read_cmd_out_pld    (switch_west_read_cmd_out_pld ),
             .east_read_cmd_in_vld     (east_read_cmd_vld_in         ),
@@ -165,10 +157,10 @@ module sram_bank
             .north_data_in            (north_data_in                ),
             .north_data_out_vld       (north_data_out_vld           ),
             .north_data_out           (north_data_out               ),
-            .south_write_cmd_out_vld  (south_write_cmd_pld_out      ),
-            .south_write_cmd_out_pld  (south_write_cmd_vld_out      ),
-            .north_write_cmd_out_vld  (north_write_cmd_pld_out      ),
-            .north_write_cmd_out_pld  (north_write_cmd_vld_out      ));
+            .south_write_cmd_out_vld  (south_write_cmd_vld_out      ),
+            .south_write_cmd_out_pld  (south_write_cmd_pld_out      ),
+            .north_write_cmd_out_vld  (north_write_cmd_vld_out      ),
+            .north_write_cmd_out_pld  (north_write_cmd_pld_out      ));
 
             
 

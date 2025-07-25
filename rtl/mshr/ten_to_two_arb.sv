@@ -28,11 +28,12 @@ module ten_to_two_arb
     output arb_out_req_t            grant_req_pld_0         ,
     output logic                    grant_req_vld_1         ,
     output arb_out_req_t            grant_req_pld_1         ,
-    input  logic                    grant_req_rdy //sram rdy
+    input  logic [1:0]              grant_req_rdy            //sram rdy
 );
 
     logic [REQ_NUM-1        :0]         all_req_vld                             ;
     arb_out_req_t                       all_req_pld             [REQ_NUM-1:0]   ;
+    arb_out_req_t                       grant_req_pld           [1:0]           ;
     logic [RAM_SHIFT_REG_WIDTH-1    :0] ram_timer_shift_reg     [7 :0]          ;
     logic [CHANNEL_SHIFT_REG_WIDTH-1:0] channel_timer_shift_reg [1 :0]          ;
     logic [1                        :0] block_id                [REQ_NUM-1:0]   ;
@@ -167,10 +168,12 @@ module ten_to_two_arb
 
     assign all_req_vld = {allowed_rd_vld,allowed_wr_vld};
     assign all_req_pld = {rd_pld, wr_pld};
+    assign grant_req_pld_0 = grant_req_pld[0];
+    assign grant_req_pld_1 = grant_req_pld[1];
 
     n_to_2_arb #(
         .N          (REQ_NUM),
-        .PLD_WIDTH  ($bits(arb_out_req_t))
+        .PLD_WIDTH  (($bits(arb_out_req_t)))
     ) u_arbiter (
         .clk        (clk                               ),
         .rst_n      (rst_n                             ),
@@ -179,7 +182,7 @@ module ten_to_two_arb
         .req_pld    (all_req_pld                       ),
         .grant_vld  ({grant_req_vld_0, grant_req_vld_1}),
         .grant_rdy  (grant_req_rdy                     ),    
-        .grant_pld  ({grant_req_pld_0, grant_req_pld_1})
+        .grant_pld  (grant_req_pld                     )
     );
 
     function automatic [CHANNEL_SHIFT_REG_WIDTH-1:0] write_set_shift_channel_mask;
