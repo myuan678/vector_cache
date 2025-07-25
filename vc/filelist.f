@@ -10,7 +10,7 @@ $VEC_CACHE_PATH/rtl/tag_ctrl/eigntto2_req_arbiter.sv
 //mshr
 $VEC_CACHE_PATH/rtl/mshr/vec_cache_mshr.sv
 $VEC_CACHE_PATH/rtl/mshr/vec_cache_mshr_entry.sv
-$VEC_CACHE_PATH/rtl/mshr/ten_to_two_arb_v2.sv
+$VEC_CACHE_PATH/rtl/mshr/ten_to_two_arb.sv
 $VEC_CACHE_PATH/rtl/mshr/onehot2bin2.sv
 $VEC_CACHE_PATH/rtl/mshr/n_to_2_arb.sv
 $VEC_CACHE_PATH/rtl/mshr/pre_alloc_two.sv
@@ -38,7 +38,7 @@ $VEC_CACHE_PATH/rtl/data_buffer/pre_alloc_one.sv
 $VEC_CACHE_PATH/rtl/resp/v_1toN_decode.sv
 $VEC_CACHE_PATH/rtl/resp/wr_resp_direction_decode.sv
 $VEC_CACHE_PATH/rtl/resp/wr_resp_master_decode.sv
-$VEC_CACHE_PATH/rtl/resp/rd_data_decode.sv
+$VEC_CACHE_PATH/rtl/resp/rd_data_master_decode.sv
 
 //cmn
 $VEC_CACHE_PATH/rtl/cmn/cmn_lead_one.sv
