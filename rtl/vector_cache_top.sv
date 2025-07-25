@@ -1090,7 +1090,7 @@ endgenerate
         .south_data_out_vld_to_rdb(south_data_out_vld_to_rdb),
         .south_data_out_to_rdb    (south_data_out_to_rdb    ),
         .evict_data_out_vld_to_evdb(evict_data_out_vld_to_evdb),
-        .evict_data_out_to_evdb    (evict_data_out_to_evdb    ),
+        .evict_data_out_to_evdb    (evict_data_out_to_evdb  ),
         .north_data_out_vld_to_rdb(north_data_out_vld_to_rdb),
         .north_data_out_to_rdb    (north_data_out_to_rdb    ));
 
