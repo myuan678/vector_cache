@@ -649,15 +649,15 @@ module vec_cache_mshr
         lf_wrreq_pld        = 'b0;  
         lf_wrreq_vld        = 'b0; //opcode 0write;1read;2evict;3linefill
  
-        if(req_ram_pld_0.opcode== 2'd1 | req_ram_pld_1.opcode== 2'd1 )begin
-            west_read_cmd_vld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd0)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==2'd0));//west
-            west_read_cmd_pld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd0)) ? req_ram_pld_0 : req_ram_pld_1;//west
-            east_read_cmd_vld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd1)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==2'd1));//east
-            east_read_cmd_pld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd1)) ? req_ram_pld_0 : req_ram_pld_1;//east
-            south_read_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd2)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==2'd2));//south
-            south_read_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd2)) ? req_ram_pld_0 : req_ram_pld_1;//south
-            north_read_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd3)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==2'd3));//north
-            north_read_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd3)) ? req_ram_pld_0 : req_ram_pld_1;//west
+        if(req_ram_pld_0.opcode== `READ | req_ram_pld_1.opcode== `READ )begin
+            west_read_cmd_vld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`WEST))  | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`WEST));//west
+            west_read_cmd_pld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`WEST))  ? req_ram_pld_0 : req_ram_pld_1;//west
+            east_read_cmd_vld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`EAST))  | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`EAST));//east
+            east_read_cmd_pld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`EAST))  ? req_ram_pld_0 : req_ram_pld_1;//east
+            south_read_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`SOUTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`SOUTH));//south
+            south_read_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`SOUTH)) ? req_ram_pld_0 : req_ram_pld_1;//south
+            north_read_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`NORTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`NORTH));//north
+            north_read_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`NORTH)) ? req_ram_pld_0 : req_ram_pld_1;//west
             west_write_cmd_vld  = 1'b0;
             west_write_cmd_pld  = 'b0 ;
             east_write_cmd_vld  = 1'b0;
@@ -671,7 +671,7 @@ module vec_cache_mshr
             lf_wrreq_vld        = 'b0;
             lf_wrreq_pld        = 'b0;
         end
-        else if(req_ram_pld_0.opcode== 2'd2 | req_ram_pld_1.opcode== 2'd2)begin
+        else if(req_ram_pld_0.opcode== `LINEFILL | req_ram_pld_1.opcode== `LINEFILL)begin
             west_read_cmd_vld   = 1'b0;
             west_read_cmd_pld   = 'b0 ;
             east_read_cmd_vld   = 1'b0;
@@ -693,7 +693,7 @@ module vec_cache_mshr
             lf_wrreq_vld        = req_ram_vld_0 | req_ram_vld_1;
             lf_wrreq_pld        = req_ram_vld_0 ? req_ram_pld_0 : req_ram_pld_1;  
         end
-        else if(req_ram_pld_0.opcode== 2'd0 | req_ram_pld_1.opcode== 2'd0)begin
+        else if(req_ram_pld_0.opcode== `WRITE | req_ram_pld_1.opcode== `WRITE)begin
             west_read_cmd_vld   = 1'b0;
             west_read_cmd_pld   = 'b0 ;
             east_read_cmd_vld   = 1'b0;
@@ -702,20 +702,20 @@ module vec_cache_mshr
             south_read_cmd_pld  = 'b0 ;
             north_read_cmd_vld  = 1'b0;
             north_read_cmd_pld  = 'b0 ;
-            west_write_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd0)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==2'd0));//west
-            west_write_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd0)) ? req_ram_pld_0 : req_ram_pld_1;//west
-            east_write_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd1)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==2'd1));//east
-            east_write_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd1)) ? req_ram_pld_0 : req_ram_pld_1;//east
-            south_write_cmd_vld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd2)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==2'd2));//south
-            south_write_cmd_pld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd2)) ? req_ram_pld_0 : req_ram_pld_1;//south
-            north_write_cmd_vld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd3)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==2'd3));//north    
-            north_write_cmd_pld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==2'd3)) ? req_ram_pld_0 : req_ram_pld_1;//west
+            west_write_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`WEST)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`WEST));//west
+            west_write_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`WEST)) ? req_ram_pld_0 : req_ram_pld_1;//west
+            east_write_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`EAST)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`EAST));//east
+            east_write_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`EAST)) ? req_ram_pld_0 : req_ram_pld_1;//east
+            south_write_cmd_vld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`SOUTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`SOUTH));//south
+            south_write_cmd_pld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`SOUTH)) ? req_ram_pld_0 : req_ram_pld_1;//south
+            north_write_cmd_vld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`NORTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`NORTH));//north    
+            north_write_cmd_pld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`NORTH)) ? req_ram_pld_0 : req_ram_pld_1;//west
             evict_req_vld       = 'b0;
             evict_req_pld       = 'b0;
             lf_wrreq_vld        = 'b0;
             lf_wrreq_pld        = 'b0;
         end
-        else if(req_ram_pld_0.opcode== 2'd3 | req_ram_pld_1.opcode== 2'd3)begin
+        else if(req_ram_pld_0.opcode== `EVICT | req_ram_pld_1.opcode== `EVICT)begin
             west_read_cmd_vld   = 1'b0;
             west_read_cmd_pld   = 'b0 ;
             east_read_cmd_vld   = 1'b0;

@@ -5,13 +5,10 @@ import vector_cache_pkg::*;
 ) (
     input  logic                              clk                                ,
     input  logic                              rst_n                              ,
+
     input  logic [W_REQ_NUM-1         :0]     wr_cmd_vld                         ,
+    input  input_write_cmd_pld_t              wr_cmd_pld      [W_REQ_NUM-1:0]    ,
     output logic [W_REQ_NUM-1         :0]     wr_cmd_rdy                         ,
-    input  logic [63                  :0]     wr_addr           [W_REQ_NUM-1:0]  ,
-    input  logic [1023                :0]     wr_data           [W_REQ_NUM-1:0]  ,
-    input  logic [TXNID_WIDTH-1       :0]     wr_cmd_txnid      [W_REQ_NUM-1:0]  ,
-    input  logic [127                 :0]     wr_strb           [W_REQ_NUM-1:0]  ,
-    input  logic [SIDEBAND_WIDTH-1    :0]     wr_sideband       [W_REQ_NUM-1:0]  ,
 
     input  logic [3                   :0]     alloc_vld                          ,
     input  logic [DB_ENTRY_IDX_WIDTH-1:0]     alloc_idx         [3:0]            ,
@@ -33,18 +30,18 @@ import vector_cache_pkg::*;
 //select gen
     generate
         for(genvar i=0;i<W_REQ_NUM;i=i+1)begin
-            assign in_select[i] = wr_addr[i][63:62];
+            assign in_select[i] = wr_cmd_pld[i].cmd_addr[63:62];
         end
     endgenerate
 
     generate
         for(genvar i=0;i<W_REQ_NUM;i=i+1)begin:WEST_WR
-            assign in_wr_pld[i].cmd_pld.cmd_addr      = wr_addr[i]      ;
-            assign in_wr_pld[i].data                  = wr_data[i]      ;
-            assign in_wr_pld[i].cmd_pld.cmd_txnid     = wr_cmd_txnid[i] ;
-            assign in_wr_pld[i].cmd_pld.cmd_sideband  = wr_sideband[i]  ;
-            assign in_wr_pld[i].cmd_pld.strb          = wr_strb[i]      ;
-            assign in_wr_pld[i].cmd_pld.cmd_opcode    = 1'b0            ; //0 is write
+            assign in_wr_pld[i].cmd_pld.cmd_addr      = wr_cmd_pld[i].cmd_addr      ;
+            assign in_wr_pld[i].cmd_pld.cmd_txnid     = wr_cmd_pld[i].cmd_txnid     ;
+            assign in_wr_pld[i].cmd_pld.cmd_sideband  = wr_cmd_pld[i].cmd_sideband  ;
+            assign in_wr_pld[i].data                  = wr_cmd_pld[i].data          ;
+            assign in_wr_pld[i].cmd_pld.strb          = wr_cmd_pld[i].strb          ;
+            assign in_wr_pld[i].cmd_pld.cmd_opcode    = 1'b0                        ; //0 is write
         end
     endgenerate
 

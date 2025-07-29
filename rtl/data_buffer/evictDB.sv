@@ -5,7 +5,7 @@ module evictDB
     input  logic                            rst_n,
 
     output logic                            evict_clean     ,//ram_to_evict_db done signal
-    output logic                            evict_clean_idx ,
+    output logic[MSHR_ENTRY_IDX_WIDTH-1:0]  evict_clean_idx ,
 
     input  arb_out_req_t                    evict_req_pld   ,
     input  logic                            evict_req_vld   ,

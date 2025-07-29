@@ -132,10 +132,10 @@ module sram_group
             end
         end
     endgenerate
-    logic [7:0]             west_data_in_vld_wire   [3:0];
-    bankgroup_data_pld_t    west_data_in_wire       [3:0][7:0];
-    logic [7:0]             east_data_in_vld_wire   [3:0];
-    bankgroup_data_pld_t    east_data_in_wire       [3:0][7:0];
+    logic [7:0]             west_data_in_vld_wire    [3:0];
+    bankgroup_data_pld_t    west_data_in_wire        [3:0][7:0];
+    logic [7:0]             east_data_in_vld_wire    [3:0];
+    bankgroup_data_pld_t    east_data_in_wire        [3:0][7:0];
     logic [7:0]             south_data_in_vld_wire   [3:0];
     bankgroup_data_pld_t    south_data_in_wire       [3:0][7:0];
     logic [7:0]             north_data_in_vld_wire   [3:0];

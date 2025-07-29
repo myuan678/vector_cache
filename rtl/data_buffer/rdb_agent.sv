@@ -4,7 +4,7 @@ module rdb_agent
     input  logic                            clk             ,
     input  logic                            rst_n           ,
     output logic                            to_us_done      , //means rob entry release
-    output logic [DB_ENTRY_IDX_WIDTH-1:0]   to_us_done_idx  ,
+    output logic [MSHR_ENTRY_IDX_WIDTH-1:0] to_us_done_idx  ,
 
     input  logic                            dataram_rd_vld  ,
     input  arb_out_req_t                    dataram_rd_pld  ,
@@ -64,7 +64,7 @@ module rdb_agent
     assign read_rdb_vld   = shift_reg[RDB_DATA_RDY_DELAY-1];
     assign read_rdb_pld   = delay_pld_reg[RDB_DATA_RDY_DELAY-1];
     
-    //3.再延迟，数据已经发给US，产生to_us_done，//TODO:
+    //3.再延迟,data to US, to_us_done，//TODO:
     assign to_us_done     = shift_reg[TO_US_DONE_DELAY-1];
     assign to_us_done_idx = delay_pld_reg[TO_US_DONE_DELAY-1].rob_entry_id;
 

@@ -17,7 +17,7 @@ module wr_resp_master_decode
 
     generate
         for(genvar i=0;i<8;i=i+1)begin:select_gen
-            assign select[i] = in_wresp_pld[i].txnid[TXNID_WIDTH-1:2]; //txnid中除低2bit外，其余作为master的id
+            assign select[i] = in_wresp_pld[i].txnid.master_id; //txnid中除低2bit外，其余作为master的id
         end
     endgenerate
 

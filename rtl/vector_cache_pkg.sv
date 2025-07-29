@@ -1,10 +1,19 @@
 package vector_cache_pkg;
 
 
+    `define WEST   2'b00
+    `define EAST   2'b01
+    `define SOUTH  2'b10
+    `define NORTH  2'b11
+
+//opcode 0write;1read;2evict;3linefill
+    `define WRITE     2'b00
+    `define READ      2'b01
+    `define EVICT     2'b10
+    `define LINEFILL  2'b11
 
 
 
-//arb out cmd: addr,target,
     localparam integer unsigned RAM_WIDTH  = 128;
     localparam integer unsigned RAM_DEPTH  = 512;
     localparam integer unsigned RAM_NUM    = 4;
@@ -95,9 +104,23 @@ package vector_cache_pkg;
         logic [1                   :0] direction_id ;//txnid的低2bit表示方向：00：west；01：east；10：south；11：north
         logic [$clog2(MASTER_NUM)-1:0] master_id    ;
         logic [3:0]                    req_id       ;//每个master可以发N个，假设16个
-        logic                          mode         ;    //读写时时操作连续的32bit，还是每个32bit中选一个byte，组成32bit。mode=0表示连续，mode=1表示4个byte
+        logic                          mode         ;//读写时时操作连续的32bit，还是每个32bit中选一个byte，组成32bit。mode=0表示连续，mode=1表示4个byte
         logic [1                   :0] byte_sel     ;//表示读32bit中的哪一个byte
     } txnid_t;
+
+    typedef struct packed {
+        logic [63:0]                     cmd_addr    ;
+        txnid_t                          cmd_txnid   ;
+        logic [SIDEBAND_WIDTH-1      :0] cmd_sideband;
+    } input_read_cmd_pld_t;
+
+    typedef struct packed {
+        addr_t                           cmd_addr    ;
+        txnid_t                          cmd_txnid   ;
+        logic [SIDEBAND_WIDTH-1      :0] cmd_sideband;
+        logic [127                   :0] strb        ;
+        logic [1023                  :0] data        ;
+    } input_write_cmd_pld_t;
 
 
     typedef struct packed {
@@ -111,11 +134,10 @@ package vector_cache_pkg;
     } input_req_pld_t;
 
     typedef struct packed {
-        //logic                          cmd_vld     ;
-        logic [INDEX_WIDTH-1       :0] index     ;
-        logic [OFFSET_WIDTH-1      :0] offset    ;
-        logic [TAG_WIDTH-1         :0] tag       ;
-        logic [$clog2(WAY_NUM)-1   :0] way       ; //way id 
+        logic [INDEX_WIDTH-1       :0] index       ;
+        logic [OFFSET_WIDTH-1      :0] offset      ;
+        logic [TAG_WIDTH-1         :0] tag         ;
+        logic [$clog2(WAY_NUM)-1   :0] way         ; //way id 
     } wr_buf_pld_t;
 
     typedef struct packed {

@@ -138,13 +138,13 @@ import vector_cache_pkg::*;
                     east_data_out[i]     <= north_data_in_vld[i] ? north_data_in[i] :
                                             south_data_in_vld[i] ? south_data_in[i] : west_data_in[i] ;
 ;
-                    west_data_out_vld[i] <=  east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==2'd0);
+                    west_data_out_vld[i] <=  east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==`WEST);
                     west_data_out[i]     <= east_data_in[i] ;
 
-                    north_data_out_vld[i]<=  east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==2'd3);//north
+                    north_data_out_vld[i]<=  east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==`NORTH);//north
                     north_data_out[i]    <= east_data_in[i] ;
 
-                    south_data_out_vld[i]<=  east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==2'd2);//south
+                    south_data_out_vld[i]<=  east_data_in_vld[i] && (east_data_in[i].cmd_pld.txnid.direction_id==`SOUTH);//south
                     south_data_out[i]    <=  east_data_in[i] ;
                 end
                 else begin

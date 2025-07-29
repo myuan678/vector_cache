@@ -1,15 +1,23 @@
-module rd_data_master_decode #(
+module rd_data_master_decode 
+    import vector_cache_pkg::*;
+    #(
     parameter int M = 8,
-    parameter int N = 16,
-    parameter int PLD_WIDTH = 32
+    parameter int N = 16
 )(
     input  logic [M-1:0]                     in_vld,
-    input  logic [PLD_WIDTH-1:0]             in_pld [M-1:0],
-    input  logic [$clog2(N)-1:0]             select [M-1:0],
+    input  us_data_pld_t                     in_pld [M-1:0],
+    //input  logic [$clog2(N)-1:0]             select [M-1:0],
 
-    output logic [N-1:0]                     out_vld,
-    output logic [PLD_WIDTH-1:0]             out_pld [N-1:0]
+    output logic [N-1:0]                    out_vld,
+    output us_data_pld_t                    out_pld [N-1:0]
 );
+    logic [$clog2(N)-1:0]             select [M-1:0];
+    generate
+        for(genvar i=0;i<M;i=i+1)begin
+            assign select[i] = in_pld[i].txnid.master_id;
+        end
+    endgenerate
+
 
     always_comb begin
         for (int j = 0; j < N; j++) begin

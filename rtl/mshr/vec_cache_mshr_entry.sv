@@ -193,7 +193,7 @@ module vec_cache_mshr_entry
     assign evict_rd_pld_0.txnid.master_id   = mshr_entry_pld.txnid.master_id    ;
     assign evict_rd_pld_0.txnid.mode        = mshr_entry_pld.txnid.mode         ;
     assign evict_rd_pld_0.txnid.byte_sel    = 2'd0                              ;
-    assign evict_rd_pld_0.opcode            = 2'd2                              ;// evict opcode
+    assign evict_rd_pld_0.opcode            = `EVICT                            ;// evict opcode
     assign evict_rd_pld_0.way               = mshr_entry_pld.way                ;
     assign evict_rd_pld_0.index             = mshr_entry_pld.index              ; 
     assign evict_rd_pld_0.dest_ram_id       = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];//最高2bit为hash id，接下来的3bit为dest ram id，5bit确定是哪一个block的哪一个hash的哪一个ram
@@ -207,7 +207,7 @@ module vec_cache_mshr_entry
     assign evict_rd_pld_1.txnid.master_id   = mshr_entry_pld.txnid.master_id    ;
     assign evict_rd_pld_1.txnid.mode        = mshr_entry_pld.txnid.mode         ;
     assign evict_rd_pld_1.txnid.byte_sel    = 2'd1                              ;
-    assign evict_rd_pld_1.opcode            = 2'd2                              ;
+    assign evict_rd_pld_1.opcode            = `EVICT                              ;
     assign evict_rd_pld_1.way               = mshr_entry_pld.way                ;
     assign evict_rd_pld_1.index             = mshr_entry_pld.index              ; 
     assign evict_rd_pld_1.dest_ram_id       = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];
@@ -221,7 +221,7 @@ module vec_cache_mshr_entry
     assign evict_rd_pld_2.txnid.master_id   = mshr_entry_pld.txnid.master_id    ;
     assign evict_rd_pld_2.txnid.mode        = mshr_entry_pld.txnid.mode         ;
     assign evict_rd_pld_2.txnid.byte_sel    = 2'd2                              ;
-    assign evict_rd_pld_2.opcode            = 2'd2                              ;
+    assign evict_rd_pld_2.opcode            = `EVICT                              ;
     assign evict_rd_pld_2.way               = mshr_entry_pld.way                ;
     assign evict_rd_pld_2.index             = mshr_entry_pld.index              ; 
     assign evict_rd_pld_2.dest_ram_id       = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];
@@ -235,7 +235,7 @@ module vec_cache_mshr_entry
     assign evict_rd_pld_3.txnid.master_id   = mshr_entry_pld.txnid.master_id    ;
     assign evict_rd_pld_3.txnid.mode        = mshr_entry_pld.txnid.mode         ;
     assign evict_rd_pld_3.txnid.byte_sel    = 2'd3                              ;
-    assign evict_rd_pld_3.opcode            = 2'd2                              ;
+    assign evict_rd_pld_3.opcode            = `EVICT                              ;
     assign evict_rd_pld_3.way               = mshr_entry_pld.way                ;
     assign evict_rd_pld_3.index             = mshr_entry_pld.index              ; 
     assign evict_rd_pld_3.dest_ram_id       = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];
@@ -274,7 +274,7 @@ module vec_cache_mshr_entry
     //assign linefill_req_vld           = state_ds_to_lfdb_done && state_evict_dram_clean && ~state_linefill_done;//需要发4个，offset+1作为下一个地址
     assign linefill_req_vld              = state_ds_to_lfdb_done && ~state_linefill_done;
     assign linefill_req_pld.txnid        = mshr_entry_pld.txnid    ;
-    assign linefill_req_pld.opcode       = 2'd3                    ; //linefill opcode ;
+    assign linefill_req_pld.opcode       = `LINEFILL                    ; //linefill opcode ;
     assign linefill_req_pld.index        = mshr_entry_pld.index    ;
     assign linefill_req_pld.way          = mshr_entry_pld.way      ;
     assign linefill_req_pld.dest_ram_id  = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];//最高2bit为hash id，接下来的2bit为block id，再下1bit为ram id，5bit确定是哪一个block的哪一个hash的哪一个ram
@@ -319,14 +319,14 @@ module vec_cache_mshr_entry
     //assign e_rd_alloc_rdy   = w_dataram_rd_vld && e_dataram_rd_rdy;
     //assign s_rd_alloc_rdy   = w_dataram_rd_vld && s_dataram_rd_rdy;
     //assign n_rd_alloc_rdy   = w_dataram_rd_vld && n_dataram_rd_rdy;
-    assign w_dataram_rd_vld = w_rd_alloc_vld && is_read && hazard_free && state_linefill_done && ~state_rd_dataram_sent  && (direc_id==2'b00);
-    assign e_dataram_rd_vld = e_rd_alloc_vld && is_read && hazard_free && state_linefill_done && ~state_rd_dataram_sent  && (direc_id==2'b01);
-    assign s_dataram_rd_vld = s_rd_alloc_vld && is_read && hazard_free && state_linefill_done && ~state_rd_dataram_sent  && (direc_id==2'b10);
-    assign n_dataram_rd_vld = n_rd_alloc_vld && is_read && hazard_free && state_linefill_done && ~state_rd_dataram_sent  && (direc_id==2'b11);
+    assign w_dataram_rd_vld = w_rd_alloc_vld && is_read && hazard_free && state_linefill_done && ~state_rd_dataram_sent  && (direc_id==`WEST );
+    assign e_dataram_rd_vld = e_rd_alloc_vld && is_read && hazard_free && state_linefill_done && ~state_rd_dataram_sent  && (direc_id==`EAST );
+    assign s_dataram_rd_vld = s_rd_alloc_vld && is_read && hazard_free && state_linefill_done && ~state_rd_dataram_sent  && (direc_id==`SOUTH);
+    assign n_dataram_rd_vld = n_rd_alloc_vld && is_read && hazard_free && state_linefill_done && ~state_rd_dataram_sent  && (direc_id==`NORTH);
     assign dataram_rd_vld   = w_dataram_rd_vld | e_dataram_rd_vld | s_dataram_rd_vld | n_dataram_rd_vld;
 
     assign w_dataram_rd_pld.txnid        = mshr_entry_pld.txnid                           ;
-    assign w_dataram_rd_pld.opcode       = 2'b1                                           ; //read opcode ;
+    assign w_dataram_rd_pld.opcode       = `READ                                           ; //read opcode ;
     assign w_dataram_rd_pld.way          = mshr_entry_pld.way                             ;
     assign w_dataram_rd_pld.index        = mshr_entry_pld.index                           ;  
     assign w_dataram_rd_pld.offset       = mshr_entry_pld.offset;
@@ -336,7 +336,7 @@ module vec_cache_mshr_entry
     assign w_dataram_rd_pld.db_entry_id  = w_rd_alloc_idx                                 ;
 
     assign e_dataram_rd_pld.txnid        = mshr_entry_pld.txnid                           ;
-    assign e_dataram_rd_pld.opcode       = 2'b1                                           ; //read opcode ;
+    assign e_dataram_rd_pld.opcode       = `READ                                           ; //read opcode ;
     assign e_dataram_rd_pld.way          = mshr_entry_pld.way                             ;
     assign e_dataram_rd_pld.index        = mshr_entry_pld.index                           ;  
     assign e_dataram_rd_pld.offset       = mshr_entry_pld.offset;
@@ -346,7 +346,7 @@ module vec_cache_mshr_entry
     assign e_dataram_rd_pld.db_entry_id  = e_rd_alloc_idx                                 ;
 
     assign s_dataram_rd_pld.txnid        = mshr_entry_pld.txnid                           ;
-    assign s_dataram_rd_pld.opcode       = 2'b1                                           ; //read opcode ;
+    assign s_dataram_rd_pld.opcode       = `READ                                           ; //read opcode ;
     assign s_dataram_rd_pld.index        = mshr_entry_pld.index                           ;
     assign s_dataram_rd_pld.offset       = mshr_entry_pld.offset;
     assign s_dataram_rd_pld.tag          = mshr_entry_pld.req_tag;
@@ -356,7 +356,7 @@ module vec_cache_mshr_entry
     assign s_dataram_rd_pld.db_entry_id  = n_rd_alloc_idx                                 ;
 
     assign n_dataram_rd_pld.txnid        = mshr_entry_pld.txnid                           ;
-    assign n_dataram_rd_pld.opcode       = 2'b1                                           ; //read opcode ;
+    assign n_dataram_rd_pld.opcode       = `READ                                           ; //read opcode ;
     assign n_dataram_rd_pld.way          = mshr_entry_pld.way                             ;
     assign n_dataram_rd_pld.index        = mshr_entry_pld.index                           ;  
     assign n_dataram_rd_pld.offset       = mshr_entry_pld.offset;
@@ -383,15 +383,15 @@ module vec_cache_mshr_entry
 
     //assign dataram_wr_vld    = is_write && hazard_free && state_linefill_done && ~state_wr_dataram_sent ;
     //txnid的高2bit表示方向：00：west；01：east；10：south；11：north
-    assign w_dataram_wr_vld = is_write && hazard_free && state_linefill_done && ~state_wr_dataram_sent && (direc_id==2'b00);
-    assign e_dataram_wr_vld = is_write && hazard_free && state_linefill_done && ~state_wr_dataram_sent && (direc_id==2'b01);
-    assign s_dataram_wr_vld = is_write && hazard_free && state_linefill_done && ~state_wr_dataram_sent && (direc_id==2'b10);
-    assign n_dataram_wr_vld = is_write && hazard_free && state_linefill_done && ~state_wr_dataram_sent && (direc_id==2'b11);
+    assign w_dataram_wr_vld = is_write && hazard_free && state_linefill_done && ~state_wr_dataram_sent && (direc_id==`WEST);
+    assign e_dataram_wr_vld = is_write && hazard_free && state_linefill_done && ~state_wr_dataram_sent && (direc_id==`EAST);
+    assign s_dataram_wr_vld = is_write && hazard_free && state_linefill_done && ~state_wr_dataram_sent && (direc_id==`SOUTH);
+    assign n_dataram_wr_vld = is_write && hazard_free && state_linefill_done && ~state_wr_dataram_sent && (direc_id==`NORTH);
     assign dataram_wr_vld   = w_dataram_wr_vld | e_dataram_wr_vld | s_dataram_wr_vld | n_dataram_wr_vld;
 
  
     assign dataram_wr_pld.txnid        = mshr_entry_pld.txnid    ;
-    assign dataram_wr_pld.opcode       = 2'd0                    ; //write opcode ;
+    assign dataram_wr_pld.opcode       = `WRITE                    ; //write opcode ;
     assign dataram_wr_pld.way          = mshr_entry_pld.way      ;
     assign dataram_wr_pld.index        = mshr_entry_pld.index    ;  
     assign dataram_wr_pld.dest_ram_id  = mshr_entry_pld.req_tag[TAG_WIDTH-1:TAG_WIDTH-5];//最高2bit为hash id，接下来的3bit为dest ram id，5bit确定是哪一个block的哪一个hash的哪一个ram

@@ -2,71 +2,48 @@ module vector_cache_top
 import vector_cache_pkg::*; 
 (   
     input  logic clk                                                          ,
+    input  logic clk_div                                                      ,
     input  logic rst_n                                                        ,
 
 //-------------------------------------------------------------------------------------
 //              upstream interface
 //-------------------------------------------------------------------------------------
 //---read
-    //direction west WR
+    //direction west 
     input  logic [WR_REQ_NUM-1      :0] w_rd_cmd_vld                          ,
-    input  logic [63                :0] w_rd_addr           [WR_REQ_NUM-1:0]  ,
-    input  logic [TXNID_WIDTH-1     :0] w_rd_cmd_txnid      [WR_REQ_NUM-1:0]  ,
-    input  logic [SIDEBAND_WIDTH-1  :0] w_rd_sideband       [WR_REQ_NUM-1:0]  ,
+    input  input_read_cmd_pld_t         w_rd_cmd_pld        [WR_REQ_NUM-1:0]  ,
     output logic [WR_REQ_NUM-1      :0] w_rd_cmd_rdy                          ,
 
     //east
     input  logic [ER_REQ_NUM-1      :0] e_rd_cmd_vld                          ,
-    input  logic [63                :0] e_rd_addr           [ER_REQ_NUM-1:0]  ,
-    input  logic [TXNID_WIDTH-1     :0] e_rd_cmd_txnid      [ER_REQ_NUM-1:0]  ,
-    input  logic [SIDEBAND_WIDTH-1  :0] e_rd_sideband       [ER_REQ_NUM-1:0]  ,
+    input  input_read_cmd_pld_t         e_rd_cmd_pld        [ER_REQ_NUM-1:0]  ,
     output logic [ER_REQ_NUM-1      :0] e_rd_cmd_rdy                          ,
 
     //south
     input  logic [SR_REQ_NUM-1      :0] s_rd_cmd_vld                          ,
-    input  logic [63                :0] s_rd_addr           [SR_REQ_NUM-1:0]  ,
-    input  logic [TXNID_WIDTH-1     :0] s_rd_cmd_txnid      [SR_REQ_NUM-1:0]  ,
-    input  logic [SIDEBAND_WIDTH-1  :0] s_rd_sideband       [SR_REQ_NUM-1:0]  ,
+    input  input_read_cmd_pld_t         s_rd_cmd_pld        [SR_REQ_NUM-1:0]  ,
     output logic [SR_REQ_NUM-1      :0] s_rd_cmd_rdy                          ,
 
     //north
     input  logic [NR_REQ_NUM-1      :0] n_rd_cmd_vld                          ,
-    input  logic [63                :0] n_rd_addr           [NR_REQ_NUM-1:0]  ,
-    input  logic [TXNID_WIDTH-1     :0] n_rd_cmd_txnid      [NR_REQ_NUM-1:0]  ,
-    input  logic [SIDEBAND_WIDTH-1  :0] n_rd_sideband       [NR_REQ_NUM-1:0]  ,
+    input  input_read_cmd_pld_t         n_rd_cmd_pld        [NR_REQ_NUM-1:0]  ,
     output logic [NR_REQ_NUM-1      :0] n_rd_cmd_rdy                          ,
 
 //---write
     input  logic [WW_REQ_NUM-1      :0] w_wr_cmd_vld                          ,
-    input  logic [63                :0] w_wr_addr           [WW_REQ_NUM-1:0]  ,
-    input  logic [1023              :0] w_wr_data           [WW_REQ_NUM-1:0]  ,
-    input  logic [TXNID_WIDTH-1     :0] w_wr_cmd_txnid      [WW_REQ_NUM-1:0]  ,
-    input  logic [127               :0] w_strb              [WW_REQ_NUM-1:0]  ,
-    input  logic [SIDEBAND_WIDTH-1  :0] w_wr_sideband       [WW_REQ_NUM-1:0]  ,
+    input  input_write_cmd_pld_t        w_wr_cmd_pld        [WW_REQ_NUM-1:0]  ,
     output logic [WW_REQ_NUM-1      :0] w_wr_cmd_rdy                          ,
 
     input  logic [EW_REQ_NUM-1      :0] e_wr_cmd_vld                          ,
-    input  logic [63                :0] e_wr_addr           [EW_REQ_NUM-1:0]  ,
-    input  logic [1023              :0] e_wr_data           [EW_REQ_NUM-1:0]  ,
-    input  logic [TXNID_WIDTH-1     :0] e_wr_cmd_txnid      [EW_REQ_NUM-1:0]  ,
-    input  logic [127               :0] e_strb              [EW_REQ_NUM-1:0]  ,
-    input  logic [SIDEBAND_WIDTH-1  :0] e_wr_sideband       [EW_REQ_NUM-1:0]  ,
+    input  input_write_cmd_pld_t        e_wr_cmd_pld        [EW_REQ_NUM-1:0]  ,
     output logic [EW_REQ_NUM-1      :0] e_wr_cmd_rdy                          ,
 
     input  logic [SW_REQ_NUM-1      :0] s_wr_cmd_vld                          ,
-    input  logic [63                :0] s_wr_addr           [SW_REQ_NUM-1:0]  ,
-    input  logic [1023              :0] s_wr_data           [SW_REQ_NUM-1:0]  ,
-    input  logic [TXNID_WIDTH-1     :0] s_wr_cmd_txnid      [SW_REQ_NUM-1:0]  ,
-    input  logic [127               :0] s_strb              [SW_REQ_NUM-1:0]  ,
-    input  logic [SIDEBAND_WIDTH-1  :0] s_wr_sideband       [SW_REQ_NUM-1:0]  ,
+    input  input_write_cmd_pld_t        s_wr_cmd_pld        [SW_REQ_NUM-1:0]  ,
     output logic [SW_REQ_NUM-1      :0] s_wr_cmd_rdy                          ,
 
     input  logic [NW_REQ_NUM-1      :0] n_wr_cmd_vld                          ,
-    input  logic [63                :0] n_wr_addr           [NW_REQ_NUM-1:0]  ,
-    input  logic [1023              :0] n_wr_data           [NW_REQ_NUM-1:0]  ,
-    input  logic [TXNID_WIDTH-1     :0] n_wr_cmd_txnid      [NW_REQ_NUM-1:0]  ,
-    input  logic [127               :0] n_strb              [NW_REQ_NUM-1:0]  ,
-    input  logic [SIDEBAND_WIDTH-1  :0] n_wr_sideband       [NW_REQ_NUM-1:0]  ,
+    input  input_write_cmd_pld_t        n_wr_cmd_pld        [NW_REQ_NUM-1:0]  ,
     output logic [NW_REQ_NUM-1      :0] n_wr_cmd_rdy                          ,
 
     //resp
@@ -78,6 +55,7 @@ import vector_cache_pkg::*;
     output wr_resp_pld_t                s_resp_pld          [SB_REQ_NUM-1:0]  ,
     output logic [NB_REQ_NUM-1      :0] n_resp_vld                            ,
     output wr_resp_pld_t                n_resp_pld          [NB_REQ_NUM-1:0]  ,
+    
     //Rdata
     output logic [WRD_REQ_NUM-1     :0] w_rd_data_vld                         ,
     output us_data_pld_t                w_rd_data_pld     [WRD_REQ_NUM-1   :0], // data+txnid+addr+sideband+xxxx
@@ -264,10 +242,10 @@ import vector_cache_pkg::*;
     logic [3                   :0]      v_east_read_to_us_done          ;
     logic [3                   :0]      v_south_read_to_us_done         ;
     logic [3                   :0]      v_north_read_to_us_done         ;
-    logic [DB_ENTRY_IDX_WIDTH-1:0]      v_west_read_to_us_done_idx[3:0] ;
-    logic [DB_ENTRY_IDX_WIDTH-1:0]      v_east_read_to_us_done_idx[3:0] ;
-    logic [DB_ENTRY_IDX_WIDTH-1:0]      v_south_read_to_us_done_idx[3:0];
-    logic [DB_ENTRY_IDX_WIDTH-1:0]      v_north_read_to_us_done_idx[3:0];
+    logic [MSHR_ENTRY_IDX_WIDTH-1:0]    v_west_read_to_us_done_idx[3:0] ;
+    logic [MSHR_ENTRY_IDX_WIDTH-1:0]    v_east_read_to_us_done_idx[3:0] ;
+    logic [MSHR_ENTRY_IDX_WIDTH-1:0]    v_south_read_to_us_done_idx[3:0];
+    logic [MSHR_ENTRY_IDX_WIDTH-1:0]    v_north_read_to_us_done_idx[3:0];
     logic [3                   :0]      v_west_rdb_to_us_data_vld       ;
     logic [3                   :0]      v_east_rdb_to_us_data_vld       ;
     logic [3                   :0]      v_south_rdb_to_us_data_vld      ;
@@ -365,9 +343,7 @@ import vector_cache_pkg::*;
         .rst_n       (rst_n         ),
         .rd_cmd_vld  (w_rd_cmd_vld  ),
         .rd_cmd_rdy  (w_rd_cmd_rdy  ),
-        .rd_addr     (w_rd_addr     ),
-        .rd_cmd_txnid(w_rd_cmd_txnid),
-        .rd_sideband (w_rd_sideband ),
+        .rd_cmd_pld  (w_rd_cmd_pld  ),
         .sel_rd_vld  (w_rd_vld      ),
         .sel_rd_pld  (w_rd_pld      ),
         .sel_rd_rdy  ({v_hash_req_rdy[3][7],v_hash_req_rdy[2][7],v_hash_req_rdy[1][7],v_hash_req_rdy[0][7]}));
@@ -379,9 +355,7 @@ import vector_cache_pkg::*;
         .rst_n       (rst_n         ),
         .rd_cmd_vld  (e_rd_cmd_vld  ),
         .rd_cmd_rdy  (e_rd_cmd_rdy  ),
-        .rd_addr     (e_rd_addr     ),
-        .rd_cmd_txnid(e_rd_cmd_txnid),
-        .rd_sideband (e_rd_sideband ),
+        .rd_cmd_pld  (e_rd_cmd_pld  ),
         .sel_rd_vld  (e_rd_vld      ),
         .sel_rd_pld  (e_rd_pld      ),
         .sel_rd_rdy  ({v_hash_req_rdy[3][5],v_hash_req_rdy[2][5],v_hash_req_rdy[1][5],v_hash_req_rdy[0][5]}));
@@ -393,9 +367,7 @@ import vector_cache_pkg::*;
         .rst_n       (rst_n         ),
         .rd_cmd_vld  (s_rd_cmd_vld  ),
         .rd_cmd_rdy  (s_rd_cmd_rdy  ),
-        .rd_addr     (s_rd_addr     ),
-        .rd_cmd_txnid(s_rd_cmd_txnid),
-        .rd_sideband (s_rd_sideband ),
+        .rd_cmd_pld  (s_rd_cmd_pld  ),
         .sel_rd_vld  (s_rd_vld      ),
         .sel_rd_pld  (s_rd_pld      ),
         .sel_rd_rdy  ({v_hash_req_rdy[3][3],v_hash_req_rdy[2][3],v_hash_req_rdy[1][3],v_hash_req_rdy[0][3]}      ));
@@ -407,9 +379,7 @@ import vector_cache_pkg::*;
         .rst_n       (rst_n         ),
         .rd_cmd_vld  (n_rd_cmd_vld  ),
         .rd_cmd_rdy  (n_rd_cmd_rdy  ),
-        .rd_addr     (n_rd_addr     ),
-        .rd_cmd_txnid(n_rd_cmd_txnid),
-        .rd_sideband (n_rd_sideband ),
+        .rd_cmd_pld  (n_rd_cmd_pld  ),
         .sel_rd_vld  (n_rd_vld      ),
         .sel_rd_pld  (n_rd_pld      ),
         .sel_rd_rdy  ({v_hash_req_rdy[3][1],v_hash_req_rdy[2][1],v_hash_req_rdy[1][1],v_hash_req_rdy[0][1]}      ));
@@ -421,11 +391,7 @@ import vector_cache_pkg::*;
         .rst_n           (rst_n                 ),
         .wr_cmd_vld      (w_wr_cmd_vld          ),
         .wr_cmd_rdy      (w_wr_cmd_rdy          ),
-        .wr_addr         (w_wr_addr             ),
-        .wr_data         (w_wr_data             ),
-        .wr_cmd_txnid    (w_wr_cmd_txnid        ),
-        .wr_strb         (w_strb                ),
-        .wr_sideband     (w_wr_sideband         ),
+        .wr_cmd_pld      (w_wr_cmd_pld          ),
         .alloc_vld       (v_west_write_alloc_vld),
         .alloc_idx       (v_west_write_alloc_idx),
         .alloc_rdy       (v_west_write_alloc_rdy),
@@ -441,11 +407,7 @@ import vector_cache_pkg::*;
         .rst_n           (rst_n                 ),
         .wr_cmd_vld      (e_wr_cmd_vld          ),
         .wr_cmd_rdy      (e_wr_cmd_rdy          ),
-        .wr_addr         (e_wr_addr             ),
-        .wr_data         (e_wr_data             ),
-        .wr_cmd_txnid    (e_wr_cmd_txnid        ),
-        .wr_strb         (e_strb                ),
-        .wr_sideband     (e_wr_sideband         ),
+        .wr_cmd_pld      (e_wr_cmd_pld          ),
         .alloc_vld       (v_east_write_alloc_vld),
         .alloc_idx       (v_east_write_alloc_idx),
         .alloc_rdy       (v_east_write_alloc_rdy),
@@ -461,11 +423,7 @@ import vector_cache_pkg::*;
         .rst_n           (rst_n                  ),
         .wr_cmd_vld      (s_wr_cmd_vld           ),
         .wr_cmd_rdy      (s_wr_cmd_rdy           ),
-        .wr_addr         (s_wr_addr              ),
-        .wr_data         (s_wr_data              ),
-        .wr_cmd_txnid    (s_wr_cmd_txnid         ),
-        .wr_strb         (s_strb                 ),
-        .wr_sideband     (s_wr_sideband          ),
+        .wr_cmd_pld      (s_wr_cmd_pld           ),
         .alloc_vld       (v_south_write_alloc_vld),
         .alloc_idx       (v_south_write_alloc_idx),
         .alloc_rdy       (v_south_write_alloc_rdy),
@@ -481,11 +439,7 @@ import vector_cache_pkg::*;
         .rst_n           (rst_n                  ),
         .wr_cmd_vld      (n_wr_cmd_vld           ),
         .wr_cmd_rdy      (n_wr_cmd_rdy           ),
-        .wr_addr         (n_wr_addr              ),
-        .wr_data         (n_wr_data              ),
-        .wr_cmd_txnid    (n_wr_cmd_txnid         ),
-        .wr_strb         (n_strb                 ),
-        .wr_sideband     (n_wr_sideband          ),
+        .wr_cmd_pld      (n_wr_cmd_pld           ),
         .alloc_vld       (v_north_write_alloc_vld),
         .alloc_idx       (v_north_write_alloc_idx),
         .alloc_rdy       (v_north_write_alloc_rdy),
@@ -784,8 +738,8 @@ generate
             .evict_req_pld      (v_evict_req_pld[i]     ),
             .evict_req_vld      (v_evict_req_vld[i]     ),
             .evict_req_rdy      (v_evict_req_rdy[i]     ),
-            .ram_to_evdb_data_in(evict_data_out_to_evdb ),//sram input data
-            .ram_to_evdb_data_vld(evict_data_out_vld_to_evdb),   
+            .ram_to_evdb_data_in(evict_data_out_to_evdb[i] ),//sram input data
+            .ram_to_evdb_data_vld(evict_data_out_vld_to_evdb[i]),   
             .alloc_vld          (v_evict_alloc_vld[i]   ),
             .alloc_idx          (v_evict_alloc_idx[i]   ),
             .alloc_rdy          (v_evict_alloc_rdy[i]   ),
@@ -844,7 +798,7 @@ generate
             .rst_n              (rst_n                          ),
             .rdb_addr           (east_rdb_addr[i]               ),
             .rdb_mem_en         (east_rdb_mem_en[i]             ),
-            .rdb_wr_en          (east_rdb_wr_en                 ),
+            .rdb_wr_en          (east_rdb_wr_en [i]             ),
             .ram_to_rdb_data_in (east_data_out_to_rdb[i]        ),//from sram array
             .ram_to_rdb_data_vld(east_data_out_vld_to_rdb[i]    ),//from sram
             .rdb_to_us_data_vld (v_east_rdb_to_us_data_vld[i]   ),
@@ -908,44 +862,40 @@ endgenerate
 //============= data to us decode===========================
     rd_data_master_decode #( 
         .M(4),
-        .N(WRD_REQ_NUM),
-        .PLD_WIDTH($bits(us_data_pld_t))
+        .N(WRD_REQ_NUM)
     ) u_west_rdata_switch_xbar(
         .in_vld  (v_west_rdb_to_us_data_vld),
         .in_pld  (v_west_rdb_to_us_data_pld),
-        .select  (v_west_rdb_to_us_data_pld.txnid.master_id),
+        //.select  (v_west_rdb_to_us_data_pld.txnid.master_id),
         .out_vld (w_rd_data_vld            ),
         .out_pld (w_rd_data_pld            ));
     rd_data_master_decode #( 
         .M(4),
-        .N(ERD_REQ_NUM),
-        .PLD_WIDTH($bits(us_data_pld_t))
+        .N(ERD_REQ_NUM)
     ) u_east_rdata_switch_xbar(
         .in_vld  (v_east_rdb_to_us_data_vld),
         .in_pld  (v_east_rdb_to_us_data_pld),
-        .select  (v_east_rdb_to_us_data_pld.txnid.master_id),
+        //.select  (v_east_rdb_to_us_data_pld.txnid.master_id),
         .out_vld (e_rd_data_vld            ),
         .out_pld (e_rd_data_pld            ));
 
     rd_data_master_decode #( 
         .M(4),
-        .N(SRD_REQ_NUM),
-        .PLD_WIDTH($bits(us_data_pld_t))
+        .N(SRD_REQ_NUM)
     ) u_south_rdata_switch_xbar(
         .in_vld  (v_south_rdb_to_us_data_vld),
         .in_pld  (v_south_rdb_to_us_data_pld),
-        .select  (v_south_rdb_to_us_data_pld.txnid.master_id),
+        //.select  (v_south_rdb_to_us_data_pld.txnid.master_id),
         .out_vld (s_rd_data_vld             ),
         .out_pld (s_rd_data_pld             ));
 
     rd_data_master_decode #( 
         .M(4),
-        .N(NRD_REQ_NUM),
-        .PLD_WIDTH($bits(us_data_pld_t))
+        .N(NRD_REQ_NUM)
     ) u_north_rdata_switch_xbar(
         .in_vld  (v_north_rdb_to_us_data_vld),
         .in_pld  (v_north_rdb_to_us_data_pld),
-        .select  (v_north_rdb_to_us_data_pld.txnid.master_id),
+        //.select  (v_north_rdb_to_us_data_pld.txnid.master_id),
         .out_vld (n_rd_data_vld             ),
         .out_pld (n_rd_data_pld             ));
 
@@ -1098,6 +1048,31 @@ endgenerate
 //---------------------------------------------------------------------------------------
 //            SRAM ARRAY
 //---------------------------------------------------------------------------------------
+
+        write_ram_cmd_t                     toram_west_write_cmd_pld_in_cmd [7:0]     ;
+        write_ram_cmd_t                     toram_south_write_cmd_pld_in_cmd[7:0]     ;
+        write_ram_cmd_t                     toram_north_write_cmd_pld_in_cmd[7:0]     ;
+        write_ram_cmd_t                     toram_east_write_cmd_pld_in_cmd [7:0];
+
+        group_data_pld_t                    toram_west_write_cmd_pld_in_data [7:0]    ;
+        group_data_pld_t                    toram_south_write_cmd_pld_in_data[7:0]    ;
+        group_data_pld_t                    toram_north_write_cmd_pld_in_data[7:0]    ;
+        group_data_pld_t                    toram_east_write_cmd_pld_in_data [7:0]    ;
+
+        generate
+            for(genvar i=0;i<8;i=i+1)begin
+                assign toram_west_write_cmd_pld_in_cmd [i] = toram_west_write_cmd_pld_in[i].write_cmd;
+                assign toram_south_write_cmd_pld_in_cmd[i] = toram_south_write_cmd_pld_in[i].write_cmd;
+                assign toram_north_write_cmd_pld_in_cmd[i] = toram_north_write_cmd_pld_in[i].write_cmd;
+                assign toram_east_write_cmd_pld_in_cmd [i] = toram_east_write_cmd_pld_in[i].write_cmd;
+
+                assign toram_west_write_cmd_pld_in_data [i] = toram_west_write_cmd_pld_in[i].data ;
+                assign toram_south_write_cmd_pld_in_data[i] = toram_south_write_cmd_pld_in[i].data;
+                assign toram_north_write_cmd_pld_in_data[i] = toram_north_write_cmd_pld_in[i].data;
+                assign toram_east_write_cmd_pld_in_data [i] = toram_east_write_cmd_pld_in[i].data ;
+            end
+        endgenerate
+
     
     sram_group  u_vec_data_ram_array(
         .clk                      (clk                                      ),
@@ -1105,13 +1080,13 @@ endgenerate
         .rst_n                    (rst_n                                    ),
         .west_read_cmd_pld_in     (toram_west_rd_cmd_pld                    ),
         .west_read_cmd_vld_in     (toram_west_rd_cmd_vld                    ),
-        .west_write_cmd_pld_in    (toram_west_write_cmd_pld_in.write_cmd    ),
+        .west_write_cmd_pld_in    (toram_west_write_cmd_pld_in_cmd    ),
         .west_write_cmd_vld_in    (toram_west_write_cmd_vld_in              ),
         .east_write_cmd_pld_in    (west_write_cmd_pld_out                   ),//from loopback
         .east_write_cmd_vld_in    (west_write_cmd_vld_out                   ),//from loopback
-        .south_write_cmd_pld_in   (toram_south_write_cmd_pld_in.write_cmd   ),
+        .south_write_cmd_pld_in   (toram_south_write_cmd_pld_in_cmd   ),
         .south_write_cmd_vld_in   (toram_south_write_cmd_vld_in             ),
-        .north_write_cmd_pld_in   (toram_north_write_cmd_pld_in.write_cmd   ),
+        .north_write_cmd_pld_in   (toram_north_write_cmd_pld_in_cmd   ),
         .north_write_cmd_vld_in   (toram_north_write_cmd_vld_in             ),
         .east_write_cmd_pld_out   (east_write_cmd_pld_out                   ),
         .east_write_cmd_vld_out   (east_write_cmd_vld_out                   ),
@@ -1121,13 +1096,13 @@ endgenerate
         .east_read_cmd_vld_out    (east_read_cmd_vld_out                    ),
 
         .west_data_in_vld         (toram_west_write_cmd_vld_in              ),//from west wdb
-        .west_data_in             (toram_west_write_cmd_pld_in.data         ),//from west wdb
+        .west_data_in             (toram_west_write_cmd_pld_in_data         ),//from west wdb
         .east_data_in_vld         (west_data_out_vld                        ),//from loopback
         .east_data_in             (west_data_out                            ),//from loopback
         .south_data_in_vld        (toram_south_write_cmd_vld_in             ),
-        .south_data_in            (toram_south_write_cmd_pld_in.data        ),
+        .south_data_in            (toram_south_write_cmd_pld_in_data        ),
         .north_data_in_vld        (toram_north_write_cmd_vld_in             ),
-        .north_data_in            (toram_north_write_cmd_pld_in.data        ),
+        .north_data_in            (toram_north_write_cmd_pld_in_data        ),
         .west_data_out_vld        (west_data_out_vld_todb                   ),//to west rdb
         .west_data_out            (west_data_out_todb                       ),//to west rdb
         .east_data_out_vld        (east_data_out_vld_toloop                 ),//to loopback
@@ -1151,10 +1126,10 @@ endgenerate
         .west_read_cmd_vld_in    (east_read_cmd_vld_out             ),//from sram
         .west_data_in_vld        (east_data_out_vld_toloop          ),//from sram
         .west_data_in            (east_data_out_toloop              ),//from sram
-        .east_write_cmd_pld_in   (toram_east_write_cmd_pld_in.write_cmd   ),//from east wdb
+        .east_write_cmd_pld_in   (toram_east_write_cmd_pld_in_cmd   ),//from east wdb
         .east_write_cmd_vld_in   (toram_east_write_cmd_vld_in             ),//from east wdb
         .east_data_in_vld        (toram_east_write_cmd_vld_in             ),//from east wdb
-        .east_data_in            (toram_east_write_cmd_pld_in.data        ),//from east wdb
+        .east_data_in            (toram_east_write_cmd_pld_in_data        ),//from east wdb
         .west_read_cmd_pld_out   (west_read_cmd_pld_out             ),//to sram
         .west_read_cmd_vld_out   (west_read_cmd_vld_out             ),//to sram
         .west_write_cmd_pld_out  (west_write_cmd_pld_out            ),//to sram

@@ -134,25 +134,25 @@ module ten_to_two_arb
                 else begin
                     case(block_id[i]) 
                         2'b00: wr_allow_bit[i] = wr_pre_allow_bit[i] && 
-                                                (direction_id[i] == 2'd0 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_WEST+WR_BLOCK0_DELAY]   == 1'b0) :       //访问block0，west write应检查shift_reg的bit[WEST_WR_BIT]
-                                                 direction_id[i] == 2'd1 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_EAST+WR_BLOCK0_DELAY]   == 1'b0) :       //访问block0，east write应检查shift_reg的bit[3]
-                                                 direction_id[i] == 2'd2 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_SOUTH+WR_BLOCK0_DELAY]  == 1'b0) :       //访问block0，south write应检查shift_reg的bit[10]
-                                                 direction_id[i] == 2'd3 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_NORTH+WR_BLOCK0_DELAY]  == 1'b0) : 1'b0); //访问block0，north write应检查shift_reg的bit[8]
+                                                ((direction_id[i] == `WEST ) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_WEST+WR_BLOCK0_DELAY]   == 1'b0) :       //访问block0，west write应检查shift_reg的bit[WEST_WR_BIT]
+                                                 (direction_id[i] == `EAST ) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_EAST+WR_BLOCK0_DELAY]   == 1'b0) :       //访问block0，east write应检查shift_reg的bit[3]
+                                                 (direction_id[i] == `SOUTH) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_SOUTH+WR_BLOCK0_DELAY]  == 1'b0) :       //访问block0，south write应检查shift_reg的bit[10]
+                                                 (direction_id[i] == `NORTH) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_NORTH+WR_BLOCK0_DELAY]  == 1'b0) : 1'b0); //访问block0，north write应检查shift_reg的bit[8]
                         2'b01: wr_allow_bit[i] = wr_pre_allow_bit[i] && 
-                                                (direction_id[i] == 2'd0 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_WEST+WR_BLOCK1_DELAY]   == 1'b0) :       //访问block0，west write应检查shift_reg的bit[WEST_WR_BIT]
-                                                 direction_id[i] == 2'd1 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_EAST+WR_BLOCK1_DELAY]   == 1'b0) :       
-                                                 direction_id[i] == 2'd2 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_SOUTH+WR_BLOCK1_DELAY]  == 1'b0) :       
-                                                 direction_id[i] == 2'd3 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_NORTH+WR_BLOCK1_DELAY]  == 1'b0) : 1'b0); 
+                                                ((direction_id[i] == `WEST ) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_WEST+WR_BLOCK1_DELAY]   == 1'b0) :       //访问block0，west write应检查shift_reg的bit[WEST_WR_BIT]
+                                                 (direction_id[i] == `EAST ) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_EAST+WR_BLOCK1_DELAY]   == 1'b0) :       
+                                                 (direction_id[i] == `SOUTH) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_SOUTH+WR_BLOCK1_DELAY]  == 1'b0) :       
+                                                 (direction_id[i] == `NORTH) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_NORTH+WR_BLOCK1_DELAY]  == 1'b0) : 1'b0); 
                         2'b10: wr_allow_bit[i] = wr_pre_allow_bit[i] && 
-                                                (direction_id[i] == 2'd0 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_WEST+WR_BLOCK2_DELAY]   == 1'b0) :       
-                                                 direction_id[i] == 2'd1 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_EAST+WR_BLOCK2_DELAY]   == 1'b0) :       
-                                                 direction_id[i] == 2'd2 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_SOUTH+WR_BLOCK2_DELAY]  == 1'b0) :       
-                                                 direction_id[i] == 2'd3 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_NORTH+WR_BLOCK2_DELAY]  == 1'b0) : 1'b0); 
+                                                ((direction_id[i] == `WEST ) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_WEST+WR_BLOCK2_DELAY]   == 1'b0) :       
+                                                 (direction_id[i] == `EAST ) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_EAST+WR_BLOCK2_DELAY]   == 1'b0) :       
+                                                 (direction_id[i] == `SOUTH) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_SOUTH+WR_BLOCK2_DELAY]  == 1'b0) :       
+                                                 (direction_id[i] == `NORTH) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_NORTH+WR_BLOCK2_DELAY]  == 1'b0) : 1'b0); 
                         2'b11: wr_allow_bit[i] = wr_pre_allow_bit[i] && 
-                                                (direction_id[i] == 2'd0 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_WEST+WR_BLOCK3_DELAY]   == 1'b0) :       
-                                                 direction_id[i] == 2'd1 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_EAST+WR_BLOCK3_DELAY]   == 1'b0) :       
-                                                 direction_id[i] == 2'd2 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_SOUTH+WR_BLOCK3_DELAY]  == 1'b0) :       
-                                                 direction_id[i] == 2'd3 ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_NORTH+WR_BLOCK3_DELAY]  == 1'b0) : 1'b0); 
+                                                ((direction_id[i] == `WEST ) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_WEST+WR_BLOCK3_DELAY]   == 1'b0) :       
+                                                 (direction_id[i] == `EAST ) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_EAST+WR_BLOCK3_DELAY]   == 1'b0) :       
+                                                 (direction_id[i] == `SOUTH) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_SOUTH+WR_BLOCK3_DELAY]  == 1'b0) :       
+                                                 (direction_id[i] == `NORTH) ? (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_NORTH+WR_BLOCK3_DELAY]  == 1'b0) : 1'b0); 
                     endcase
                 end
             end
@@ -241,13 +241,13 @@ module ten_to_two_arb
     always_comb begin
         set_req0_channel_timer = 'b0;
         set_req0_ram_timer     = 'b0;
-        if(grant_req_pld_0.opcode=='d0 )begin //write
+        if(grant_req_pld_0.opcode==`WRITE )begin //write
             set_req0_channel_timer = write_set_shift_channel_mask(grant_req_pld_0.txnid.direction_id);
             set_req0_ram_timer     = write_set_shift_ram_mask(grant_req_pld_0.dest_ram_id[2:1],grant_req_pld_0.txnid.direction_id);
         end
-        else if(grant_req_pld_0.opcode=='d3)begin//linefill
+        else if(grant_req_pld_0.opcode==`LINEFILL)begin//linefill
             set_req0_channel_timer[WR_CMD_DELAY_LF] = 1'b1;
-            case(grant_req_pld_0.dest_ram_id[2:1])
+            case(grant_req_pld_0.dest_ram_id[2:1])//block
                 2'b00: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK0_DELAY] = 1'b1;
                 2'b01: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK1_DELAY] = 1'b1;
                 2'b10: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK2_DELAY] = 1'b1;
@@ -258,11 +258,11 @@ module ten_to_two_arb
     always_comb begin
         set_req1_channel_timer = 'b0;
         set_req1_ram_timer     = 'b0;
-        if(grant_req_pld_1.opcode=='d0 )begin //write
+        if(grant_req_pld_1.opcode==`WRITE )begin //write
             set_req1_channel_timer = write_set_shift_channel_mask(grant_req_pld_1.txnid.direction_id);
             set_req1_ram_timer     = write_set_shift_ram_mask(grant_req_pld_1.dest_ram_id[2:1],grant_req_pld_1.txnid.direction_id);
         end
-        else if(grant_req_pld_1.opcode=='d3)begin//linefill
+        else if(grant_req_pld_1.opcode==`LINEFILL)begin//linefill
             set_req1_channel_timer[WR_CMD_DELAY_LF] = 1'b1;
             case(grant_req_pld_1.dest_ram_id[2:1])
                 2'b00: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK0_DELAY] = 1'b1;
