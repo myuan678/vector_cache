@@ -1,6 +1,6 @@
 
 $VEC_CACHE_PATH/rtl/vector_cache_pkg.sv
-//$VEC_CACHE_PATH/rtl/vector_cache_top.sv
+$VEC_CACHE_PATH/rtl/vector_cache_top.sv
 $VEC_CACHE_PATH/rtl/vec_cache_ctrl.sv
 
 //tag_ctrl
@@ -62,6 +62,9 @@ $VEC_CACHE_PATH/rtl/sram_group/sram_bank.sv
 $VEC_CACHE_PATH/rtl/sram_group/sram_bank_group.sv
 $VEC_CACHE_PATH/rtl/sram_group/sram_group.sv
 $VEC_CACHE_PATH/rtl/sram_group/mem_model.sv
+
+-f $VEC_CACHE_PATH/vc/tb.f
+
 
 
 
