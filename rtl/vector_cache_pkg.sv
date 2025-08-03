@@ -81,7 +81,7 @@ package vector_cache_pkg;
     parameter integer unsigned EVICT_CLEAN_DELAY    = 15    ; 
     parameter integer unsigned EVICT_DOWN_DELAY     = 20    ;
     //parameter integer unsigned ARB_TO_LFDB_DELAY    = 5     ;
-    parameter integer unsigned LF_DONE_DELAY        = 10    ;
+    parameter integer unsigned LF_DONE_DELAY        = 20    ;
     parameter integer unsigned RDB_DATA_RDY_DELAY   = 15    ; //是指sram中的数据已经被读到了RDB中，现在可以发起对RDB的读请求，将数据给US
     parameter integer unsigned TO_US_DONE_DELAY     =20     ;
 
@@ -109,7 +109,7 @@ package vector_cache_pkg;
     } txnid_t;
 
     typedef struct packed {
-        logic [63:0]                     cmd_addr    ;
+        addr_t                     cmd_addr    ;
         txnid_t                          cmd_txnid   ;
         logic [SIDEBAND_WIDTH-1      :0] cmd_sideband;
     } input_read_cmd_pld_t;
@@ -183,7 +183,7 @@ package vector_cache_pkg;
     typedef struct packed{
         logic                               valid         ;
         txnid_t                             txnid         ;
-        logic [OP_WIDTH-1       :0]         opcode        ;
+        //logic [OP_WIDTH-1       :0]         opcode        ;
         logic [INDEX_WIDTH-1    :0]         index         ;
         logic [OFFSET_WIDTH-1   :0]         offset        ;
         logic [TAG_WIDTH-1      :0]         req_tag       ;

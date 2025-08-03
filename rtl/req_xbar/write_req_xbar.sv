@@ -41,7 +41,7 @@ import vector_cache_pkg::*;
             assign in_wr_pld[i].cmd_pld.cmd_sideband  = wr_cmd_pld[i].cmd_sideband  ;
             assign in_wr_pld[i].data                  = wr_cmd_pld[i].data          ;
             assign in_wr_pld[i].cmd_pld.strb          = wr_cmd_pld[i].strb          ;
-            assign in_wr_pld[i].cmd_pld.cmd_opcode    = 1'b0                        ; //0 is write
+            assign in_wr_pld[i].cmd_pld.cmd_opcode    = 2'd1                        ; //1 is write
         end
     endgenerate
 

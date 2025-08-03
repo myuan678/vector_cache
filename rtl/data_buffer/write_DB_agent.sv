@@ -115,7 +115,7 @@ module write_DB_agent
 
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n)begin
-            v_wdb_entry_vld = 'b1;
+            v_wdb_entry_vld = 'hff;
         end
         else begin
             if(wdb_mem_en && wdb_wr_en)             v_wdb_entry_vld[wdb_addr] <= 1'b0;

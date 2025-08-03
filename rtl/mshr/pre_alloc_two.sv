@@ -42,9 +42,9 @@ module pre_alloc_two
     assign v_in_rdy   = (free_mshr_vld_1 && free_mshr_vld_2 && !pre_allo_buf_full) ? (free_mshr_oh_1 | free_mshr_oh_2) : {ENTRY_NUM{1'b0}};
 
     logic [ENTRY_ID_WIDTH*2-1:0] two_free_id                ;
-    assign two_free_id = {free_mshr_id_1, free_mshr_id_2}   ;
-    assign mshr_id_wr = free_mshr_vld_1 && free_mshr_vld_2  ;
-    assign mshr_id_rd = out_vld && out_rdy                  ;
+    assign two_free_id = {free_mshr_id_2,free_mshr_id_1}    ;
+    assign mshr_id_wr  = free_mshr_vld_1 && free_mshr_vld_2  ;
+    assign mshr_id_rd  = out_vld && out_rdy                  ;
 
     fifo#(
         .DATA_WIDTH(ENTRY_ID_WIDTH*2),

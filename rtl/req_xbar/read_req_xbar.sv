@@ -32,7 +32,9 @@ module read_req_xbar
             assign in_rd_pld[i].cmd_txnid     = rd_cmd_pld[i].cmd_txnid     ;
             assign in_rd_pld[i].cmd_sideband  = rd_cmd_pld[i].cmd_sideband  ;
             assign in_rd_pld[i].strb          = 'b0             ;
-            assign in_rd_pld[i].cmd_opcode    = 1'b1;//1 is read
+            assign in_rd_pld[i].cmd_opcode    = 2'd2;//2 is read
+            assign in_rd_pld[i].db_entry_id   = 'b0;
+            assign in_rd_pld[i].rob_entry_id  = 'b0;
         end
     endgenerate
 

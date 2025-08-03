@@ -20,7 +20,8 @@ module mem_model #(
 
 
     logic_data              memory[logic_addr]    ;
-    logic   [31:0]          tmp_data              ;
+    //logic   [31:0]          tmp_data              ;
+    logic   [127:0]          tmp_data             ;
     string                  arg_parse_str         ;
     string                  code_path             ;
 
@@ -32,6 +33,8 @@ module mem_model #(
         end else begin
             memory[address] = 'x;
             data = 'x; 
+            //memory[address]={DATA_WIDTH{1'b0}};
+            //data = {DATA_WIDTH{1'b0}};
         end
 
         return data;

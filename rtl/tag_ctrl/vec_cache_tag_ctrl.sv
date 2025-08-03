@@ -1,7 +1,8 @@
 module vec_cache_tag_ctrl
     import vector_cache_pkg::*;
     #(
-        parameter TAG_INFO_WIDTH = TAG_WIDTH+2,//加1bit valid，加1bit dirty/clean
+        //parameter TAG_INFO_WIDTH = TAG_WIDTH+2,//加1bit valid，加1bit dirty/clean
+    parameter TAG_INFO_WIDTH = TAG_WIDTH+1,//加1bit valid
         parameter TAG_RAM_WIDTH  = TAG_INFO_WIDTH * WAY_NUM
     )
     (
@@ -15,12 +16,12 @@ module vec_cache_tag_ctrl
     output wr_resp_pld_t                        v_wr_resp_pld_2  [3:0]                , //txnid+sideband    
     input  logic                                wr_resp_rdy                           ,//master 接受write resp的rdy，应该tie1？
 
-    input  logic                                tag_req_vld                           ,
+    input  logic                                tag_req_vld_1                           ,
+    input  logic                                tag_req_vld_2                           ,
     input  input_req_pld_t                      tag_req_input_arb_grant1_pld          ,
     input  input_req_pld_t                      tag_req_input_arb_grant2_pld          ,
     output logic                                tag_req_rdy                           ,//to 8to2 arb
-    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]     tag_req_index                         , //mshr entry的pre allocate的entry idx
-    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]     mshr_alloc_idx_1                      ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]     mshr_alloc_idx_1                      ,//mshr entry的pre allocate的entry idx
     input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]     mshr_alloc_idx_2                      ,
     input  mshr_entry_t                         v_mshr_entry_pld[MSHR_ENTRY_NUM-1:0]  ,
 
@@ -55,6 +56,7 @@ module vec_cache_tag_ctrl
     logic [TAG_RAM_WIDTH-1   :0]         tag_ram_B_din   ;
     logic [TAG_RAM_WIDTH-1   :0]         tag_ram_B_dout  ;
     
+    logic tag_req_vld;
     
     logic [MSHR_ENTRY_NUM-1 :0] v_A_hazard_bitmap       ;
     logic [MSHR_ENTRY_NUM-1 :0] v_B_hazard_bitmap       ;
@@ -75,7 +77,6 @@ module vec_cache_tag_ctrl
     logic [INDEX_WIDTH-1    :0] wr_tag_buf_A_index      ;
     logic [INDEX_WIDTH-1    :0] wr_tag_buf_B_index      ;
 
-    mshr_entry_t                mshr_update_pld         ;
 
     logic                       A_is_write                      ;
     logic                       A_is_read                       ;
@@ -128,6 +129,7 @@ module vec_cache_tag_ctrl
     logic [WAY_NUM-1        :0] A_wr_tag_buf_way_oh;
     logic [WAY_NUM-1        :0] B_wr_tag_buf_way_oh;
 
+    assign tag_req_vld = tag_req_vld_1 || tag_req_vld_2;
     assign tag_req_rdy = (wr_buf_vld==1'b0) && (stall==1'b0);
 
 //--------------------------------------------------------------
@@ -164,7 +166,7 @@ module vec_cache_tag_ctrl
             cre_tag_req_vld = 1'b0;
         end
         else if(wr_tag_buf_A_vld==1'b0 && wr_tag_buf_B_vld==1'b0 && tag_req_rdy)begin
-            cre_tag_req_vld = tag_req_vld ;
+            cre_tag_req_vld = tag_req_vld && tag_req_rdy ;
         end
         else begin
             cre_tag_req_vld = 1'b0;
@@ -180,18 +182,25 @@ module vec_cache_tag_ctrl
             req_vld_B  <= 1'b0;
         end
         else begin
-            req_vld_A <= cre_tag_req_vld;
-            req_vld_B <= cre_tag_req_vld;
+            //req_vld_A <= cre_tag_req_vld;
+            //req_vld_B <= cre_tag_req_vld;
+            req_vld_A <= tag_req_vld_1 && tag_req_rdy;
+            req_vld_B <= tag_req_vld_2 && tag_req_rdy;
         end
     end
 
-    assign A_is_write       = (req_pld_A.cmd_opcode) == 1;
-    assign A_is_read        = (req_pld_A.cmd_opcode) == 0;
-    assign B_is_write       = (req_pld_B.cmd_opcode) == 1;
-    assign B_is_read        = (req_pld_B.cmd_opcode) == 0;
+    assign A_is_write       = req_vld_A && (req_pld_A.cmd_opcode == 1);
+    assign A_is_read        = req_vld_A && (req_pld_A.cmd_opcode == 2);
+    assign B_is_write       = req_vld_B && (req_pld_B.cmd_opcode == 1);
+    assign B_is_read        = req_vld_B && (req_pld_B.cmd_opcode == 2);
     
-    always_ff@(posedge clk)begin
-        if(tag_req_vld && tag_req_rdy)begin
+    always_ff@(posedge clk or negedge rst_n)begin
+        //if(tag_req_vld && tag_req_rdy)begin
+        if(!rst_n)begin
+            req_pld_A     <= '{default:'b0};
+            req_pld_B      <= '{default:'b0};
+        end
+        else begin
             req_pld_A.cmd_addr      <= cre_tag_req_pldA.cmd_addr;
             req_pld_A.cmd_txnid     <= cre_tag_req_pldA.cmd_txnid;
             req_pld_A.cmd_sideband  <= cre_tag_req_pldA.cmd_sideband;
@@ -236,13 +245,22 @@ module vec_cache_tag_ctrl
     end
     assign wr_buf_vld = wr_tag_buf_A_vld || wr_tag_buf_B_vld;
       
-    always_ff@(posedge clk) begin //miss need to enable wr_tag_buf
-        wr_tag_buf_A_pld.index <= req_pld_A.cmd_addr.index  ;
-        wr_tag_buf_A_pld.tag   <= req_pld_A.cmd_addr.tag    ;
-        wr_tag_buf_A_pld.way   <= A_evict_way               ;
-        wr_tag_buf_B_pld.index <= req_pld_B.cmd_addr.index  ;
-        wr_tag_buf_B_pld.tag   <= req_pld_B.cmd_addr.tag    ;
-        wr_tag_buf_B_pld.way   <= B_evict_way               ;
+    always_ff@(posedge clk or negedge rst_n) begin //miss need to enable wr_tag_buf
+        if(!rst_n)begin
+            wr_tag_buf_A_pld <= '{default:'b0};
+            wr_tag_buf_B_pld <= '{default:'b0};
+        end
+        else begin
+            wr_tag_buf_A_pld.index <= req_pld_A.cmd_addr.index  ;
+            wr_tag_buf_A_pld.tag   <= req_pld_A.cmd_addr.tag    ;
+            wr_tag_buf_A_pld.way   <= A_evict_way               ;
+            //wr_tag_buf_A_pld.dirty_bit<= A_dirty_bit;
+
+            wr_tag_buf_B_pld.index <= req_pld_B.cmd_addr.index  ;
+            wr_tag_buf_B_pld.tag   <= req_pld_B.cmd_addr.tag    ;
+            wr_tag_buf_B_pld.way   <= B_evict_way               ;
+            //wr_tag_buf_B_pld.dirty_bit<= B_dirty_bit;
+        end
     end
 
 
@@ -265,7 +283,7 @@ module vec_cache_tag_ctrl
 //        tag  ram
 //========================================================
     toy_mem_model_bit #(
-        .ADDR_WIDTH  (INDEX_WIDTH),
+        .ADDR_WIDTH  (INDEX_WIDTH  ),
         .DATA_WIDTH  (TAG_RAM_WIDTH)
     ) u_tag_ramA (
         .clk    (clk                ),
@@ -309,17 +327,67 @@ module vec_cache_tag_ctrl
     //assign tag_ram_B_byte_en = wr_tag_buf_B_pld.way;
 
     ///////
+    logic [WAY_NUM-1:0]         tag_ram_dty[2**INDEX_WIDTH-1:0]  ;
+    logic [INDEX_WIDTH-1:0]     A_tag_index;
+    logic [INDEX_WIDTH-1:0]     B_tag_index;
+    logic [2**INDEX_WIDTH-1:0]  A_tag_idx_ohot;
+    logic [2**INDEX_WIDTH-1:0]  B_tag_idx_ohot;
+    assign A_tag_index = req_pld_A.cmd_addr.index;
+    assign B_tag_index = req_pld_B.cmd_addr.index;
+    cmn_bin2onehot #(
+       .BIN_WIDTH    (INDEX_WIDTH  ),
+       .ONEHOT_WIDTH (2**INDEX_WIDTH)
+    )u_tag_dty_idx_bin2onehot_A(
+       .bin_in       (A_tag_index        ),
+       .onehot_out   (A_tag_idx_ohot   )
+    );
+    cmn_bin2onehot #(
+       .BIN_WIDTH    (INDEX_WIDTH  ),
+       .ONEHOT_WIDTH (2**INDEX_WIDTH)
+    )u_tag_dty_idx_bin2onehot_B(
+       .bin_in       (B_tag_index        ),
+       .onehot_out   (B_tag_idx_ohot   )
+    );
+
+
+    generate
+        for(genvar i=0;i<2**INDEX_WIDTH;i=i+1)begin
+            for(genvar j=0;j<WAY_NUM;j=j+1)begin
+                always_ff@(posedge clk or negedge rst_n)begin//write->dirty
+                    if(!rst_n) begin
+                        tag_ram_dty[i][j] <= 1'b0;
+                    end 
+                    else if(req_vld_A && A_is_write && A_tag_idx_ohot[i] && A_dest_way_oh[j]) begin
+                        tag_ram_dty[i][j] <= 1'b1; 
+                    end
+                    else if(req_vld_B && B_is_write && B_tag_idx_ohot[i] && B_dest_way_oh[j]) begin
+                        tag_ram_dty[i][j] <= 1'b1; 
+                    end
+                    else if(req_vld_A && A_is_read && A_miss && A_tag_idx_ohot[i]&& A_evict_way_oh[j]) begin
+                        tag_ram_dty[i][j] <= 1'b0; 
+                    end 
+                    else if(req_vld_B && B_is_read && B_miss && B_tag_idx_ohot[i]&& B_evict_way_oh[j]) begin
+                        tag_ram_dty[i][j] <= 1'b0; 
+                    end
+                end
+            end
+        end
+    endgenerate
+
+
 
     always_comb begin
         tag_ram_A_din = 'b0;
         tag_ram_B_din = 'b0;
         if(wr_tag_buf_A_vld)begin
-            tag_ram_A_din = {wr_tag_buf_A_pld.tag,1'b1,1'b1};
-            tag_ram_B_din = {wr_tag_buf_A_pld.tag,1'b1,1'b1};
+            //tag_ram_A_din = {wr_tag_buf_A_pld.tag,1'b1,wr_tag_buf_A_pld.dirty_bit};//{tag,vld,dirty}
+            //tag_ram_B_din = {wr_tag_buf_A_pld.tag,1'b1,wr_tag_buf_A_pld.dirty_bit};
+            tag_ram_A_din = {wr_tag_buf_A_pld.tag,1'b1};//{tag,vld,dirty}
+            tag_ram_B_din = {wr_tag_buf_A_pld.tag,1'b1};
         end
         else if(wr_tag_buf_A_vld==1'b0 && wr_tag_buf_B_vld)begin
-            tag_ram_A_din = {wr_tag_buf_B_pld.tag,1'b1,1'b1};
-            tag_ram_B_din = {wr_tag_buf_B_pld.tag,1'b1,1'b1};
+            tag_ram_A_din = {wr_tag_buf_B_pld.tag,1'b1};
+            tag_ram_B_din = {wr_tag_buf_B_pld.tag,1'b1};
         end
     end
 //==========================================================
@@ -327,12 +395,24 @@ module vec_cache_tag_ctrl
 //==========================================================
     generate
         for(genvar i=0;i<WAY_NUM;i=i+1)begin
-            assign A_dirty[i] = tag_ram_A_dout[i*TAG_WIDTH];//每个tag的最低位为dirty bit
+            //assign A_dirty[i] = tag_ram_A_dout[i*TAG_WIDTH];//每个tag的最低位为dirty bit
+            assign A_dirty[i] = tag_ram_dty[req_pld_A.cmd_addr.index][i];//每个tag的最低位为dirty bit
         end
     endgenerate
     generate
         for(genvar i=0;i<WAY_NUM;i=i+1)begin
-            assign A_valid[i] = tag_ram_A_dout[i*TAG_WIDTH+1];//每个tag的第二低位为vld bit
+            //assign A_valid[i] = tag_ram_A_dout[i*TAG_WIDTH+1];//每个tag的第二低位为vld bit
+            assign A_valid[i] = tag_ram_A_dout[i*TAG_WIDTH];//每个tag的最低位为vld bit
+        end
+    endgenerate
+    generate
+        for(genvar i=0;i<WAY_NUM;i=i+1)begin
+            assign B_dirty[i] = tag_ram_dty[req_pld_B.cmd_addr.index][i];//每个tag的最低位为dirty bit
+        end
+    endgenerate
+    generate
+        for(genvar i=0;i<WAY_NUM;i=i+1)begin
+            assign B_valid[i] = tag_ram_B_dout[i*TAG_WIDTH];//每个tag的最低位为vld bit
         end
     endgenerate
 
@@ -343,12 +423,14 @@ module vec_cache_tag_ctrl
 //===========================================
     generate
         for(genvar i=0;i<WAY_NUM;i=i+1)begin //read out the data of [req_pld_A.addr]
-            assign A_evict_tag_array[i] = tag_ram_A_dout[i*TAG_WIDTH+TAG_WIDTH+1:i*TAG_WIDTH+2];//每一路的低两位位vld和dirty，实际tag[TAG_WIDTH+2-1:2]
+            //assign A_evict_tag_array[i] = tag_ram_A_dout[i*TAG_WIDTH+TAG_WIDTH+1:i*TAG_WIDTH+2];//每一路的低两位位vld和dirty，实际tag[TAG_WIDTH+2-1:2]
+            assign A_evict_tag_array[i] = tag_ram_A_dout[i*TAG_WIDTH+TAG_WIDTH+1-1:i*TAG_WIDTH+1];//每一路的低位vld，实际tag[TAG_WIDTH+1-1:1]
         end
     endgenerate
     generate
         for(genvar i=0;i<WAY_NUM;i=i+1)begin //read out the data of [req_pld_B.addr]
-            assign B_evict_tag_array[i] = tag_ram_B_dout[i*TAG_WIDTH+TAG_WIDTH+1:i*TAG_WIDTH+2];
+            //assign B_evict_tag_array[i] = tag_ram_B_dout[i*TAG_WIDTH+TAG_WIDTH+1:i*TAG_WIDTH+2];
+            assign B_evict_tag_array[i] = tag_ram_B_dout[i*TAG_WIDTH+TAG_WIDTH+1-1:i*TAG_WIDTH+1];
         end
     endgenerate
 
@@ -393,8 +475,8 @@ module vec_cache_tag_ctrl
         .bin_out   (B_hit_way)
     );
     
-    assign A_wr_tag_buf_hit = ((req_pld_A.cmd_addr.tag==wr_tag_buf_A_pld.tag)&&(req_pld_A.cmd_addr.index== wr_tag_buf_A_pld.index)) || ((req_pld_A.cmd_addr.tag==wr_tag_buf_B_pld.tag)&&(req_pld_A.cmd_addr.index== wr_tag_buf_B_pld.index));
-    assign B_wr_tag_buf_hit = ((req_pld_B.cmd_addr.tag==wr_tag_buf_A_pld.tag)&&(req_pld_B.cmd_addr.index== wr_tag_buf_A_pld.index)) || ((req_pld_B.cmd_addr.tag==wr_tag_buf_B_pld.tag)&&(req_pld_B.cmd_addr.index== wr_tag_buf_B_pld.index));
+    assign A_wr_tag_buf_hit = req_vld_A && (((req_pld_A.cmd_addr.tag==wr_tag_buf_A_pld.tag)&&(req_pld_A.cmd_addr.index== wr_tag_buf_A_pld.index)) || ((req_pld_A.cmd_addr.tag==wr_tag_buf_B_pld.tag)&&(req_pld_A.cmd_addr.index== wr_tag_buf_B_pld.index)));
+    assign B_wr_tag_buf_hit = req_vld_B && (((req_pld_B.cmd_addr.tag==wr_tag_buf_A_pld.tag)&&(req_pld_B.cmd_addr.index== wr_tag_buf_A_pld.index)) || ((req_pld_B.cmd_addr.tag==wr_tag_buf_B_pld.tag)&&(req_pld_B.cmd_addr.index== wr_tag_buf_B_pld.index)));
     
     assign A_tag_ram_hit = |tag_ram_A_hit_way_oh;
     assign B_tag_ram_hit = |tag_ram_B_hit_way_oh;
@@ -426,12 +508,20 @@ module vec_cache_tag_ctrl
 //========================================================
 //         hazard check and behavior mapping 
 //========================================================
-    always_comb begin
-        mshr_update_en = 1'b0;
-        if(req_vld_A | req_vld_B)begin
-            mshr_update_en = 1'b1;
-        end
-    end
+    //always_comb begin
+    //    mshr_update_en = 1'b0;
+    //    //if(req_vld_A | req_vld_B)begin
+    //    if(cre_tag_req_vld)begin
+    //        mshr_update_en = 1'b1;
+    //    end
+    //end
+    always_ff@(posedge clk or negedge rst_n)begin
+        if(!rst_n)               mshr_update_en <= 1'b0;
+        else if(cre_tag_req_vld) mshr_update_en <= 1'b1;
+        else                     mshr_update_en <= 1'b0;
+
+    end     
+//========================================================    
 
 //address hazard check
     generate 

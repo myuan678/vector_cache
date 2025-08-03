@@ -99,11 +99,11 @@ module vec_cache_ctrl
     output logic                                        bresp_rdy              //Bresp 
 );
 
-    logic                                               tag_req_vld                            ;
+    logic                                               tag_req_vld_1                          ;
+    logic                                               tag_req_vld_2                          ;
     input_req_pld_t                                     tag_req_input_arb_grant1_pld           ;
     input_req_pld_t                                     tag_req_input_arb_grant2_pld           ;
     logic                                               tag_req_rdy                            ;
-    logic [MSHR_ENTRY_IDX_WIDTH-1:0]                    tag_req_index                          ;
     mshr_entry_t                                        v_mshr_entry_pld[MSHR_ENTRY_NUM-1:0]   ;
     logic [MSHR_ENTRY_IDX_WIDTH-1:0]                    mshr_alloc_index_1;
     logic [MSHR_ENTRY_IDX_WIDTH-1:0]                    mshr_alloc_index_2;
@@ -113,8 +113,8 @@ module vec_cache_ctrl
 
     eightto2_req_arbiter #(
         .REQ_NUM        (8),
-        .ENTRY_IDX_WIDTH(MSHR_ENTRY_IDX_WIDTH),
-        .PLD_WIDTH      ($bits(input_req_pld_t))
+        .ENTRY_IDX_WIDTH(MSHR_ENTRY_IDX_WIDTH)
+        //.PLD_WIDTH      ($bits(input_req_pld_t))
     ) u_8to2_req_arb (
         .clk                (clk                          ),
         .rst_n              (rst_n                        ),
@@ -125,7 +125,8 @@ module vec_cache_ctrl
         .mshr_alloc_idx_1   (mshr_alloc_index_1           ),
         .mshr_alloc_idx_2   (mshr_alloc_index_2           ),
         .mshr_alloc_rdy     (mshr_alloc_rdy               ),
-        .out_grant_vld      (tag_req_vld                  ),
+        .out_grant_vld_1    (tag_req_vld_1                ),
+        .out_grant_vld_2    (tag_req_vld_2                ),
         .out_grant_pld_1    (tag_req_input_arb_grant1_pld ),
         .out_grant_pld_2    (tag_req_input_arb_grant2_pld ),
         .out_grant_rdy      (tag_req_rdy                  ) //from tag_ctrl
@@ -139,11 +140,11 @@ module vec_cache_ctrl
         .v_wr_resp_vld_2             (v_wr_resp_vld_2           ),
         .v_wr_resp_pld_2             (v_wr_resp_pld_2           ),
         .wr_resp_rdy                 (1'b1                      ),
-        .tag_req_vld                 (tag_req_vld               ),
+        .tag_req_vld_1               (tag_req_vld_1               ),
+        .tag_req_vld_2               (tag_req_vld_2               ),
         .tag_req_input_arb_grant1_pld(tag_req_input_arb_grant1_pld  ),//8to2
         .tag_req_input_arb_grant2_pld(tag_req_input_arb_grant2_pld  ),
         .tag_req_rdy                 (tag_req_rdy               ),
-        .tag_req_index               (tag_req_index             ),
         .mshr_alloc_idx_1            (mshr_alloc_index_1        ),
         .mshr_alloc_idx_2            (mshr_alloc_index_2        ),
         .v_mshr_entry_pld            (v_mshr_entry_pld          ),
@@ -232,7 +233,7 @@ module vec_cache_ctrl
         .bresp_rdy                   (bresp_rdy                ),
         .entry_release_done_index    (entry_release_done_index ),
         .mshr_stall                  (mshr_stall               ), 
-        .v_mshr_entry_pld            (v_mshr_entry_pld         ),
+        .v_mshr_entry_pld_out        (v_mshr_entry_pld         ),
 
         .w_rd_alloc_vld              (w_rd_alloc_vld         ),
         .w_rd_alloc_idx              (w_rd_alloc_idx         ),

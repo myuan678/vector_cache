@@ -22,6 +22,7 @@ module readDB
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n)                          rdb_to_us_data_vld <= 1'b0;
         else if(rdb_mem_en && ~rdb_wr_en)   rdb_to_us_data_vld <= 1'b1;
+        else                                rdb_to_us_data_vld <= 1'b0;                                            
     end
     assign rdb_to_us_data_pld.data         = data_out                   ;
     assign rdb_to_us_data_pld.txnid        = rdb_addr_d.txnid           ;

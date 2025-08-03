@@ -16,12 +16,14 @@ module nto4_xbar #(
 );
 
     logic [N-1:0]            sel_rdy[3:0];
+    logic [N-1:0] grant_vec[3:0];
     generate
         for (genvar out_idx = 0; out_idx < 4; out_idx++) begin : OUT_PORT
             logic [N-1        :0] sel_vld        ;
             logic [PLD_WIDTH-1:0] sel_pld [N-1:0];
             logic                 arb_vld        ;
             logic [PLD_WIDTH-1:0] arb_pld        ;
+            logic [$clog2(N)-1:0] grant_idx;
 
             always_comb begin
                 for (int i = 0; i < N; i++) begin
@@ -35,7 +37,7 @@ module nto4_xbar #(
                 end
             end
 
-            vrp_arb #(
+            vrp_arb_grant #(
                 .WIDTH(N),
                 .PLD_WIDTH(PLD_WIDTH)
             ) u_arb (
@@ -44,26 +46,43 @@ module nto4_xbar #(
                 .v_rdy_s(sel_rdy[out_idx]),
                 .rdy_m  (out_rdy[out_idx]),
                 .vld_m  (arb_vld         ),
-                .pld_m  (arb_pld         )
+                .pld_m  (arb_pld         ),
+                .grant_idx(grant_idx)
             );
 
             assign out_vld[out_idx]     = arb_vld;
             assign out_pld[out_idx]     = arb_pld;
-        end
-    endgenerate
 
 
-    generate
-        for(genvar i=0;i<N;i=i+1)begin:GEN_IN_RDY
+            // 生成仲裁标志 grant_vec
             always_comb begin
-                in_rdy[i] = 1'b0; // 默认值为0
-                for (int j = 0; j < 4; j++) begin
-                    if (in_select[i] == j && out_rdy[j]) begin
-                        in_rdy[i] = 1'b1; // 
-                    end
+                grant_vec[out_idx] = '0;
+                if (arb_vld) begin
+                    grant_vec[out_idx][grant_idx] = 1'b1;
                 end
             end
         end
     endgenerate
+
+    generate
+        for (genvar i = 0; i < N; i++) begin : GEN_IN_RDY
+            always_comb begin
+                in_rdy[i] = grant_vec[0][i] | grant_vec[1][i] |
+                            grant_vec[2][i] | grant_vec[3][i];
+            end
+        end
+    endgenerate
+    //generate
+    //    for(genvar i=0;i<N;i=i+1)begin:GEN_IN_RDY
+    //        always_comb begin
+    //            in_rdy[i] = 1'b0; // 默认值为0
+    //            for (int j = 0; j < 4; j++) begin
+    //                if (in_select[i] == j && out_rdy[j]) begin
+    //                    in_rdy[i] = 1'b1; // 
+    //                end
+    //            end
+    //        end
+    //    end
+    //endgenerate
 
 endmodule

@@ -2,17 +2,17 @@ module n_to_2_arb #(
     parameter N = 10,           // 输入请求数量
     parameter PLD_WIDTH = 8    // payload位宽
 ) (
-    input  wire             clk,
-    input  wire             rst_n,
-    
-    input  wire [N-1        :0] req_vld,        
-    output wire [N-1        :0] req_rdy,        
-    input  wire [PLD_WIDTH-1:0] req_pld[N-1:0], 
+    input  wire                 clk         ,
+    input  wire                 rst_n       ,
+
+    input  wire [N-1        :0] req_vld     ,        
+    output wire [N-1        :0] req_rdy     ,        
+    input  wire [PLD_WIDTH-1:0] req_pld     [N-1:0], 
     
 
-    output wire [1          :0] grant_vld,      
-    input  wire [1          :0] grant_rdy,      
-    output wire [PLD_WIDTH-1:0] grant_pld[1:0]  
+    output wire [1          :0] grant_vld   ,      
+    input  wire [1          :0] grant_rdy   ,      
+    output wire [PLD_WIDTH-1:0] grant_pld   [1:0]  
 );
 
     logic [N-1:0]     first_grant_oh;     // 第一优先级(one-hot)

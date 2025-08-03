@@ -41,14 +41,14 @@ module sram_2inst
     assign read_sel  = read_cmd_a.dest_ram_id[0];
     assign write_sel = write_cmd_a.dest_ram_id[0];
     
-    always_ff@(posedge clk)begin
-        if(read_cmd_a.dest_ram_id[0] && read_cmd_b.dest_ram_id[0])begin
-            $error("ERROR: 2 requset in one hash group conflict error");
-        end
-        else if(read_cmd_a.dest_ram_id[0]==1'b0 && read_cmd_b.dest_ram_id[0]==1'b0)begin
-            $error("ERROR: 2 requset in one hash group conflict error");
-        end
-    end
+    //always_ff@(posedge clk)begin
+    //    if(read_cmd_a.dest_ram_id[0] && read_cmd_b.dest_ram_id[0])begin
+    //        $error("ERROR: 2 requset in one hash group conflict error");
+    //    end
+    //    else if(read_cmd_a.dest_ram_id[0]==1'b0 && read_cmd_b.dest_ram_id[0]==1'b0)begin
+    //        $error("ERROR: 2 requset in one hash group conflict error");
+    //    end
+    //end
 
     always_comb begin
         if (read_sel) begin

@@ -1,4 +1,4 @@
-module vrp_arb #(
+module vrp_arb_grant #(
     parameter integer unsigned WIDTH=8,
     parameter integer unsigned PLD_WIDTH=32
     ) (
@@ -8,7 +8,8 @@ module vrp_arb #(
 
     input  logic                     rdy_m,
     output logic                     vld_m,
-    output logic [PLD_WIDTH-1:0]     pld_m
+    output logic [PLD_WIDTH-1:0]     pld_m,
+    output logic [$clog2(WIDTH)-1:0]         grant_idx
     );
 
     logic [WIDTH-1      :0]         select_onehot;
@@ -39,6 +40,11 @@ module vrp_arb #(
     assign pld_m = select_pld;
     assign v_rdy_s = select_onehot;
 
-
+    cmn_onehot2bin #(
+        .ONEHOT_WIDTH(WIDTH)
+    ) u_onehot2bin (
+        .onehot_in(select_onehot),
+        .bin_out  (grant_idx)
+    );
 
 endmodule

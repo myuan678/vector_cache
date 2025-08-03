@@ -135,7 +135,7 @@ import vector_cache_pkg::*;
     endgenerate
 
     generate
-        for(genvar i=0;i<8;i=i+1)begin
+        for(genvar i=0;i<8;i=i+1)begin:SRAM_BANK_GEN
             sram_bank #( 
                 .BLOCK_ID(BLOCK_ID),
                 .ROW_ID  (ROW_ID)

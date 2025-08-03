@@ -659,11 +659,13 @@ import vector_cache_pkg::*;
     );
 
 //R  RXDATA decode 
+    logic [1:0] ds_to_lfdb_decode_idx;
+    assign ds_to_lfdb_decode_idx = ds_to_lfdb_pld.linefill_cmd.dest_ram_id[4:3];
     v_1toN_decode #(
         .N(4)
     ) u_linefill_rxdata_decode (
         .vld      (ds_to_lfdb_vld   ), //1 to 4hash
-        .vld_index(ds_to_lfdb_pld.linefill_cmd.dest_ram_id[4:3]), //hash id 
+        .vld_index(ds_to_lfdb_decode_idx), //hash id 
         .v_out_vld(v_ds_to_lfdb_vld ));
     generate
         for(genvar i=0;i<4;i=i+1)begin
@@ -684,11 +686,13 @@ import vector_cache_pkg::*;
         .vld_m  (evict_to_ds_vld       ), //output to ds
         .pld_m  (evict_to_ds_pld       ));//output to ds
 //bresp
+        logic [1:0]bresp_decode_idx;
+        assign bresp_decode_idx = bresp_pld.hash_id;
     v_1toN_decode #(
         .N(4)
     ) u_Bresp_decode (
         .vld      (bresp_vld           ),//1to4
-        .vld_index(bresp_pld.hash_id   ),//hash id //这是evict_down，用它来release rob entry
+        .vld_index(bresp_decode_idx   ),//hash id //这是evict_down，用它来release rob entry
         .v_out_vld(v_bresp_vld         ));
     generate
         for(genvar i=0;i<4;i=i+1)begin
@@ -721,7 +725,8 @@ generate
             .lfdb_rdreq_rdy          (v_lf_wrreq_rdy[i]            ),//arb decode出的linefill 请求
             .lfdb_to_ram_vld         (v_lfdb_to_ram_vld[i]         ),//to sram
             .lfdb_to_ram_pld         (v_lfdb_to_ram_pld[i]         ),//to sram
-            .lfdb_to_ram_rdy         (v_lfdb_to_ram_rdy[i]         ),//to sram
+            //.lfdb_to_ram_rdy         (v_lfdb_to_ram_rdy[i]         ),//to sram
+            .lfdb_to_ram_rdy         (1'b1                         ),//to sram
             .alloc_vld               (v_linefill_alloc_vld[i]      ),
             .alloc_idx               (v_linefill_alloc_idx[i]      ),
             .alloc_rdy               (v_linefill_alloc_rdy[i]      )

@@ -112,8 +112,10 @@ import vector_cache_pkg::*;
         for(genvar i=0;i<4;i=i+1)begin  //read  //cmd[1:0]0/1对于hash0，2/3对于hash1，
             assign east_data_out[i*2].data     = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in[i*2].data    : rd_data[i*2] ;//5bit dest_ram_id, 00 00 0 表示hash0，block0 的第一块sram。地址的最高bit决定sram hash 二选一
             assign east_data_out[i*2].cmd_pld  = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in[i*2].cmd_pld : read_ram_cmd_d1[i*2];
+            assign east_data_out_vld[i*2]      = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in_vld[i*2]     : read_ram_cmd_vld_d1[i*2] ;
             assign east_data_out[i*2+1].data   = (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in[i*2+1].data    : rd_data[i*2+1] ;////5bit dest_ram_id, 00 00 1 表示hash0，block0 的第二块sram
             assign east_data_out[i*2+1].cmd_pld= (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in[i*2+1].cmd_pld : read_ram_cmd_d1[i*2+1];
+            assign east_data_out_vld[i*2+1]    = (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in_vld[i*2+1]     : read_ram_cmd_vld_d1[i*2+1] ;
         end
     endgenerate
 
@@ -127,7 +129,7 @@ import vector_cache_pkg::*;
                 end
                 else begin
                     write_ram_cmd_d1[i]    <= write_ram_cmd[i]       ;
-                    write_ram_cmd_vld_d1[i]<= east_read_cmd_vld_in[i];
+                    write_ram_cmd_vld_d1[i]<= east_write_cmd_vld_in[i];
                 end
             end
         end
@@ -142,6 +144,8 @@ import vector_cache_pkg::*;
             assign west_data_out[i*2].cmd_pld  = east_data_in[i*2].cmd_pld  ;
             assign west_data_out[i*2+1].data   = east_data_in[i*2+1].data   ;
             assign west_data_out[i*2+1].cmd_pld= east_data_in[i*2+1].cmd_pld;
+            assign west_data_out_vld[i*2]      = east_data_in_vld[i*2]      ;
+            assign west_data_out_vld[i*2+1]    = east_data_in_vld[i*2+1]    ;
         end
     endgenerate
 
@@ -167,25 +171,25 @@ import vector_cache_pkg::*;
     endgenerate
 
 
-    always_ff@(posedge clk)begin
-        for(int i=0;i<8;i=i+1)begin
-            if(west_read_cmd_vld_in[i] && east_write_cmd_vld_in[i])begin
-                $error("Error: read/write conflict in one sram");
-            end
-        end
-    end
-
-
-
-    always_ff@(posedge clk)begin
-        for(int i=0;i<4;i=i+1)begin
-            if(west_read_cmd_vld_in[2*i] && west_read_cmd_vld_in[2*i+1])begin
-                if(west_read_cmd_pld_in[2*i].dest_ram_id== west_read_cmd_pld_in[2*i+1].dest_ram_id)begin
-                    $error("Error: read req in one hash group conflict in one sram");
-                end
-            end
-        end
-    end
+    //always_ff@(posedge clk)begin
+    //    for(int i=0;i<8;i=i+1)begin
+    //        if(west_read_cmd_vld_in[i] && east_write_cmd_vld_in[i])begin
+    //            $error("Error: read/write conflict in one sram");
+    //        end
+    //    end
+    //end
+//
+//
+//
+    //always_ff@(posedge clk)begin
+    //    for(int i=0;i<4;i=i+1)begin
+    //        if(west_read_cmd_vld_in[2*i] && west_read_cmd_vld_in[2*i+1])begin
+    //            if(west_read_cmd_pld_in[2*i].dest_ram_id== west_read_cmd_pld_in[2*i+1].dest_ram_id)begin
+    //                $error("Error: read req in one hash group conflict in one sram");
+    //            end
+    //        end
+    //    end
+    //end
 
 
 

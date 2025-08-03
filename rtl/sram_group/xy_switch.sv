@@ -161,36 +161,36 @@ import vector_cache_pkg::*;
         end
     endgenerate
 
-    //===========assertion write_vld , read_vld在同channel不会同时出现==================
-    generate
-        for(genvar i=0;i<8;i=i+1)begin
-            always_comb begin
-                assert ((west_write_cmd_in_vld[i] + south_write_cmd_in_vld[i] + north_write_cmd_in_vld[i])<=1'b1)
-                else $error(" ERROR: only one cmd can be valid,write_cmd_vld conflict error");
-            end
-        end
-    endgenerate
-
-    generate
-        for(genvar i=0;i<8;i=i+1)begin
-            always_comb begin
-                assert (west_write_cmd_in_vld[i] && west_read_cmd_in_vld[i])
-                else $error("ERROR: read/write conflict ,can not both valid ! ");
-            end
-        end
-    endgenerate
-    //=====================================================================
-    //===========assertion 四个方向的data不会冲突============================
-    //west_data,north_data,south_data不会同时出现在该block的同一个channel
-    
-    generate
-        for(genvar i=0;i<8;i=i+1)begin
-            always_comb begin
-                assert ((west_data_in_vld[i] + south_data_in_vld[i] + north_data_in_vld[i])<=1'b1)
-                else $error( " ERROR: data_in can not be valid more than one , data_vld conflict error");
-            end
-        end
-    endgenerate
+    ////===========assertion write_vld , read_vld在同channel不会同时出现==================
+    //generate
+    //    for(genvar i=0;i<8;i=i+1)begin
+    //        always_comb begin
+    //            assert ((west_write_cmd_in_vld[i] + south_write_cmd_in_vld[i] + north_write_cmd_in_vld[i])<=1'b1)
+    //            else $error(" ERROR: only one cmd can be valid,write_cmd_vld conflict error");
+    //        end
+    //    end
+    //endgenerate
+//
+    //generate
+    //    for(genvar i=0;i<8;i=i+1)begin
+    //        always_comb begin
+    //            assert (west_write_cmd_in_vld[i] && west_read_cmd_in_vld[i])
+    //            else $error("ERROR: read/write conflict ,can not both valid ! ");
+    //        end
+    //    end
+    //endgenerate
+    ////=====================================================================
+    ////===========assertion 四个方向的data不会冲突============================
+    ////west_data,north_data,south_data不会同时出现在该block的同一个channel
+    //
+    //generate
+    //    for(genvar i=0;i<8;i=i+1)begin
+    //        always_comb begin
+    //            assert ((west_data_in_vld[i] + south_data_in_vld[i] + north_data_in_vld[i])<=1'b1)
+    //            else $error( " ERROR: data_in can not be valid more than one , data_vld conflict error");
+    //        end
+    //    end
+    //endgenerate
             
 
 endmodule

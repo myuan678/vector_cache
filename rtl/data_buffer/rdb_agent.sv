@@ -76,13 +76,14 @@ module rdb_agent
     assign rdb_addr.db_entry_id  = ram_write_rdb_vld ? ram_write_rdb_pld.db_entry_id : read_rdb_pld.db_entry_id; //addr 确定等于arb出的read请求的rdb id
     assign rdb_addr.txnid        = ram_write_rdb_vld ? ram_write_rdb_pld.txnid : read_rdb_pld.txnid;
     assign rdb_addr.rob_entry_id = ram_write_rdb_vld ? ram_write_rdb_pld.rob_entry_id : read_rdb_pld.rob_entry_id;
+    assign rdb_addr.sideband     = ram_write_rdb_vld ? ram_write_rdb_pld.sideband : read_rdb_pld.sideband;
     assign ram_write_rdb_rdy     = RDB_rdy && ram_write_rdb_vld;
     assign read_rdb_rdy          = RDB_rdy && read_rdb_vld && (~ram_write_rdb_vld);
     assign dataram_rd_rdy        = RDB_rdy && ~ram_write_rdb_vld;//
 
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n)begin
-            v_rdb_entry_vld = 'b1;
+            v_rdb_entry_vld = 'hff;
         end
         else begin
             if(rdb_mem_en && rdb_wr_en)begin

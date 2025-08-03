@@ -107,7 +107,7 @@ module evictDB
 
    
     always_ff@(posedge clk or negedge rst_n) begin
-        if(!rst_n)                          v_evdb_entry_vld                         <= 'b1;
+        if(!rst_n)                          v_evdb_entry_vld                         <= 'hff;
         else if(alloc_vld && alloc_rdy)     v_evdb_entry_vld[alloc_idx]              <= 1'b0;
         else if(evdb_entry_release)         v_evdb_entry_vld[evdb_entry_release_idx] <= 1'b1;
         else                                v_evdb_entry_vld                         <= v_evdb_entry_vld;

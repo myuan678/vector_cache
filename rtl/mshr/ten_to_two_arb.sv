@@ -174,7 +174,7 @@ module ten_to_two_arb
         .req_vld    (all_req_vld                       ),
         .req_rdy    ({rd_rdy, wr_rdy}                  ),
         .req_pld    (all_req_pld                       ),
-        .grant_vld  ({grant_req_vld_0, grant_req_vld_1}),
+        .grant_vld  ({grant_req_vld_1,grant_req_vld_0} ),
         .grant_rdy  (grant_req_rdy                     ),    
         .grant_pld  (grant_req_pld                     )
     );

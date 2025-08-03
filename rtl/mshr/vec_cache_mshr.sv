@@ -74,7 +74,7 @@ module vec_cache_mshr
 
     output logic [MSHR_ENTRY_IDX_WIDTH   :0]            entry_release_done_index  ,
     output logic                                        mshr_stall                , 
-    output mshr_entry_t                                 v_mshr_entry_pld[MSHR_ENTRY_NUM-1:0],
+    output mshr_entry_t                                 v_mshr_entry_pld_out[MSHR_ENTRY_NUM-1:0],
     //add RDB and RDBagent interface
     
     input  logic                                        w_rd_alloc_vld      ,
@@ -106,6 +106,7 @@ module vec_cache_mshr
     logic  [MSHR_ENTRY_NUM-1         :0]                v_mshr_update_en_2                             ;
 
     logic  [MSHR_ENTRY_NUM-1         :0]                v_entry_active                                 ;  
+    mshr_entry_t                                        v_mshr_entry_pld_in[MSHR_ENTRY_NUM-1:0]        ;        
 
     logic  [MSHR_ENTRY_NUM-1         :0]                v_alloc_vld                                    ; 
     logic  [MSHR_ENTRY_NUM-1         :0]                v_alloc_rdy                                    ;
@@ -173,7 +174,7 @@ module vec_cache_mshr
     logic [MSHR_ENTRY_NUM-1         :0]                 v_north_wr_done                                 ;
     logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_done                                    ;
     logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_clean                                   ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_mshr_entry_pld_valid                          ;
+    //logic [MSHR_ENTRY_NUM-1         :0]                 v_mshr_entry_pld_valid                          ;
 
     logic [MSHR_ENTRY_IDX_WIDTH-1   :0]                 mshr_update_alloc_idx1;
     logic [MSHR_ENTRY_IDX_WIDTH-1   :0]                 mshr_update_alloc_idx2;
@@ -193,10 +194,10 @@ module vec_cache_mshr
     assign mshr_update_alloc_idx1 = mshr_update_pld_A.alloc_idx;
     assign mshr_update_alloc_idx2 = mshr_update_pld_B.alloc_idx;
 
-    always_ff@(posedge clk )begin
-        v_mshr_entry_pld[mshr_update_alloc_idx1]   <= mshr_update_pld_A;
-        v_mshr_entry_pld[mshr_update_alloc_idx2]   <= mshr_update_pld_B;
-    end
+    //always_ff@(posedge clk )begin
+    //    v_mshr_entry_pld[mshr_update_alloc_idx1]   <= mshr_update_pld_A;
+    //    v_mshr_entry_pld[mshr_update_alloc_idx2]   <= mshr_update_pld_B;
+    //end
     //always_ff@(posedge clk or negedge rst_n) begin
     //    if(!rst_n)begin
     //        for(int i=0;i<MSHR_ENTRY_NUM;i=i+1)begin
@@ -211,20 +212,22 @@ module vec_cache_mshr
     //        v_mshr_entry_pld[entry_release_done_index].valid <= 1'b0;
     //    end
     //end
-    always_ff@(posedge clk or negedge rst_n) begin
-        if(!rst_n)begin
-            for(int i=0;i<MSHR_ENTRY_NUM;i=i+1)begin
-                v_mshr_entry_pld_valid[i] <= 1'b0 ;
-            end
-        end
-        else if(mshr_update_en && v_mshr_update_en_1[mshr_update_alloc_idx1] && v_mshr_update_en_2[mshr_update_alloc_idx2])begin
-            v_mshr_entry_pld_valid[mshr_update_alloc_idx1] <= 1'b1;
-            v_mshr_entry_pld_valid[mshr_update_alloc_idx2] <= 1'b1;
-        end 
-        else begin
-            v_mshr_entry_pld_valid[entry_release_done_index] <= 1'b0;
-        end
-    end
+    //always_ff@(posedge clk or negedge rst_n) begin
+    //    if(!rst_n)begin
+    //        for(int i=0;i<MSHR_ENTRY_NUM;i=i+1)begin
+    //            v_mshr_entry_pld_valid[i] <= 1'b0 ;
+    //        end
+    //    end
+    //    //else if(mshr_update_en && v_mshr_update_en_1[mshr_update_alloc_idx1] && v_mshr_update_en_2[mshr_update_alloc_idx2])begin
+    //    else if(v_mshr_update_en_1[mshr_update_alloc_idx1] && v_mshr_update_en_2[mshr_update_alloc_idx2])begin
+//
+    //        v_mshr_entry_pld_valid[mshr_update_alloc_idx1] <= 1'b1;
+    //        v_mshr_entry_pld_valid[mshr_update_alloc_idx2] <= 1'b1;
+    //    end 
+    //    else begin
+    //        v_mshr_entry_pld_valid[entry_release_done_index] <= 1'b0;
+    //    end
+    //end
 
     assign mshr_stall = ( (&v_entry_active)==1'b1);
 
@@ -255,7 +258,25 @@ module vec_cache_mshr
         .enable         (mshr_update_en    ),
         .enable_index   (mshr_update_alloc_idx2),
         .v_out_en       (v_mshr_update_en_2));
+
+    //always_ff@(posedge clk or negedge rst_n)begin
+    //    v_mshr_update_en <= v_mshr_update_en_1 | v_mshr_update_en_2;
+    //end
     assign v_mshr_update_en = v_mshr_update_en_1 | v_mshr_update_en_2;
+    //always_ff@(posedge clk )begin
+    //    v_mshr_entry_pld[mshr_update_alloc_idx1]   <= mshr_update_pld_A;
+    //    v_mshr_entry_pld[mshr_update_alloc_idx2]   <= mshr_update_pld_B;
+    //end
+    always_comb begin
+        for(int i=0;i<MSHR_ENTRY_NUM;i=i+1)begin
+            v_mshr_entry_pld_in[i] = '0;
+            //v_mshr_entry_pld[i].valid = 1'b0;
+        end
+        if(mshr_update_en)begin
+            v_mshr_entry_pld_in[mshr_update_alloc_idx1] = mshr_update_pld_A;
+            v_mshr_entry_pld_in[mshr_update_alloc_idx2] = mshr_update_pld_B;   
+        end
+    end
 
 // entry_done decode
     //rxdata 进入LFDB，linefill请求可以举手参与仲裁
@@ -362,8 +383,11 @@ module vec_cache_mshr
             .clk                    (clk                        ),
             .rst_n                  (rst_n                      ),
             .mshr_update_en         (v_mshr_update_en[i]        ),
-            .mshr_entry_pld         (v_mshr_entry_pld[i]        ),
-            .mshr_entry_vld         (v_mshr_entry_pld_valid[i]  ),
+            .mshr_entry_pld        (v_mshr_entry_pld_in[i]     ),
+            .mshr_out_pld           (v_mshr_entry_pld_out[i]    ),
+            //.mshr_entry_pld_A       (mshr_entry_pld_A           ),
+            //.mshr_entry_pld_B       (mshr_entry_pld_B           ),
+            //.mshr_entry_vld         (v_mshr_entry_pld_valid[i]  ),
 
             .entry_active           (v_entry_active[i]          ),
             .alloc_vld              (v_alloc_vld[i]             ),
@@ -454,14 +478,14 @@ module vec_cache_mshr
 
     
 //读arb----------------------------------------------------------------
-    logic         w_out_dataram_rd_vld;
-    arb_out_req_t w_out_dataram_rd_pld;
-    logic         e_out_dataram_rd_vld;
-    arb_out_req_t e_out_dataram_rd_pld;
-    logic         s_out_dataram_rd_vld;
-    arb_out_req_t s_out_dataram_rd_pld;
-    logic         n_out_dataram_rd_vld;
-    arb_out_req_t n_out_dataram_rd_pld;
+    //logic         w_out_dataram_rd_vld;
+    //arb_out_req_t w_out_dataram_rd_pld;
+    //logic         e_out_dataram_rd_vld;
+    //arb_out_req_t e_out_dataram_rd_pld;
+    //logic         s_out_dataram_rd_vld;
+    //arb_out_req_t s_out_dataram_rd_pld;
+    //logic         n_out_dataram_rd_vld;
+    //arb_out_req_t n_out_dataram_rd_pld;
     logic [4:0]   v_rd_rdy            ;
     logic [4:0]   v_wr_rdy            ;
 
@@ -471,13 +495,13 @@ module vec_cache_mshr
     ) u_w_dataram_rd_arb (
         .v_vld_s(v_w_dataram_rd_vld ),
         .v_rdy_s(v_w_dataram_rd_rdy ),
-        .v_pld_s(v_dataram_rd_pld   ),
+        .v_pld_s(v_w_dataram_rd_pld ),
         .vld_m  (w_dataram_rd_vld   ),
         .rdy_m  (v_rd_rdy[4]         ),
         .pld_m  (w_dataram_rd_pld   ));
 
-        assign w_out_dataram_rd_vld             = w_dataram_rd_vld && w_rd_alloc_vld;
-        assign w_out_dataram_rd_pld.db_entry_id = w_rd_alloc_idx;
+        //assign w_out_dataram_rd_vld             = w_dataram_rd_vld && w_rd_alloc_vld;
+        //assign w_out_dataram_rd_pld.db_entry_id = w_rd_alloc_idx;
     
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
@@ -485,12 +509,12 @@ module vec_cache_mshr
     ) u_e_dataram_rd_arb (
         .v_vld_s(v_e_dataram_rd_vld ),
         .v_rdy_s(v_e_dataram_rd_rdy ),
-        .v_pld_s(v_dataram_rd_pld   ),
+        .v_pld_s(v_e_dataram_rd_pld ),
         .vld_m  (e_dataram_rd_vld   ),
-        .rdy_m  (v_rd_rdy[3]         ),
-        .pld_m  (e_dataram_rd_pld     ));
-        assign e_out_dataram_rd_vld = e_dataram_rd_vld && e_rd_alloc_vld;
-        assign e_out_dataram_rd_pld.db_entry_id = e_rd_alloc_idx;
+        .rdy_m  (v_rd_rdy[3]        ),
+        .pld_m  (e_dataram_rd_pld   ));
+        //assign e_out_dataram_rd_vld = e_dataram_rd_vld && e_rd_alloc_vld;
+        //assign e_out_dataram_rd_pld.db_entry_id = e_rd_alloc_idx;
         
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
@@ -498,12 +522,12 @@ module vec_cache_mshr
     ) u_s_dataram_rd_arb (
         .v_vld_s(v_s_dataram_rd_vld ),
         .v_rdy_s(v_s_dataram_rd_rdy ),
-        .v_pld_s(v_dataram_rd_pld   ),
+        .v_pld_s(v_s_dataram_rd_pld ),
         .vld_m  (s_dataram_rd_vld   ),
         .rdy_m  (v_rd_rdy[2]         ),
         .pld_m  (s_dataram_rd_pld     ));
-        assign s_out_dataram_rd_vld = s_dataram_rd_vld && s_rd_alloc_vld;
-        assign s_out_dataram_rd_pld.db_entry_id = s_rd_alloc_idx;
+        //assign s_out_dataram_rd_vld = s_dataram_rd_vld && s_rd_alloc_vld;
+        //assign s_out_dataram_rd_pld.db_entry_id = s_rd_alloc_idx;
         
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
@@ -511,12 +535,12 @@ module vec_cache_mshr
     ) u_n_dataram_rd_arb (
         .v_vld_s(v_n_dataram_rd_vld ),
         .v_rdy_s(v_n_dataram_rd_rdy ),
-        .v_pld_s(v_dataram_rd_pld   ),
+        .v_pld_s(v_n_dataram_rd_pld ),
         .vld_m  (n_dataram_rd_vld   ),
-        .rdy_m  (v_rd_rdy[1]         ),
+        .rdy_m  (v_rd_rdy[1]        ),
         .pld_m  (n_dataram_rd_pld   ));
-        assign n_out_dataram_rd_vld = n_dataram_rd_vld && n_rd_alloc_vld;
-        assign n_out_dataram_rd_pld.db_entry_id = n_rd_alloc_idx;
+        //assign n_out_dataram_rd_vld = n_dataram_rd_vld && n_rd_alloc_vld;
+        //assign n_out_dataram_rd_pld.db_entry_id = n_rd_alloc_idx;
 
         assign v_data_rd_rdy = v_w_dataram_rd_rdy |v_e_dataram_rd_rdy |v_s_dataram_rd_rdy |v_n_dataram_rd_rdy;
 //--------------------------------------------------------------------
@@ -552,7 +576,7 @@ module vec_cache_mshr
         .v_rdy_s(v_s_dataram_wr_rdy   ),
         .v_pld_s(v_dataram_wr_pld     ),
         .vld_m  (s_dataram_wr_vld     ),
-        .rdy_m  (v_wr_rdy[2]           ),
+        .rdy_m  (v_wr_rdy[2]          ),
         .pld_m  (s_dataram_wr_pld    ));
 
     vrp_arb #(
@@ -688,8 +712,8 @@ module vec_cache_mshr
             south_write_cmd_pld = 'b0 ;
             north_write_cmd_vld = 1'b0;
             north_write_cmd_pld = 'b0 ;
-            evict_req_vld       = 'b0;
-            evict_req_pld       = 'b0;
+            evict_req_vld       = 'b0 ;
+            evict_req_pld       = 'b0 ;
             lf_wrreq_vld        = req_ram_vld_0 | req_ram_vld_1;
             lf_wrreq_pld        = req_ram_vld_0 ? req_ram_pld_0 : req_ram_pld_1;  
         end

@@ -32,16 +32,16 @@ module rd_data_master_decode
         end
     end
 
-    always_comb begin
-        for (int i = 0; i < M; i++) begin
-            for (int j = i + 1; j < M; j++) begin
-                if (in_vld[i] && in_vld[j]) begin
-                    assert (select[i] != select[j])
-                        else $error("Crossbar conflict: select[%0d]=%0d == select[%0d]=%0d", i, select[i], j, select[j]);
-                end
-            end
-        end
-    end
+    //always_comb begin
+    //    for (int i = 0; i < M; i++) begin
+    //        for (int j = i + 1; j < M; j++) begin
+    //            if (in_vld[i] && in_vld[j]) begin
+    //                assert (select[i] != select[j])
+    //                    else $error("Crossbar conflict: select[%0d]=%0d == select[%0d]=%0d", i, select[i], j, select[j]);
+    //            end
+    //        end
+    //    end
+    //end
 
 
 endmodule

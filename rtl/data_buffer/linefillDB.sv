@@ -95,16 +95,18 @@ module linefillDB
             end
             else if (sending) begin
                 //if (req_cnt == 2'd2) sending <= 1'b0; // 3发完之后下拍停止
-                sending                   <= (req_cnt==2'd2) ? 1'b0 : 1'b1;
+                sending                   <= (req_cnt==2'd3) ? 1'b0 : 1'b1;
                 req_cnt                   <= req_cnt + 1;
                 read_lfdb_vld             <= 1'b1;
                 read_lfdb_pld.req_cmd_pld <= delay_pld_reg[ARB_TO_LFDB_DELAY-1 + req_cnt + 1];  // 后续数据
                 read_lfdb_pld.req_num     <= req_cnt + 1;
-                read_lfdb_pld.last        <= (req_cnt == 2'd2);  // 下一拍是最后一个
+                read_lfdb_pld.last        <= (req_cnt == 2'd3);  // 下一拍是最后一个
                 
             end
             else begin
                 read_lfdb_vld <= 1'b0;
+                req_cnt     <= 2'd0;
+
             end
         end
     end
@@ -169,7 +171,7 @@ module linefillDB
 //一次pre_alloc 4个，并且读出4个后才release lfdb entry
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n)begin
-            v_lfdb_entry_vld = 'b1;
+            v_lfdb_entry_vld = 'hff;
         end
         else if(db_mem_en && db_wr_en)begin
             v_lfdb_entry_vld[db_addr] = 1'b0;

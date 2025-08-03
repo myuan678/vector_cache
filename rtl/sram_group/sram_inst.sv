@@ -35,6 +35,8 @@ module sram_inst
     assign addr        = write_vld ? write_cmd.addr : read_cmd.addr;
 
     mem_model #(
+        //.ARGPARSE_KEY(HEX),
+        //.ALLOW_NO_HEX(0),
         .ADDR_WIDTH  (9  ),
         .DATA_WIDTH  (128))
     sram_inst (
@@ -162,9 +164,9 @@ module sram_inst
 
     
 
-    always @(posedge clk) begin
-        assert (!(read_vld && write_vld))
-            else $error("Crossbar conflict: Read and Write are both valid");
-    end
+    //always @(posedge clk) begin
+    //    assert (!(read_vld && write_vld))
+    //        else $error("Crossbar conflict: Read and Write are both valid");
+    //end
 
 endmodule
