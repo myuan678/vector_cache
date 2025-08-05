@@ -6,7 +6,11 @@ package vector_cache_pkg;
     `define SOUTH  2'b10
     `define NORTH  2'b11
 
-//opcode 0write;1read;2evict;3linefill
+    //input cmd opcode
+    `define CMD_WRITE  2'b01
+    `define CMD_READ   2'b10
+
+    //opcode 0write;1read;2evict;3linefill
     `define WRITE     2'b00
     `define READ      2'b01
     `define EVICT     2'b10
@@ -31,9 +35,9 @@ package vector_cache_pkg;
     parameter integer unsigned WAY_NUM         = 4  ;
     parameter integer unsigned SET_NUM         = CACHE_SIZE/(CACHE_LINE_SIZE*WAY_NUM); //每个set的大小为512Byte，4way 
 
-    parameter integer unsigned INDEX_WIDTH     = $clog2(SET_NUM) ;//12bit
+    parameter integer unsigned INDEX_WIDTH     = $clog2(SET_NUM/4) ;//10bit，分4组
     parameter integer unsigned OFFSET_WIDTH    = $clog2(CACHE_LINE_SIZE)  ;//9bit
-    parameter integer unsigned TAG_WIDTH       =  REQ_ADDR_WIDTH-INDEX_WIDTH-OFFSET_WIDTH;//43bit
+    parameter integer unsigned TAG_WIDTH       =  REQ_ADDR_WIDTH-INDEX_WIDTH-OFFSET_WIDTH;//43bit，
     parameter integer unsigned BUS_WIDTH       = 128;
     parameter integer unsigned DS_N            = CACHE_LINE_SIZE / BUS_WIDTH;  
     parameter integer unsigned TAG_RAM_WIDTH   = WAY_NUM*(TAG_WIDTH+2);
@@ -109,7 +113,7 @@ package vector_cache_pkg;
     } txnid_t;
 
     typedef struct packed {
-        addr_t                     cmd_addr    ;
+        addr_t                           cmd_addr    ;
         txnid_t                          cmd_txnid   ;
         logic [SIDEBAND_WIDTH-1      :0] cmd_sideband;
     } input_read_cmd_pld_t;
@@ -128,7 +132,7 @@ package vector_cache_pkg;
         txnid_t                          cmd_txnid   ;
         logic [SIDEBAND_WIDTH-1      :0] cmd_sideband;
         logic [127                   :0] strb        ;
-        logic [OP_WIDTH-1            :0] cmd_opcode  ;  //0write; 1read//0write; 1read; 2linefill; 3evict
+        logic [OP_WIDTH-1            :0] cmd_opcode  ;  //1是write，2是read      // //0write; 1read//0write; 1read; 2linefill; 3evict
         logic [DB_ENTRY_IDX_WIDTH-1  :0] db_entry_id ;
         logic [MSHR_ENTRY_IDX_WIDTH-1:0] rob_entry_id; 
     } input_req_pld_t;
@@ -148,7 +152,7 @@ package vector_cache_pkg;
     typedef struct packed {
         logic [DB_ENTRY_IDX_WIDTH-1:0] db_entry_id ;      
         logic [1023 :0]                data        ;
-        logic                          cmd         ;
+        input_req_pld_t                cmd         ;
     }  wdb_pld_t;
     
 
@@ -159,6 +163,7 @@ package vector_cache_pkg;
         logic [INDEX_WIDTH-1            :0] index           ;
         logic [OFFSET_WIDTH-1           :0] offset          ;
         logic [$clog2(WAY_NUM)-1        :0] way             ;
+        logic [1                        :0] hash_id         ;//地址最高2bit
         logic [4                        :0] dest_ram_id     ; //最高2bit为hash id，接下来的3bit为dest ram id，5bit确定是哪一个block的哪一个hash的哪一个ram
         logic [$clog2(MSHR_ENTRY_NUM)-1 :0] rob_entry_id    ;
         logic [$clog2(RW_DB_ENTRY_NUM)-1:0] db_entry_id     ;
@@ -183,6 +188,7 @@ package vector_cache_pkg;
     typedef struct packed{
         logic                               valid         ;
         txnid_t                             txnid         ;
+        logic [1:0]                         hash_id       ;//地址最高2bit
         //logic [OP_WIDTH-1       :0]         opcode        ;
         logic [INDEX_WIDTH-1    :0]         index         ;
         logic [OFFSET_WIDTH-1   :0]         offset        ;

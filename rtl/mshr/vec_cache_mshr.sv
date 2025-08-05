@@ -1,43 +1,52 @@
 module vec_cache_mshr 
     import vector_cache_pkg::*;
     (
-    input  logic                                        clk                       ,
-    input  logic                                        rst_n                     ,    
+    input  logic                                        clk                     ,
+    input  logic                                        rst_n                   ,    
 
-    input  logic                                        mshr_update_en            ,
-    input  mshr_entry_t                                 mshr_update_pld_A         ,
-    input  mshr_entry_t                                 mshr_update_pld_B         ,
+    input  logic                                        mshr_update_en          ,
+    input  mshr_entry_t                                 mshr_update_pld_A       ,
+    input  mshr_entry_t                                 mshr_update_pld_B       ,
 
-    output logic                                        alloc_vld                 ,//to tag pipe
-    output logic [MSHR_ENTRY_IDX_WIDTH-1:0]             alloc_index_1             ,
-    output logic [MSHR_ENTRY_IDX_WIDTH-1:0]             alloc_index_2             ,
-    input  logic                                        alloc_rdy                 ,
+    output logic                                        alloc_vld               ,//to tag pipe
+    output logic [MSHR_ENTRY_IDX_WIDTH-1:0]             alloc_index_1           ,
+    output logic [MSHR_ENTRY_IDX_WIDTH-1:0]             alloc_index_2           ,
+    input  logic                                        alloc_rdy               ,
 
-    output logic                                        west_read_cmd_vld  ,
-    output arb_out_req_t                                west_read_cmd_pld  ,
-    output logic                                        east_read_cmd_vld  ,
-    output arb_out_req_t                                east_read_cmd_pld  ,
-    output logic                                        south_read_cmd_vld ,
-    output arb_out_req_t                                south_read_cmd_pld ,
-    output logic                                        north_read_cmd_vld ,
-    output arb_out_req_t                                north_read_cmd_pld ,
-    output logic                                        west_write_cmd_vld ,
-    output arb_out_req_t                                west_write_cmd_pld ,
-    output logic                                        east_write_cmd_vld ,
-    output arb_out_req_t                                east_write_cmd_pld ,
-    output logic                                        south_write_cmd_vld,
-    output arb_out_req_t                                south_write_cmd_pld,
-    output logic                                        north_write_cmd_vld,
-    output arb_out_req_t                                north_write_cmd_pld,
+    output logic                                        west_read_cmd_vld       ,
+    output arb_out_req_t                                west_read_cmd_pld       ,
+    output logic                                        east_read_cmd_vld       ,
+    output arb_out_req_t                                east_read_cmd_pld       ,
+    output logic                                        south_read_cmd_vld      ,
+    output arb_out_req_t                                south_read_cmd_pld      ,
+    output logic                                        north_read_cmd_vld      ,
+    output arb_out_req_t                                north_read_cmd_pld      ,
+    input  logic                                        west_read_cmd_rdy       ,
+    input  logic                                        east_read_cmd_rdy       ,
+    input  logic                                        south_read_cmd_rdy      ,
+    input  logic                                        north_read_cmd_rdy      ,
 
-    output arb_out_req_t                                evict_req_pld       ,
-    output logic                                        evict_req_vld       ,
-    input  logic                                        evict_req_rdy       ,
-    output arb_out_req_t                                lf_wrreq_pld        ,//linefill write request
-    output logic                                        lf_wrreq_vld        ,//linefill write request
-    input  logic                                        lf_wrreq_rdy        ,
+    output logic                                        west_write_cmd_vld      ,
+    output arb_out_req_t                                west_write_cmd_pld      ,
+    output logic                                        east_write_cmd_vld      ,
+    output arb_out_req_t                                east_write_cmd_pld      ,
+    output logic                                        south_write_cmd_vld     ,
+    output arb_out_req_t                                south_write_cmd_pld     ,
+    output logic                                        north_write_cmd_vld     ,
+    output arb_out_req_t                                north_write_cmd_pld     ,
+    input  logic                                        west_write_cmd_rdy      ,
+    input  logic                                        east_write_cmd_rdy      ,
+    input  logic                                        south_write_cmd_rdy     ,
+    input  logic                                        north_write_cmd_rdy     ,
 
-    input  logic                                        dataram_rdy               ,
+    output arb_out_req_t                                evict_req_pld           ,
+    output logic                                        evict_req_vld           ,
+    input  logic                                        evict_req_rdy           ,
+    output arb_out_req_t                                lf_wrreq_pld            ,//linefill write request
+    output logic                                        lf_wrreq_vld            ,//linefill write request
+    input  logic                                        lf_wrreq_rdy            ,
+
+    input  logic                                        dataram_rdy             ,
 
     input  logic                                        downstream_txreq_rdy      ,// to ds
     output logic                                        downstream_txreq_vld      ,
@@ -85,16 +94,15 @@ module vec_cache_mshr
     input  logic [$clog2(RW_DB_ENTRY_NUM)-1:0]          s_rd_alloc_idx      ,
     input  logic                                        n_rd_alloc_vld      ,
     input  logic [$clog2(RW_DB_ENTRY_NUM)-1:0]          n_rd_alloc_idx      ,
+    output logic                                        w_rd_alloc_rdy      ,//TODO:
+    output logic                                        e_rd_alloc_rdy      ,
+    output logic                                        s_rd_alloc_rdy      ,
+    output logic                                        n_rd_alloc_rdy      ,
 
     input  logic                                        linefill_alloc_vld  ,
     input  logic [$clog2(LFDB_ENTRY_NUM/4)-1:0]         linefill_alloc_idx  ,
     input  logic                                        evict_alloc_vld     ,
     input  logic [$clog2(EVDB_ENTRY_NUM/4)-1:0]         evict_alloc_idx     ,
-
-    output logic                                        w_rd_alloc_rdy      ,//TODO:
-    output logic                                        e_rd_alloc_rdy      ,
-    output logic                                        s_rd_alloc_rdy      ,
-    output logic                                        n_rd_alloc_rdy      ,
     output logic                                        linefill_alloc_rdy  ,
     output logic                                        evit_alloc_rdy
 
@@ -179,20 +187,29 @@ module vec_cache_mshr
     logic [MSHR_ENTRY_IDX_WIDTH-1   :0]                 mshr_update_alloc_idx1;
     logic [MSHR_ENTRY_IDX_WIDTH-1   :0]                 mshr_update_alloc_idx2;
 
-
-    arb_out_req_t   linefill_req_pld;
-    arb_out_req_t   w_dataram_wr_pld;
-    arb_out_req_t   e_dataram_wr_pld;
-    arb_out_req_t   s_dataram_wr_pld;
-    arb_out_req_t   n_dataram_wr_pld;
-    arb_out_req_t   evict_rd_pld;
-    arb_out_req_t   w_dataram_rd_pld;
-    arb_out_req_t   e_dataram_rd_pld;
-    arb_out_req_t   s_dataram_rd_pld;
-    arb_out_req_t   n_dataram_rd_pld;
+    logic [4    :0]                                     v_rd_rdy                                ;
+    logic [4    :0]                                     v_wr_rdy                                ;
+    arb_out_req_t                                       linefill_req_pld                        ;
+    arb_out_req_t                                       w_dataram_wr_pld                        ;
+    arb_out_req_t                                       e_dataram_wr_pld                        ;
+    arb_out_req_t                                       s_dataram_wr_pld                        ;
+    arb_out_req_t                                       n_dataram_wr_pld                        ;
+    arb_out_req_t                                       evict_rd_pld                            ;
+    arb_out_req_t                                       w_dataram_rd_pld                        ;
+    arb_out_req_t                                       e_dataram_rd_pld                        ;
+    arb_out_req_t                                       s_dataram_rd_pld                        ;
+    arb_out_req_t                                       n_dataram_rd_pld                        ;
 
     assign mshr_update_alloc_idx1 = mshr_update_pld_A.alloc_idx;
     assign mshr_update_alloc_idx2 = mshr_update_pld_B.alloc_idx;
+    assign w_rd_alloc_rdy         = west_read_cmd_vld && west_read_cmd_rdy;
+    assign e_rd_alloc_rdy         = east_read_cmd_vld && east_read_cmd_rdy;
+    assign s_rd_alloc_rdy         = south_read_cmd_vld && south_read_cmd_rdy;
+    assign n_rd_alloc_rdy         = north_read_cmd_vld && north_read_cmd_rdy;
+    assign linefill_alloc_rdy     = lf_wrreq_vld && lf_wrreq_rdy;
+    assign evit_alloc_rdy         = evict_req_vld && evict_req_rdy;
+
+    
 
     //always_ff@(posedge clk )begin
     //    v_mshr_entry_pld[mshr_update_alloc_idx1]   <= mshr_update_pld_A;
@@ -383,7 +400,7 @@ module vec_cache_mshr
             .clk                    (clk                        ),
             .rst_n                  (rst_n                      ),
             .mshr_update_en         (v_mshr_update_en[i]        ),
-            .mshr_entry_pld        (v_mshr_entry_pld_in[i]     ),
+            .mshr_entry_pld        (v_mshr_entry_pld_in[i]      ),
             .mshr_out_pld           (v_mshr_entry_pld_out[i]    ),
             //.mshr_entry_pld_A       (mshr_entry_pld_A           ),
             //.mshr_entry_pld_B       (mshr_entry_pld_B           ),
@@ -478,16 +495,6 @@ module vec_cache_mshr
 
     
 //读arb----------------------------------------------------------------
-    //logic         w_out_dataram_rd_vld;
-    //arb_out_req_t w_out_dataram_rd_pld;
-    //logic         e_out_dataram_rd_vld;
-    //arb_out_req_t e_out_dataram_rd_pld;
-    //logic         s_out_dataram_rd_vld;
-    //arb_out_req_t s_out_dataram_rd_pld;
-    //logic         n_out_dataram_rd_vld;
-    //arb_out_req_t n_out_dataram_rd_pld;
-    logic [4:0]   v_rd_rdy            ;
-    logic [4:0]   v_wr_rdy            ;
 
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
@@ -499,9 +506,6 @@ module vec_cache_mshr
         .vld_m  (w_dataram_rd_vld   ),
         .rdy_m  (v_rd_rdy[4]         ),
         .pld_m  (w_dataram_rd_pld   ));
-
-        //assign w_out_dataram_rd_vld             = w_dataram_rd_vld && w_rd_alloc_vld;
-        //assign w_out_dataram_rd_pld.db_entry_id = w_rd_alloc_idx;
     
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
@@ -513,8 +517,6 @@ module vec_cache_mshr
         .vld_m  (e_dataram_rd_vld   ),
         .rdy_m  (v_rd_rdy[3]        ),
         .pld_m  (e_dataram_rd_pld   ));
-        //assign e_out_dataram_rd_vld = e_dataram_rd_vld && e_rd_alloc_vld;
-        //assign e_out_dataram_rd_pld.db_entry_id = e_rd_alloc_idx;
         
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
@@ -526,8 +528,6 @@ module vec_cache_mshr
         .vld_m  (s_dataram_rd_vld   ),
         .rdy_m  (v_rd_rdy[2]         ),
         .pld_m  (s_dataram_rd_pld     ));
-        //assign s_out_dataram_rd_vld = s_dataram_rd_vld && s_rd_alloc_vld;
-        //assign s_out_dataram_rd_pld.db_entry_id = s_rd_alloc_idx;
         
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
@@ -624,13 +624,16 @@ module vec_cache_mshr
     arb_out_req_t                                req_ram_pld_0;
     logic                                        req_ram_vld_1;
     arb_out_req_t                                req_ram_pld_1;
-    
+    logic                                        grant_ram_rdy;
+
+    //assign grant_ram_rdy = dataram_rdy && lf_wrreq_rdy;
+    assign grant_ram_rdy = dataram_rdy && lf_wrreq_rdy && west_write_cmd_rdy && east_write_cmd_rdy && south_write_cmd_rdy && north_write_cmd_rdy; //sram 输入的rdy信号,还需要& WDB输入的rdy
         ten_to_two_arb #(
             .RD_REQ_NUM (5),
             .WR_REQ_NUM (5),
             .CHANNEL_SHIFT_REG_WIDTH (20),
-            .RAM_SHIFT_REG_WIDTH (20),
-            .REQ_NUM (10)
+            .RAM_SHIFT_REG_WIDTH (20)
+            //.REQ_NUM (10)
         ) u_10to2_arb (
             .clk            (clk                      ),
             .rst_n          (rst_n                    ),
@@ -644,7 +647,7 @@ module vec_cache_mshr
             .grant_req_pld_0(req_ram_pld_0            ),
             .grant_req_vld_1(req_ram_vld_1            ),
             .grant_req_pld_1(req_ram_pld_1            ),
-            .grant_req_rdy  ({dataram_rdy,dataram_rdy})    //sram 输入的rdy信号
+            .grant_req_rdy  ({grant_ram_rdy,grant_ram_rdy})    //sram 输入的rdy信号
         );
 
 

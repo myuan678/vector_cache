@@ -99,7 +99,7 @@ import vector_cache_pkg::*;
 
 
     generate
-        for(genvar i=0;i<8;i=i+1)begin
+        for(genvar i=0;i<8;i=i+1)begin:BANK8_CMD_IN_GEN
             assign fanout_west_read_cmd_pld_in  [i] = west_read_cmd_pld_in  ;
             assign fanout_west_read_cmd_vld_in  [i] = west_read_cmd_vld_in  ;
             assign fanout_east_read_cmd_pld_in  [i] = east_read_cmd_pld_in  ;
@@ -116,7 +116,7 @@ import vector_cache_pkg::*;
     endgenerate
 
     generate
-        for(genvar i=0;i<8;i=i+1)begin
+        for(genvar i=0;i<8;i=i+1)begin:BANK8_DATA_IN_GEN
             for(genvar j=0;j<8;j=j+1)begin
                 assign fanout_west_data_in_vld[i][j]      = west_data_in_vld[j]                 ;
                 assign fanout_west_data_in[i][j].data     = west_data_in[i].data[j*32 +: 32]    ;
@@ -140,30 +140,30 @@ import vector_cache_pkg::*;
                 .BLOCK_ID(BLOCK_ID),
                 .ROW_ID  (ROW_ID)
             )u_sram_bank(
-                .clk                    (clk                      ),
-                .clk_div                (clk_div                  ),
-                .rst_n                  (rst_n                    ),
-                .west_read_cmd_pld_in   (fanout_west_read_cmd_pld_in[i]  ),
-                .west_read_cmd_vld_in   (fanout_west_read_cmd_vld_in[i]  ),
-                .east_read_cmd_pld_in   (fanout_east_read_cmd_pld_in[i]  ),
-                .east_read_cmd_vld_in   (fanout_east_read_cmd_vld_in[i]  ),
-                .west_write_cmd_pld_in  (fanout_west_write_cmd_pld_in[i] ),
-                .west_write_cmd_vld_in  (fanout_west_write_cmd_vld_in[i] ),
-                .east_write_cmd_pld_in  (fanout_east_write_cmd_pld_in[i] ),
-                .east_write_cmd_vld_in  (fanout_east_write_cmd_vld_in[i] ),
-                .south_write_cmd_pld_in (fanout_south_write_cmd_pld_in[i]),
-                .south_write_cmd_vld_in (fanout_south_write_cmd_vld_in[i]),
-                .north_write_cmd_pld_in (fanout_north_write_cmd_pld_in[i]),
-                .north_write_cmd_vld_in (fanout_north_write_cmd_vld_in[i]),
+                .clk                    (clk                                ),
+                .clk_div                (clk_div                            ),
+                .rst_n                  (rst_n                              ),
+                .west_read_cmd_pld_in   (fanout_west_read_cmd_pld_in[i]     ),
+                .west_read_cmd_vld_in   (fanout_west_read_cmd_vld_in[i]     ),
+                .east_read_cmd_pld_in   (fanout_east_read_cmd_pld_in[i]     ),
+                .east_read_cmd_vld_in   (fanout_east_read_cmd_vld_in[i]     ),
+                .west_write_cmd_pld_in  (fanout_west_write_cmd_pld_in[i]    ),
+                .west_write_cmd_vld_in  (fanout_west_write_cmd_vld_in[i]    ),
+                .east_write_cmd_pld_in  (fanout_east_write_cmd_pld_in[i]    ),
+                .east_write_cmd_vld_in  (fanout_east_write_cmd_vld_in[i]    ),
+                .south_write_cmd_pld_in (fanout_south_write_cmd_pld_in[i]   ),
+                .south_write_cmd_vld_in (fanout_south_write_cmd_vld_in[i]   ),
+                .north_write_cmd_pld_in (fanout_north_write_cmd_pld_in[i]   ),
+                .north_write_cmd_vld_in (fanout_north_write_cmd_vld_in[i]   ),
 
-                .west_read_cmd_pld_out  (fanout_west_read_cmd_pld_out[i] ),
-                .west_read_cmd_vld_out  (fanout_west_read_cmd_vld_out[i] ),
-                .east_read_cmd_pld_out  (fanout_east_read_cmd_pld_out[i] ),
-                .east_read_cmd_vld_out  (fanout_east_read_cmd_vld_out[i] ),
-                .west_write_cmd_pld_out (fanout_west_write_cmd_pld_out[i]),
-                .west_write_cmd_vld_out (fanout_west_write_cmd_vld_out[i]),
-                .east_write_cmd_pld_out (fanout_east_write_cmd_pld_out[i]),
-                .east_write_cmd_vld_out (fanout_east_write_cmd_vld_out[i]), 
+                .west_read_cmd_pld_out  (fanout_west_read_cmd_pld_out[i]  ),
+                .west_read_cmd_vld_out  (fanout_west_read_cmd_vld_out[i]  ),
+                .east_read_cmd_pld_out  (fanout_east_read_cmd_pld_out[i]  ),
+                .east_read_cmd_vld_out  (fanout_east_read_cmd_vld_out[i]  ),
+                .west_write_cmd_pld_out (fanout_west_write_cmd_pld_out[i] ),
+                .west_write_cmd_vld_out (fanout_west_write_cmd_vld_out[i] ),
+                .east_write_cmd_pld_out (fanout_east_write_cmd_pld_out[i] ),
+                .east_write_cmd_vld_out (fanout_east_write_cmd_vld_out[i] ), 
                 .south_write_cmd_pld_out(fanout_south_write_cmd_pld_out[i]),
                 .south_write_cmd_vld_out(fanout_south_write_cmd_vld_out[i]),
                 .north_write_cmd_pld_out(fanout_north_write_cmd_pld_out[i]),
@@ -190,8 +190,8 @@ import vector_cache_pkg::*;
     endgenerate
 
     generate
-        for(genvar i=0;i<8;i=i+1)begin
-            assign west_data_out_vld[i] =  fanout_west_data_out_vld[0];
+        for(genvar i=0;i<8;i=i+1)begin:BANK_GROUP_DATA_OUT_GEN
+            assign west_data_out_vld[i] =  fanout_west_data_out_vld[0][i];
             assign west_data_out[i].cmd_pld = fanout_west_data_out[i][0].cmd_pld;
             assign west_data_out[i].data ={fanout_west_data_out[i][7].data,
                                            fanout_west_data_out[i][6].data,
@@ -201,7 +201,7 @@ import vector_cache_pkg::*;
                                            fanout_west_data_out[i][2].data,
                                            fanout_west_data_out[i][1].data,
                                            fanout_west_data_out[i][0].data};
-            assign east_data_out_vld[i] =  fanout_east_data_out_vld[0];
+            assign east_data_out_vld[i] =  fanout_east_data_out_vld[0][i];
             assign east_data_out[i].cmd_pld =fanout_east_data_out[i][0].cmd_pld;
             assign east_data_out[i].data ={fanout_east_data_out[i][7].data,
                                            fanout_east_data_out[i][6].data,
@@ -211,7 +211,7 @@ import vector_cache_pkg::*;
                                            fanout_east_data_out[i][2].data,
                                            fanout_east_data_out[i][1].data,
                                            fanout_east_data_out[i][0].data};
-            assign south_data_out_vld[i] = fanout_south_data_out_vld[0];
+            assign south_data_out_vld[i] = fanout_south_data_out_vld[0][i];
             assign south_data_out[i].cmd_pld = fanout_south_data_out[i][0].cmd_pld;
             assign south_data_out[i].data={fanout_south_data_out[i][7].data,
                                            fanout_south_data_out[i][6].data,
@@ -221,7 +221,7 @@ import vector_cache_pkg::*;
                                            fanout_south_data_out[i][2].data,
                                            fanout_south_data_out[i][1].data,
                                            fanout_south_data_out[i][0].data};
-            assign north_data_out_vld[i] =fanout_north_data_out_vld[0];
+            assign north_data_out_vld[i] =fanout_north_data_out_vld[0][i];
             assign north_data_out[i].cmd_pld =fanout_north_data_out[i][0].cmd_pld;
             assign north_data_out[i].data={fanout_north_data_out[i][7].data,
                                            fanout_north_data_out[i][6].data,
@@ -237,7 +237,7 @@ import vector_cache_pkg::*;
 
     //dont need output
     generate
-        for(genvar i=0;i<8;i=i+1)begin
+        for(genvar i=0;i<8;i=i+1)begin:BAN_GROUP_CMD_OUT_GEN
             assign west_read_cmd_pld_out  [i] = fanout_west_read_cmd_pld_out[0][i]  ;
             assign west_read_cmd_vld_out  [i] = fanout_west_read_cmd_vld_out[0][i]  ;
             assign east_read_cmd_pld_out  [i] = fanout_east_read_cmd_pld_out[0][i]  ;

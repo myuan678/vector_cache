@@ -28,6 +28,11 @@ module vec_cache_ctrl
     output arb_out_req_t                                north_read_cmd_pld                     ,
     input  logic                                        north_read_cmd_rdy                     ,
 
+
+    input  logic                                        west_write_cmd_rdy                     ,
+    input  logic                                        east_write_cmd_rdy                     ,
+    input  logic                                        south_write_cmd_rdy                    ,
+    input  logic                                        north_write_cmd_rdy                    ,
     output logic                                        west_write_cmd_vld                     ,
     output arb_out_req_t                                west_write_cmd_pld                     ,
     output logic                                        east_write_cmd_vld                     ,
@@ -174,6 +179,11 @@ module vec_cache_ctrl
         .alloc_index_1               (mshr_alloc_index_1       ),
         .alloc_index_2               (mshr_alloc_index_2       ),
         .alloc_rdy                   (mshr_alloc_rdy           ),
+
+        .west_read_cmd_rdy           (west_read_cmd_rdy        ),
+        .east_read_cmd_rdy           (east_read_cmd_rdy        ),
+        .south_read_cmd_rdy          (south_read_cmd_rdy       ),
+        .north_read_cmd_rdy          (north_read_cmd_rdy       ),
         .west_read_cmd_vld           (west_read_cmd_vld        ),
         .west_read_cmd_pld           (west_read_cmd_pld        ),
         .east_read_cmd_vld           (east_read_cmd_vld        ),
@@ -182,6 +192,11 @@ module vec_cache_ctrl
         .south_read_cmd_pld          (south_read_cmd_pld       ),
         .north_read_cmd_vld          (north_read_cmd_vld       ),
         .north_read_cmd_pld          (north_read_cmd_pld       ),
+
+        .west_write_cmd_rdy          (west_write_cmd_rdy       ),
+        .east_write_cmd_rdy          (east_write_cmd_rdy       ),
+        .south_write_cmd_rdy         (south_write_cmd_rdy      ),
+        .north_write_cmd_rdy         (north_write_cmd_rdy      ),
         .west_write_cmd_vld          (west_write_cmd_vld       ),
         .west_write_cmd_pld          (west_write_cmd_pld       ),
         .east_write_cmd_vld          (east_write_cmd_vld       ),

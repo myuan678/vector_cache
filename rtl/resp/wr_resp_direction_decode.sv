@@ -16,7 +16,7 @@ import vector_cache_pkg::*;
         for(genvar i=0;i<WIDTH;i=i+1)begin:direction_vld_gen
             always_comb begin
                 v_wresp_vld[i] = 'b0;
-                if(req_pld.cmd_opcode==1'b0)begin//写请求才需要回wresp
+                if(req_pld.cmd_opcode == `CMD_WRITE)begin//写请求才需要回wresp,write 的opcode是1，
                     if(req_vld && req_pld.cmd_txnid.direction_id==i)begin //txnid的低两位作为方向id,高位作为master id
                         v_wresp_vld[i] = 1'b1;
                     end

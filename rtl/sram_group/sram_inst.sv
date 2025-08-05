@@ -29,9 +29,9 @@ module sram_inst
     assign en          = write_vld | read_vld       ;
     assign wr_en       = write_vld                  ;
     assign wr_byte_sel = write_cmd.byte_sel         ;
-    assign wr_mode     = write_cmd.mode             ;//mode=0,读写连续的32bit; mode=1 每32bit中读一个byte
+    assign wr_mode     = write_cmd.mode             ;//mode=0,读写连续的32bit; mode=1 每32bit中读写一个byte
     assign rd_byte_sel = read_cmd.byte_sel          ;
-    assign rd_mode     = read_cmd.mode              ;//mode=0,读写连续的32bit; mode=1 每32bit中读一个byte
+    assign rd_mode     = read_cmd.mode              ;//mode=0,读写连续的32bit; mode=1 每32bit中读写一个byte
     assign addr        = write_vld ? write_cmd.addr : read_cmd.addr;
 
     mem_model #(
@@ -82,8 +82,8 @@ module sram_inst
                     byte_wr_en[4]       = 1'b1;
                     byte_wr_en[8]       = 1'b1;
                     byte_wr_en[12]      = 1'b1;
-                    ram_wr_data[7:0]    = wr_data[7:0];
-                    ram_wr_data[39:32]  = wr_data[15:8];
+                    ram_wr_data[7:0]    = wr_data[7:0]  ;
+                    ram_wr_data[39:32]  = wr_data[15:8] ;
                     ram_wr_data[71:64]  = wr_data[23:16];
                     ram_wr_data[103:96] = wr_data[31:24];
                 end

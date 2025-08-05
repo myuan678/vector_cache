@@ -28,6 +28,7 @@ import vector_cache_pkg::*;
     logic [W_REQ_NUM-1:0]                     pre_wr_cmd_rdy                     ;
 
 //select gen
+    
     generate
         for(genvar i=0;i<W_REQ_NUM;i=i+1)begin
             assign in_select[i] = wr_cmd_pld[i].cmd_addr[63:62];
@@ -41,7 +42,7 @@ import vector_cache_pkg::*;
             assign in_wr_pld[i].cmd_pld.cmd_sideband  = wr_cmd_pld[i].cmd_sideband  ;
             assign in_wr_pld[i].data                  = wr_cmd_pld[i].data          ;
             assign in_wr_pld[i].cmd_pld.strb          = wr_cmd_pld[i].strb          ;
-            assign in_wr_pld[i].cmd_pld.cmd_opcode    = 2'd1                        ; //1 is write
+            assign in_wr_pld[i].cmd_pld.cmd_opcode    = `CMD_WRITE                  ; //1 is write
         end
     endgenerate
 
@@ -68,8 +69,14 @@ import vector_cache_pkg::*;
 
     generate
         for(genvar i=0;i<W_REQ_NUM;i=i+1)begin
-            //assign wr_cmd_rdy[i] = pre_wr_cmd_rdy[i] && sel_wr_vld[i];   //TODO:
-            assign wr_cmd_rdy[i] = {W_REQ_NUM{pre_wr_cmd_rdy[i]}} && wr_cmd_vld[i];   //TODO:
+            //assign wr_cmd_rdy[i] = pre_wr_cmd_rdy[i] && sel_wr_vld[i]; 
+            assign wr_cmd_rdy[i] = {W_REQ_NUM{pre_wr_cmd_rdy[i]}} && wr_cmd_vld[i]; 
+        end
+    endgenerate
+
+    generate
+        for(genvar i=0;i<4;i=i+1)begin
+            assign alloc_rdy[i]     = sel_wr_vld[i]  && sel_wr_rdy[i]  ;
         end
     endgenerate
 
@@ -84,6 +91,7 @@ import vector_cache_pkg::*;
             assign sel_wr_pld[i].strb         = sel_full_wr_pld[i].cmd_pld.strb;
             assign sel_wr_pld[i].cmd_opcode   = sel_full_wr_pld[i].cmd_pld.cmd_opcode;
             assign sel_wr_pld[i].db_entry_id  = alloc_idx[i];
+            assign sel_wr_pld[i].rob_entry_id = 'b0;//tmp,在8to2arb赋值
 
             assign sel_wr_data_pld[i].data        = sel_full_wr_pld[i].data;
             assign sel_wr_data_pld[i].db_entry_id = alloc_idx[i]; 

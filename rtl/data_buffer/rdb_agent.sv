@@ -22,12 +22,14 @@ module rdb_agent
 );
 
     logic                       read_rdb_vld        ; //
-    arb_out_req_t               read_rdb_pld        ; //rdb entry id 作为地址，并带着其他的id，txnid/sideband
+    arb_out_req_t               read_rdb_pld        ; //rdb entry id 作为地址
     logic                       read_rdb_rdy        ;  //应该是arb发出一个读请求，可以确定N拍之后数据进入到RDB，所以把rd_req delayN拍后作为read_rdb_vld
     logic                       ram_write_rdb_vld   ;//write RDB
     arb_out_req_t               ram_write_rdb_pld   ;
     logic                       ram_write_rdb_rdy   ;
-    logic [RW_DB_ENTRY_NUM-1:0] v_rdb_entry_vld     ;
+    logic [RW_DB_ENTRY_NUM-1:0] v_rdb_entry_idle    ;
+    logic [RW_DB_ENTRY_NUM-1:0] v_rdb_entry_active  ;
+    logic [RW_DB_ENTRY_NUM-1:0] v_rdb_rdy           ;
 
 //-----------------DELAY----------------------------------------------------------------
     logic [TO_US_DONE_DELAY-1:0] shift_reg   ;
@@ -83,19 +85,35 @@ module rdb_agent
 
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n)begin
-            v_rdb_entry_vld = 'hff;
+            for(int i=0;i<RW_DB_ENTRY_NUM;i=i+1)begin
+                v_rdb_entry_idle[i]  <= 1'b1;
+            end
+        end                                    
+        else begin
+            for(int i=0;i<RW_DB_ENTRY_NUM;i=i+1)begin
+                if(v_rdb_entry_idle[i] && v_rdb_rdy[i])begin
+                    v_rdb_entry_idle[i] <= 1'b0;
+                end
+            end    
+            if(read_rdb_vld && read_rdb_rdy && v_rdb_entry_active[read_rdb_pld.db_entry_id] )begin
+                v_rdb_entry_idle[read_rdb_pld.db_entry_id]<= 1'b1;
+            end
+        end
+    end
+    always_ff@(posedge clk or negedge rst_n)begin
+        if(!rst_n) begin
+            for(int i=0;i<RW_DB_ENTRY_NUM;i=i+1)begin
+                v_rdb_entry_active[i] <= 'b0;
+            end
         end
         else begin
-            if(rdb_mem_en && rdb_wr_en)begin
-                v_rdb_entry_vld[rdb_addr] <= 1'b0;
+            if(ram_write_rdb_vld)begin
+                v_rdb_entry_active[ram_write_rdb_pld.db_entry_id] <= 'b1;
             end
-            else if(rdb_mem_en && rdb_wr_en==1'b0)begin
-                v_rdb_entry_vld[rdb_addr] <= 1'b1;
-            end
-            else begin
-                v_rdb_entry_vld <= v_rdb_entry_vld;
-            end
-        end
+            else if(read_rdb_vld && read_rdb_rdy)begin
+                v_rdb_entry_active[read_rdb_pld.db_entry_id] <= 'b0;
+            end               
+        end                              
     end
 
     pre_alloc_one #(
@@ -104,8 +122,8 @@ module rdb_agent
     ) u_pre_alloc_rdb (
         .clk        (clk             ),
         .rst_n      (rst_n           ),
-        .v_in_vld   (v_rdb_entry_vld ),
-        .v_in_rdy   (                ),
+        .v_in_vld   (v_rdb_entry_idle),
+        .v_in_rdy   (v_rdb_rdy       ),
         .out_vld    (alloc_vld       ),
         .out_rdy    (alloc_rdy       ),
         .out_index  (alloc_idx       )

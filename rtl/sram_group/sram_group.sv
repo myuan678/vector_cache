@@ -79,8 +79,8 @@ module sram_group
     bankgroup_data_pld_t    ns_data_wire [4:0][4:0][7:0];
 
     generate
-        for(genvar i=0;i<4;i=i+1)begin
-            for(genvar j=0;j<8;j=j+1)begin
+        for(genvar i=0;i<4;i=i+1)begin:ROW_IN_CMD_GEN
+            for(genvar j=0;j<8;j=j+1)begin:CHANNEL_CMD_GEN
                 assign lr_read_cmd_pld_wire  [i][0][j] = west_read_cmd_pld_in[j];
                 assign lr_read_cmd_vld_wire  [i][0][j] = west_read_cmd_vld_in[j];
                 assign rl_read_cmd_pld_wire  [i][4][j] = east_read_cmd_pld_in[j];
@@ -99,7 +99,7 @@ module sram_group
     
     
     generate
-        for(genvar i=0;i<8;i=i+1)begin
+        for(genvar i=0;i<8;i=i+1)begin:CHANNEL_IN_DATA_GEN
             assign lr_data_wire[0][0][i].data      = west_data_in[i].data[255:0];
             assign lr_data_wire[0][0][i].cmd_pld   = west_data_in[i].cmd_pld;
             assign lr_data_wire[1][0][i].data      = west_data_in[i].data[511:256];
@@ -208,7 +208,7 @@ module sram_group
 
 
 generate
-    for(genvar i=0;i<8;i=i+1)begin
+    for(genvar i=0;i<8;i=i+1)begin:CHANNEL_OUT_DATA_GEN
         assign west_data_out[i].data[255:0]   = rl_data_wire[0][0][i].data;
         assign west_data_out[i].data[511:256] = rl_data_wire[1][0][i].data;
         assign west_data_out[i].data[767:512] = rl_data_wire[2][0][i].data;
@@ -240,7 +240,7 @@ generate
 endgenerate
 
 generate
-    for(genvar i=0;i<8;i=i+1)begin
+    for(genvar i=0;i<8;i=i+1)begin:CHANNEL_OUT_CMD_GEN
         assign east_read_cmd_pld_out  [i] = lr_read_cmd_pld_wire[0][4][i];
         assign east_read_cmd_vld_out  [i] = lr_read_cmd_vld_wire[0][4][i];
 

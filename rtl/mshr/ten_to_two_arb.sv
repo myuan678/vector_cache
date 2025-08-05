@@ -5,7 +5,7 @@ module ten_to_two_arb
     parameter integer unsigned WR_REQ_NUM = 5,
     parameter integer unsigned CHANNEL_SHIFT_REG_WIDTH = 10,
     parameter integer unsigned RAM_SHIFT_REG_WIDTH = 20,
-    parameter integer unsigned REQ_NUM = RD_REQ_NUM + WR_REQ_NUM
+    localparam integer unsigned REQ_NUM = RD_REQ_NUM + WR_REQ_NUM
     ) (
     input  logic                    clk                     ,
     input  logic                    rst_n                   ,
@@ -45,31 +45,31 @@ module ten_to_two_arb
     //-----------direction_id-------------------------------------------------------------------
     generate
         for(genvar i=0;i<RD_REQ_NUM;i=i+1) begin
-            assign direction_id[i] = rd_pld[i].txnid[1:0];//txnid的低两位作为方向id
+            assign direction_id[i] = rd_pld[i].txnid.direction_id;//txnid的低两位作为方向id
         end
     endgenerate
     generate
         for(genvar i=RD_REQ_NUM;i<REQ_NUM;i=i+1) begin
-            assign direction_id[i] = wr_pld[i-RD_REQ_NUM].txnid[1:0];//txnid的低两位作为方向id
+            assign direction_id[i] = wr_pld[i-RD_REQ_NUM].txnid.direction_id;//txnid的低两位作为方向id
         end
     endgenerate
 
 //-----------dest_ram_id-------------------------------------------------------------------
     generate
         for(genvar i=0;i<RD_REQ_NUM;i=i+1)begin
-            assign dest_ram_id[i] = rd_pld[i].dest_ram_id;
+            assign dest_ram_id[i] = {rd_pld[i].hash_id,rd_pld[i].index[INDEX_WIDTH-1:INDEX_WIDTH-3]};
         end
     endgenerate
     generate
         for(genvar i=RD_REQ_NUM;i<REQ_NUM;i=i+1) begin
-            assign dest_ram_id[i] = wr_pld[i-RD_REQ_NUM].dest_ram_id;
+            assign dest_ram_id[i] = {wr_pld[i-RD_REQ_NUM].hash_id,wr_pld[i-RD_REQ_NUM].index[INDEX_WIDTH-1:INDEX_WIDTH-3]};
         end
     endgenerate
 
 //-----------block_id -------------------------------------------------------------------
     generate
         for(genvar i=0;i<REQ_NUM;i=i+1) begin
-            assign block_id[i] = dest_ram_id[i][2:1];
+            assign block_id[i] = dest_ram_id[i][2:1];//5bit dest_ram_id,最高2bit为hash_id，最低bit为sram id，中间2bit为block_id
         end
     endgenerate
 //----------------------------------------------------------------------------------------
@@ -90,6 +90,7 @@ module ten_to_two_arb
     generate
         for(genvar i=0;i<RD_REQ_NUM;i=i+1)begin
            always_comb begin
+                rd_allow_bit[i] = 'b0;
                 case(block_id[i]) 
                     2'b00: rd_allow_bit[i] = rd_pre_allow_bit[i] && (ram_timer_shift_reg[dest_ram_id[i]][RD_BLOCK0_DELAY]==1'b0);
                     2'b01: rd_allow_bit[i] = rd_pre_allow_bit[i] && (ram_timer_shift_reg[dest_ram_id[i]][RD_BLOCK1_DELAY]==1'b0);
@@ -106,6 +107,7 @@ module ten_to_two_arb
             //写请求经过WR_CMD_DELAY拍后占用channel，检查第WR_CMD_DELAY bit不为1说明这么多拍后不会有写冲突
             //四个方向的写请求CMD_DELAY不同，所以五个写请求不需要检查地址冲突
             always_comb begin
+                wr_pre_allow_bit[i] = 'b0;
                 if(i==0)begin
                     wr_pre_allow_bit[i] = (channel_timer_shift_reg[{dest_ram_id[i][0]}][WR_CMD_DELAY_LF]==1'b0);
                 end
@@ -123,6 +125,7 @@ module ten_to_two_arb
     generate//wr_vld[4:1] write; [0] linefill
         for(genvar i=0;i<WR_REQ_NUM; i=i+1)begin
             always_comb begin
+                wr_allow_bit[i] = 'b0;
                 if(i==0)begin//linefill没有方向id，默认是south
                     case(block_id[i])
                         2'b00: wr_allow_bit[i] = wr_pre_allow_bit[i] && (ram_timer_shift_reg[dest_ram_id[i]][WR_CMD_DELAY_LF+WR_BLOCK0_DELAY]==1'b0);
@@ -181,6 +184,7 @@ module ten_to_two_arb
 
     function automatic [CHANNEL_SHIFT_REG_WIDTH-1:0] write_set_shift_channel_mask;
         input logic [1:0] direc_id;
+        write_set_shift_channel_mask = 'b0;
         case(direc_id)
             2'b00: write_set_shift_channel_mask[WR_CMD_DELAY_WEST] = 1'b1;
             2'b01: write_set_shift_channel_mask[WR_CMD_DELAY_EAST] = 1'b1;
@@ -193,6 +197,7 @@ module ten_to_two_arb
     function automatic [RAM_SHIFT_REG_WIDTH-1:0] write_set_shift_ram_mask;
         input logic [1:0] bk_id;
         input logic [1:0] direc_id;
+        write_set_shift_ram_mask = 'b0;
         case (bk_id)
             2'b00: begin//block0
                 case (direc_id)
@@ -234,42 +239,84 @@ module ten_to_two_arb
         endcase
     endfunction
 
-    logic [CHANNEL_SHIFT_REG_WIDTH  :0]  set_req0_channel_timer;
-    logic [CHANNEL_SHIFT_REG_WIDTH  :0]  set_req1_channel_timer;
-    logic [RAM_SHIFT_REG_WIDTH      :0]  set_req0_ram_timer;
-    logic [RAM_SHIFT_REG_WIDTH      :0]  set_req1_ram_timer;
-    always_comb begin
-        set_req0_channel_timer = 'b0;
-        set_req0_ram_timer     = 'b0;
-        if(grant_req_pld_0.opcode==`WRITE )begin //write
-            set_req0_channel_timer = write_set_shift_channel_mask(grant_req_pld_0.txnid.direction_id);
-            set_req0_ram_timer     = write_set_shift_ram_mask(grant_req_pld_0.dest_ram_id[2:1],grant_req_pld_0.txnid.direction_id);
+    logic [CHANNEL_SHIFT_REG_WIDTH-1  :0]  set_req0_channel_timer;
+    logic [CHANNEL_SHIFT_REG_WIDTH-1  :0]  set_req1_channel_timer;
+    logic [RAM_SHIFT_REG_WIDTH-1      :0]  set_req0_ram_timer;
+    logic [RAM_SHIFT_REG_WIDTH-1      :0]  set_req1_ram_timer;
+    //always_comb begin
+    //    set_req0_channel_timer = 'b0;
+    //    set_req0_ram_timer     = 'b0;
+    //    if(grant_req_pld_0.opcode==`WRITE )begin //write
+    //        set_req0_channel_timer = write_set_shift_channel_mask(grant_req_pld_0.txnid.direction_id);
+    //        set_req0_ram_timer     = write_set_shift_ram_mask(grant_req_pld_0.dest_ram_id[2:1],grant_req_pld_0.txnid.direction_id);
+    //    end
+    //    else if(grant_req_pld_0.opcode==`LINEFILL)begin//linefill
+    //        set_req0_channel_timer[WR_CMD_DELAY_LF] = 1'b1;
+    //        case(grant_req_pld_0.dest_ram_id[2:1])//block
+    //            2'b00: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK0_DELAY] = 1'b1;
+    //            2'b01: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK1_DELAY] = 1'b1;
+    //            2'b10: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK2_DELAY] = 1'b1;
+    //            2'b11: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK3_DELAY] = 1'b1;
+    //        endcase
+    //    end
+    //end
+    //always_comb begin
+    //    set_req1_channel_timer = 'b0;
+    //    set_req1_ram_timer     = 'b0;
+    //    if(grant_req_pld_1.opcode==`WRITE )begin //write
+    //        set_req1_channel_timer = write_set_shift_channel_mask(grant_req_pld_1.txnid.direction_id);
+    //        set_req1_ram_timer     = write_set_shift_ram_mask(grant_req_pld_1.dest_ram_id[2:1],grant_req_pld_1.txnid.direction_id);
+    //    end
+    //    else if(grant_req_pld_1.opcode==`LINEFILL)begin//linefill
+    //        set_req1_channel_timer[WR_CMD_DELAY_LF] = 1'b1;
+    //        case(grant_req_pld_1.dest_ram_id[2:1])
+    //            2'b00: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK0_DELAY] = 1'b1;
+    //            2'b01: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK1_DELAY] = 1'b1;
+    //            2'b10: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK2_DELAY] = 1'b1;
+    //            2'b11: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK3_DELAY] = 1'b1;
+    //        endcase
+    //    end
+    //end
+    always_ff@(posedge clk or negedge rst_n) begin
+        if(!rst_n)begin
+            set_req0_channel_timer <= 'b0;
+            set_req0_ram_timer     <= 'b0;
         end
-        else if(grant_req_pld_0.opcode==`LINEFILL)begin//linefill
-            set_req0_channel_timer[WR_CMD_DELAY_LF] = 1'b1;
-            case(grant_req_pld_0.dest_ram_id[2:1])//block
-                2'b00: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK0_DELAY] = 1'b1;
-                2'b01: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK1_DELAY] = 1'b1;
-                2'b10: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK2_DELAY] = 1'b1;
-                2'b11: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK3_DELAY] = 1'b1;
-            endcase
+        else begin
+            if(grant_req_pld_0.opcode==`WRITE )begin //write
+                set_req0_channel_timer <= write_set_shift_channel_mask(grant_req_pld_0.txnid.direction_id);
+                set_req0_ram_timer     <= write_set_shift_ram_mask(grant_req_pld_0.dest_ram_id[2:1],grant_req_pld_0.txnid.direction_id);
+            end
+            else if(grant_req_pld_0.opcode==`LINEFILL)begin//linefill
+                set_req0_channel_timer[WR_CMD_DELAY_LF] <= 1'b1;
+                case(grant_req_pld_0.dest_ram_id[2:1])//block
+                    2'b00: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK0_DELAY] <= 1'b1;
+                    2'b01: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK1_DELAY] <= 1'b1;
+                    2'b10: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK2_DELAY] <= 1'b1;
+                    2'b11: set_req0_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK3_DELAY] <= 1'b1;
+                endcase
+            end
         end
     end
-    always_comb begin
-        set_req1_channel_timer = 'b0;
-        set_req1_ram_timer     = 'b0;
-        if(grant_req_pld_1.opcode==`WRITE )begin //write
-            set_req1_channel_timer = write_set_shift_channel_mask(grant_req_pld_1.txnid.direction_id);
-            set_req1_ram_timer     = write_set_shift_ram_mask(grant_req_pld_1.dest_ram_id[2:1],grant_req_pld_1.txnid.direction_id);
+    always_ff@(posedge clk or negedge rst_n) begin
+        if(!rst_n)begin
+            set_req1_channel_timer <= 'b0;
+            set_req1_ram_timer     <= 'b0;
         end
-        else if(grant_req_pld_1.opcode==`LINEFILL)begin//linefill
-            set_req1_channel_timer[WR_CMD_DELAY_LF] = 1'b1;
-            case(grant_req_pld_1.dest_ram_id[2:1])
-                2'b00: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK0_DELAY] = 1'b1;
-                2'b01: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK1_DELAY] = 1'b1;
-                2'b10: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK2_DELAY] = 1'b1;
-                2'b11: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK3_DELAY] = 1'b1;
-            endcase
+        else begin
+            if(grant_req_pld_1.opcode==`WRITE )begin //write
+                set_req1_channel_timer <= write_set_shift_channel_mask(grant_req_pld_1.txnid.direction_id);
+                set_req1_ram_timer     <= write_set_shift_ram_mask(grant_req_pld_1.dest_ram_id[2:1],grant_req_pld_1.txnid.direction_id);
+            end
+            else if(grant_req_pld_1.opcode==`LINEFILL)begin//linefill
+                set_req1_channel_timer[WR_CMD_DELAY_LF] <= 1'b1;
+                case(grant_req_pld_1.dest_ram_id[2:1])
+                    2'b00: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK0_DELAY] <= 1'b1;
+                    2'b01: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK1_DELAY] <= 1'b1;
+                    2'b10: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK2_DELAY] <= 1'b1;
+                    2'b11: set_req1_ram_timer[WR_CMD_DELAY_LF+WR_BLOCK3_DELAY] <= 1'b1;
+                endcase
+            end
         end
     end
 
@@ -280,8 +327,18 @@ module ten_to_two_arb
             logic apply_req1 ;
             logic [RAM_SHIFT_REG_WIDTH-1:0] combined_mask; 
             // 确定当前ram是否是被grant选中的，确定掩码是否需要对该slave生
-            assign apply_req0 = grant_req_vld_0 && (grant_req_pld_0.dest_ram_id == i);
-            assign apply_req1 = grant_req_vld_1 && (grant_req_pld_1.dest_ram_id == i);
+            //assign apply_req0 = grant_req_vld_0 && (grant_req_pld_0.dest_ram_id == i);
+            //assign apply_req1 = grant_req_vld_1 && (grant_req_pld_1.dest_ram_id == i);
+            always_ff@(posedge clk or negedge rst_n)begin
+                if(!rst_n)begin
+                    apply_req0 <= 'b0;
+                    apply_req1 <= 'b0;
+                end
+                else begin
+                    apply_req0 <= grant_req_vld_0 && (grant_req_pld_0.dest_ram_id == i);
+                    apply_req1 <= grant_req_vld_1 && (grant_req_pld_1.dest_ram_id == i);
+                end
+            end
             assign combined_mask= (apply_req0 ? set_req0_ram_timer : 'b0) | (apply_req1 ? set_req1_ram_timer : 'b0);
             // 更新对应ram的timer_shift_reg
             always @(posedge clk or negedge rst_n) begin

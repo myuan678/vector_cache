@@ -42,7 +42,7 @@ module write_cmd_sel
     //endgenerate
 
     generate
-        for(genvar i=0;i<4;i=i+1)begin
+        for(genvar i=0;i<4;i=i+1)begin:WEST_WRITE_GEN
             always_comb begin
                 toram_west_write_cmd_vld_in[2*i]  = 'b0;
                 toram_west_write_cmd_vld_in[2*i+1]= 'b0;
@@ -66,7 +66,7 @@ module write_cmd_sel
         end
     endgenerate
     generate
-        for(genvar i=0;i<4;i=i+1)begin
+        for(genvar i=0;i<4;i=i+1)begin:EAST_WRITE_GEN
             always_comb begin
                 toram_east_write_cmd_vld_in[2*i]  = 'b0;
                 toram_east_write_cmd_vld_in[2*i+1]= 'b0;
@@ -91,7 +91,7 @@ module write_cmd_sel
     endgenerate
 
     generate
-        for(genvar i=0;i<4;i=i+1)begin
+        for(genvar i=0;i<4;i=i+1)begin:NORTH_WRITE_GEN
             always_comb begin
                 toram_north_write_cmd_vld_in[2*i]  = 'b0;
                 toram_north_write_cmd_vld_in[2*i+1]= 'b0;
@@ -116,7 +116,7 @@ module write_cmd_sel
     endgenerate
 
     generate
-        for(genvar i=0;i<4;i=i+1)begin
+        for(genvar i=0;i<4;i=i+1)begin:SOUTH_WRITE_GEN
             always_comb begin
                 toram_south_write_cmd_vld_in[2*i]  = 'b0;
                 toram_south_write_cmd_vld_in[2*i+1]= 'b0;

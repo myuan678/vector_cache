@@ -2,7 +2,7 @@ module vec_cache_tag_ctrl
     import vector_cache_pkg::*;
     #(
         //parameter TAG_INFO_WIDTH = TAG_WIDTH+2,//加1bit valid，加1bit dirty/clean
-    parameter TAG_INFO_WIDTH = TAG_WIDTH+1,//加1bit valid
+        parameter TAG_INFO_WIDTH = TAG_WIDTH+1,//加1bit valid
         parameter TAG_RAM_WIDTH  = TAG_INFO_WIDTH * WAY_NUM
     )
     (
@@ -141,7 +141,7 @@ module vec_cache_tag_ctrl
     ) u_wresp_decode_1(
         .clk        (clk                         ),
         .rst_n      (rst_n                       ),
-        .req_vld    (tag_req_vld                 ),
+        .req_vld    (tag_req_vld_1               ),
         .req_pld    (tag_req_input_arb_grant1_pld),
         .v_wresp_vld(v_wr_resp_vld_1             ),
         .v_wresp_pld(v_wr_resp_pld_1             ));
@@ -151,7 +151,7 @@ module vec_cache_tag_ctrl
     ) u_wresp_decode_2(
         .clk        (clk                         ),
         .rst_n      (rst_n                       ),
-        .req_vld    (tag_req_vld                 ),
+        .req_vld    (tag_req_vld_2               ),
         .req_pld    (tag_req_input_arb_grant2_pld),
         .v_wresp_vld(v_wr_resp_vld_2             ),
         .v_wresp_pld(v_wr_resp_pld_2             ));
@@ -189,10 +189,10 @@ module vec_cache_tag_ctrl
         end
     end
 
-    assign A_is_write       = req_vld_A && (req_pld_A.cmd_opcode == 1);
-    assign A_is_read        = req_vld_A && (req_pld_A.cmd_opcode == 2);
-    assign B_is_write       = req_vld_B && (req_pld_B.cmd_opcode == 1);
-    assign B_is_read        = req_vld_B && (req_pld_B.cmd_opcode == 2);
+    assign A_is_write       = req_vld_A && (req_pld_A.cmd_opcode== `CMD_WRITE);
+    assign A_is_read        = req_vld_A && (req_pld_A.cmd_opcode== `CMD_READ );
+    assign B_is_write       = req_vld_B && (req_pld_B.cmd_opcode== `CMD_WRITE);
+    assign B_is_read        = req_vld_B && (req_pld_B.cmd_opcode== `CMD_READ );
     
     always_ff@(posedge clk or negedge rst_n)begin
         //if(tag_req_vld && tag_req_rdy)begin
@@ -566,6 +566,7 @@ module vec_cache_tag_ctrl
 
     //mshr_entry pld
     assign mshr_update_pld_A.txnid         = req_pld_A.cmd_txnid      ;//direction-master 
+    assign mshr_update_pld_A.hash_id       = req_pld_A.cmd_addr.tag[TAG_WIDTH-1:TAG_WIDTH-1];
     assign mshr_update_pld_A.sideband      = req_pld_A.cmd_sideband   ;
     assign mshr_update_pld_A.index         = req_pld_A.cmd_addr.index ;
     assign mshr_update_pld_A.offset        = req_pld_A.cmd_addr.offset;
@@ -583,6 +584,7 @@ module vec_cache_tag_ctrl
     assign mshr_update_pld_A.wdb_entry_id  = req_pld_A.db_entry_id    ;//只有write在输入带
 
     assign mshr_update_pld_B.txnid         = req_pld_B.cmd_txnid      ;
+    assign mshr_update_pld_B.hash_id       = req_pld_B.cmd_addr.tag[TAG_WIDTH-1:TAG_WIDTH-1];
     assign mshr_update_pld_B.sideband      = req_pld_B.cmd_sideband   ;
     assign mshr_update_pld_B.index         = req_pld_B.cmd_addr.index ;
     assign mshr_update_pld_B.offset        = req_pld_B.cmd_addr.offset;
