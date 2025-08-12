@@ -1,101 +1,100 @@
-package vector_cache_pkg;
-
-
-    `define WEST   2'b00
-    `define EAST   2'b01
-    `define SOUTH  2'b10
-    `define NORTH  2'b11
+//`ifdef TOY_SIM
+    `define VEC_CACHE_WEST   2'b00
+    `define VEC_CACHE_EAST   2'b01
+    `define VEC_CACHE_SOUTH  2'b10
+    `define VEC_CACHE_NORTH  2'b11
 
     //input cmd opcode
-    `define CMD_WRITE  2'b01
-    `define CMD_READ   2'b10
+    `define VEC_CACHE_CMD_WRITE  2'b01
+    `define VEC_CACHE_CMD_READ   2'b10
 
     //opcode 0write;1read;2evict;3linefill
-    `define WRITE     2'b00
-    `define READ      2'b01
-    `define EVICT     2'b10
-    `define LINEFILL  2'b11
+    `define VEC_CACHE_WRITE     2'b00
+    `define VEC_CACHE_READ      2'b01
+    `define VEC_CACHE_EVICT     2'b10
+    `define VEC_CACHE_LINEFILL  2'b11
+//`endif
 
 
 
+
+package vector_cache_pkg;
     localparam integer unsigned RAM_WIDTH  = 128;
     localparam integer unsigned RAM_DEPTH  = 512;
     localparam integer unsigned RAM_NUM    = 4;
     localparam integer unsigned ADDR_WIDTH = $clog2(RAM_DEPTH);
     localparam integer unsigned SEL= $clog2(RAM_WIDTH/8);
 
-    parameter integer unsigned CHANNEL   = 8    ;
+    localparam integer unsigned CHANNEL   = 8    ;
 
 
 
     //ctrl part
-    parameter integer unsigned REQ_ADDR_WIDTH  = 64;
-    parameter integer unsigned CACHE_SIZE      = 8192*1024; //8MBytes
-    parameter integer unsigned CACHE_LINE_SIZE = 512;       //512 Bytes
-    parameter integer unsigned WAY_NUM         = 4  ;
-    parameter integer unsigned SET_NUM         = CACHE_SIZE/(CACHE_LINE_SIZE*WAY_NUM); //每个set的大小为512Byte，4way 
+    localparam integer unsigned REQ_ADDR_WIDTH  = 64        ;
+    localparam integer unsigned CACHE_SIZE      = 8192*1024 ; //8MBytes
+    localparam integer unsigned CACHE_LINE_SIZE = 512       ; //512 Bytes
+    localparam integer unsigned WAY_NUM         = 4         ;
+    localparam integer unsigned SET_NUM         = CACHE_SIZE/(CACHE_LINE_SIZE*WAY_NUM); //每个set的大小为512Byte，4way 
 
-    parameter integer unsigned INDEX_WIDTH     = $clog2(SET_NUM/4) ;//10bit，分4组
-    parameter integer unsigned OFFSET_WIDTH    = $clog2(CACHE_LINE_SIZE)  ;//9bit
-    parameter integer unsigned TAG_WIDTH       =  REQ_ADDR_WIDTH-INDEX_WIDTH-OFFSET_WIDTH;//43bit，
-    parameter integer unsigned BUS_WIDTH       = 128;
-    parameter integer unsigned DS_N            = CACHE_LINE_SIZE / BUS_WIDTH;  
-    parameter integer unsigned TAG_RAM_WIDTH   = WAY_NUM*(TAG_WIDTH+2);
+    localparam integer unsigned INDEX_WIDTH     = $clog2(SET_NUM/4)         ;//10bit，分4组
+    localparam integer unsigned OFFSET_WIDTH    = $clog2(CACHE_LINE_SIZE)   ;//9bit
+    localparam integer unsigned TAG_WIDTH       =  REQ_ADDR_WIDTH-INDEX_WIDTH-OFFSET_WIDTH;//43bit，
+    localparam integer unsigned BUS_WIDTH       = 128;
+    localparam integer unsigned DS_N            = CACHE_LINE_SIZE / BUS_WIDTH;  
+    localparam integer unsigned TAG_RAM_WIDTH   = WAY_NUM*(TAG_WIDTH+2);
     
 
-    parameter integer unsigned MSHR_ENTRY_NUM  = 64 ;
-    parameter integer unsigned MSHR_ENTRY_IDX_WIDTH = $clog2(MSHR_ENTRY_NUM);
-    parameter integer unsigned TXNID_WIDTH     = 5;
-    parameter integer unsigned SIDEBAND_WIDTH  = 10;
-    parameter integer unsigned OP_WIDTH        = 5;
-    //parameter integer unsigned ICACHE_TAG_RAM_WIDTH = WAY_NUM*(TAG_WIDTH+2);
+    localparam integer unsigned MSHR_ENTRY_NUM  = 64;
+    localparam integer unsigned MSHR_ENTRY_IDX_WIDTH = $clog2(MSHR_ENTRY_NUM);
+    localparam integer unsigned TXNID_WIDTH     = 5 ;
+    localparam integer unsigned SIDEBAND_WIDTH  = 10;
+    localparam integer unsigned OP_WIDTH        = 5;
+    //localparam integer unsigned ICACHE_TAG_RAM_WIDTH = WAY_NUM*(TAG_WIDTH+2);
 
-    parameter integer unsigned LFDB_ENTRY_NUM  = 32;
-    parameter integer unsigned EVDB_ENTRY_NUM  = 32;
-    parameter integer unsigned RW_DB_ENTRY_NUM = 32;
-    //parameter integer unsigned RW_DB_ENTRY_IDX_WIDTH = $clog2()
-    parameter integer unsigned DB_ENTRY_IDX_WIDTH = $clog2(RW_DB_ENTRY_NUM);
+    localparam integer unsigned LFDB_ENTRY_NUM  = 32;
+    localparam integer unsigned EVDB_ENTRY_NUM  = 32;
+    localparam integer unsigned RW_DB_ENTRY_NUM = 32;
+    localparam integer unsigned DB_ENTRY_IDX_WIDTH = $clog2(RW_DB_ENTRY_NUM);
 
-    
     //request direction && master
-    parameter integer unsigned MASTER_NUM  = 8; //每个方向上的master的数量，其实个REQ_NUM应该对应
-    parameter integer unsigned WR_REQ_NUM  = 8; // west read req_num
-    parameter integer unsigned WW_REQ_NUM  = 8; // west write req_num
-    parameter integer unsigned WB_REQ_NUM  = 8; // west bresp num
-    parameter integer unsigned WRD_REQ_NUM = 8; // west rdata num
+    localparam integer unsigned MASTER_NUM  = 8; //每个方向上的master的数量，其实个REQ_NUM应该对应
+    localparam integer unsigned WR_REQ_NUM  = 8; // west read req_num
+    localparam integer unsigned WW_REQ_NUM  = 8; // west write req_num
+    localparam integer unsigned WB_REQ_NUM  = 8; // west bresp num
+    localparam integer unsigned WRD_REQ_NUM = 8; // west rdata num
 
-    parameter integer unsigned ER_REQ_NUM  = 8; // east read req_num
-    parameter integer unsigned EW_REQ_NUM  = 8; // east write req_num
-    parameter integer unsigned EB_REQ_NUM  = 8; // east bresp num
-    parameter integer unsigned ERD_REQ_NUM = 8; // east rdata num
+    localparam integer unsigned ER_REQ_NUM  = 8; // east read req_num
+    localparam integer unsigned EW_REQ_NUM  = 8; // east write req_num
+    localparam integer unsigned EB_REQ_NUM  = 8; // east bresp num
+    localparam integer unsigned ERD_REQ_NUM = 8; // east rdata num
 
-    parameter integer unsigned NR_REQ_NUM  = 8; //north read req_num
-    parameter integer unsigned NW_REQ_NUM  = 8; //north write req_num
-    parameter integer unsigned NB_REQ_NUM  = 8; //north bresp num
-    parameter integer unsigned NRD_REQ_NUM = 8; //north rdata num
+    localparam integer unsigned NR_REQ_NUM  = 8; //north read req_num
+    localparam integer unsigned NW_REQ_NUM  = 8; //north write req_num
+    localparam integer unsigned NB_REQ_NUM  = 8; //north bresp num
+    localparam integer unsigned NRD_REQ_NUM = 8; //north rdata num
     
 
-    parameter integer unsigned SR_REQ_NUM  = 8; //south read req_num
-    parameter integer unsigned SW_REQ_NUM  = 8; //south write req_num
-    parameter integer unsigned SB_REQ_NUM  = 8; //south bresp num
-    parameter integer unsigned SRD_REQ_NUM = 8; //south rdata num
+    localparam integer unsigned SR_REQ_NUM  = 8; //south read req_num
+    localparam integer unsigned SW_REQ_NUM  = 8; //south write req_num
+    localparam integer unsigned SB_REQ_NUM  = 8; //south bresp num
+    localparam integer unsigned SRD_REQ_NUM = 8; //south rdata num
 
-    parameter integer unsigned DATA_WIDTH           = 1024  ;
-    parameter integer unsigned READ_SRAM_DELAY      = 10    ; 
-    parameter integer unsigned EVICT_CLEAN_DELAY    = 15    ; 
-    parameter integer unsigned EVICT_DOWN_DELAY     = 20    ;
-    //parameter integer unsigned ARB_TO_LFDB_DELAY    = 5     ;
-    parameter integer unsigned LF_DONE_DELAY        = 20    ;
-    parameter integer unsigned RDB_DATA_RDY_DELAY   = 15    ; //是指sram中的数据已经被读到了RDB中，现在可以发起对RDB的读请求，将数据给US
-    parameter integer unsigned TO_US_DONE_DELAY     =20     ;
+    localparam integer unsigned DATA_WIDTH           = 1024  ;
+    localparam integer unsigned READ_SRAM_DELAY      = 10    ; 
+    localparam integer unsigned EVICT_CLEAN_DELAY    = 15    ; 
+    localparam integer unsigned EVICT_DOWN_DELAY     = 20    ;
+    //localparam integer unsigned ARB_TO_LFDB_DELAY    = 5     ;
+    localparam integer unsigned LF_DONE_DELAY        = 20    ;
+    localparam integer unsigned RDB_DATA_RDY_DELAY   = 15    ; //是指sram中的数据已经被读到了RDB中，现在可以发起对RDB的读请求，将数据给US
+    localparam integer unsigned TO_US_DONE_DELAY     =20     ;
 
-    //parameter integer unsigned WRITE_DONE_DELAY     = 20    ; 
-    //parameter integer unsigned ARB_TO_WDB_DELAY     = 5     ;
-    parameter integer unsigned WR_CMD_DELAY_WEST    = 2     ;//arb出到开始占用channel的延迟
-    parameter integer unsigned WR_CMD_DELAY_EAST    = 3     ;//arb出到开始占用channel的延迟
-    parameter integer unsigned WR_CMD_DELAY_SOUTH   = 6     ;//arb出到开始占用channel的延迟
-    parameter integer unsigned WR_CMD_DELAY_NORTH   = 4     ;//arb出到开始占用channel的延迟
-    parameter integer unsigned WR_CMD_DELAY_LF      = 8     ;//arb出到开始占用channel的延迟
+    //localparam integer unsigned WRITE_DONE_DELAY     = 20    ; 
+    //localparam integer unsigned ARB_TO_WDB_DELAY     = 5     ;
+    localparam integer unsigned WR_CMD_DELAY_WEST    = 2     ;//arb出到开始占用channel的延迟
+    localparam integer unsigned WR_CMD_DELAY_EAST    = 3     ;//arb出到开始占用channel的延迟
+    localparam integer unsigned WR_CMD_DELAY_SOUTH   = 6     ;//arb出到开始占用channel的延迟
+    localparam integer unsigned WR_CMD_DELAY_NORTH   = 4     ;//arb出到开始占用channel的延迟
+    localparam integer unsigned WR_CMD_DELAY_LF      = 8     ;//arb出到开始占用channel的延迟
 
     //地址高2bit作为hash id
     typedef struct packed{
@@ -189,7 +188,7 @@ package vector_cache_pkg;
         logic                               valid         ;
         txnid_t                             txnid         ;
         logic [1:0]                         hash_id       ;//地址最高2bit
-        //logic [OP_WIDTH-1       :0]         opcode        ;
+        logic [4:0]                         dest_ram_id   ;
         logic [INDEX_WIDTH-1    :0]         index         ;
         logic [OFFSET_WIDTH-1   :0]         offset        ;
         logic [TAG_WIDTH-1      :0]         req_tag       ;
@@ -201,11 +200,21 @@ package vector_cache_pkg;
         logic                               need_evict    ;
         logic [TAG_WIDTH-1:0]               evict_tag     ;
         logic [MSHR_ENTRY_NUM-1:0]          hzd_bitmap    ;
+        logic [MSHR_ENTRY_NUM-1:0]          release_bitmap;
         logic                               hzd_pass      ; 
         logic [MSHR_ENTRY_IDX_WIDTH-1:0]    alloc_idx     ;
         logic [SIDEBAND_WIDTH-1 :0]         sideband      ; 
         logic [DB_ENTRY_IDX_WIDTH-1:0]      wdb_entry_id  ;
     } mshr_entry_t;
+
+    typedef struct packed{
+        logic                               valid         ;
+        txnid_t                             txnid         ;
+        logic [INDEX_WIDTH-1    :0]         index         ;
+        logic [TAG_WIDTH-1      :0]         tag           ;
+        logic [TAG_WIDTH-1:0]               evict_tag     ;
+        logic [MSHR_ENTRY_NUM-1:0]          release_bitmap;
+    } hzd_mshr_pld_t;
 
     
 
@@ -260,6 +269,12 @@ package vector_cache_pkg;
         txnid_t                             txnid       ;
         logic  [SIDEBAND_WIDTH-1        :0] sideband    ;
     }read_rdb_addr_t;
+    typedef struct packed{
+        logic  [MSHR_ENTRY_IDX_WIDTH-1  :0] rob_entry_id;
+        logic  [DB_ENTRY_IDX_WIDTH-1    :0] db_entry_id ;
+        txnid_t                             txnid       ;
+        logic  [SIDEBAND_WIDTH-1        :0] sideband    ;
+    }rw_rdb_pld_t;
 
 
     typedef struct packed {
