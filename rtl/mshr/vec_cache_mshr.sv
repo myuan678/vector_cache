@@ -4,14 +4,18 @@ module vec_cache_mshr
     input  logic                                        clk                     ,
     input  logic                                        rst_n                   ,    
 
-    input  logic                                        mshr_update_en          ,
-    input  mshr_entry_t                                 mshr_update_pld_A       ,
-    input  mshr_entry_t                                 mshr_update_pld_B       ,
+    input  logic                                        mshr_update_en_0        ,
+    input  logic                                        mshr_update_en_1        ,
+    input  mshr_entry_t                                 mshr_update_pld_0       ,
+    input  mshr_entry_t                                 mshr_update_pld_1       ,
 
-    output logic                                        alloc_vld               ,//to tag pipe
-    output logic [MSHR_ENTRY_IDX_WIDTH-1:0]             alloc_index_1           ,
-    output logic [MSHR_ENTRY_IDX_WIDTH-1:0]             alloc_index_2           ,
-    input  logic                                        alloc_rdy               ,
+    output logic                                        alloc_vld_0             ,//to tag pipe
+    output logic [MSHR_ENTRY_IDX_WIDTH-1:0]             alloc_idx_0             ,
+    input  logic                                        alloc_rdy_0             ,
+
+    output logic                                        alloc_vld_1             ,
+    output logic [MSHR_ENTRY_IDX_WIDTH-1:0]             alloc_idx_1             ,
+    input  logic                                        alloc_rdy_1             ,
 
     output logic                                        west_read_cmd_vld       ,
     output arb_out_req_t                                west_read_cmd_pld       ,
@@ -21,10 +25,10 @@ module vec_cache_mshr
     output arb_out_req_t                                south_read_cmd_pld      ,
     output logic                                        north_read_cmd_vld      ,
     output arb_out_req_t                                north_read_cmd_pld      ,
-    input  logic                                        west_read_cmd_rdy       ,
-    input  logic                                        east_read_cmd_rdy       ,
-    input  logic                                        south_read_cmd_rdy      ,
-    input  logic                                        north_read_cmd_rdy      ,
+    //input  logic                                        west_read_cmd_rdy       ,
+    //input  logic                                        east_read_cmd_rdy       ,
+    //input  logic                                        south_read_cmd_rdy      ,
+    //input  logic                                        north_read_cmd_rdy      ,
 
     output logic                                        west_write_cmd_vld      ,
     output arb_out_req_t                                west_write_cmd_pld      ,
@@ -52,8 +56,8 @@ module vec_cache_mshr
     output logic                                        downstream_txreq_vld      ,
     output downstream_txreq_pld_t                       downstream_txreq_pld      ,
 
-    input  logic                                        linefill_data_done        ,//linefill ack
-    input  logic [MSHR_ENTRY_IDX_WIDTH-1  :0]           linefill_data_done_idx    ,
+    input  logic                                        ds_txreq_done        ,//linefill ack
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1  :0]           ds_txreq_done_idx    ,
     input  logic                                        linefill_done             ,
     input  logic [MSHR_ENTRY_IDX_WIDTH-1  :0]           linefill_done_idx         ,
 
@@ -81,40 +85,30 @@ module vec_cache_mshr
     input  bresp_pld_t                                  bresp_pld                 ,//Bresp //txnid+sideband+rob_id
     output logic                                        bresp_rdy                 ,//Bresp
 
-    output logic [MSHR_ENTRY_IDX_WIDTH   :0]            entry_release_done_index  ,
-    output logic                                        mshr_stall                , 
-    output mshr_entry_t                                 v_mshr_entry_pld_out[MSHR_ENTRY_NUM-1:0],
+    output hzd_mshr_pld_t                               v_mshr_entry_pld_out[MSHR_ENTRY_NUM-1:0],
     //add RDB and RDBagent interface
     
-    input  logic                                        w_rd_alloc_vld      ,
-    input  logic [$clog2(RW_DB_ENTRY_NUM)-1:0]          w_rd_alloc_idx      ,
-    input  logic                                        e_rd_alloc_vld      ,
-    input  logic [$clog2(RW_DB_ENTRY_NUM)-1:0]          e_rd_alloc_idx      ,
-    input  logic                                        s_rd_alloc_vld      ,
-    input  logic [$clog2(RW_DB_ENTRY_NUM)-1:0]          s_rd_alloc_idx      ,
-    input  logic                                        n_rd_alloc_vld      ,
-    input  logic [$clog2(RW_DB_ENTRY_NUM)-1:0]          n_rd_alloc_idx      ,
-    output logic                                        w_rd_alloc_rdy      ,//TODO:
-    output logic                                        e_rd_alloc_rdy      ,
-    output logic                                        s_rd_alloc_rdy      ,
-    output logic                                        n_rd_alloc_rdy      ,
+
+    input  logic                                        w_rdb_alloc_nfull,
+    input  logic                                        e_rdb_alloc_nfull,
+    input  logic                                        s_rdb_alloc_nfull,
+    input  logic                                        n_rdb_alloc_nfull,
 
     input  logic                                        linefill_alloc_vld  ,
     input  logic [$clog2(LFDB_ENTRY_NUM/4)-1:0]         linefill_alloc_idx  ,
-    input  logic                                        evict_alloc_vld     ,
-    input  logic [$clog2(EVDB_ENTRY_NUM/4)-1:0]         evict_alloc_idx     ,
-    output logic                                        linefill_alloc_rdy  ,
-    output logic                                        evit_alloc_rdy
+    output logic                                        linefill_alloc_rdy  
+
+    //input  logic                                        evict_alloc_vld     ,
+    //input  logic [$clog2(EVDB_ENTRY_NUM/4)-1:0]         evict_alloc_idx     ,
+    //output logic                                        evit_alloc_rdy
 
 
 );
 
     logic  [MSHR_ENTRY_NUM-1         :0]                v_mshr_update_en                               ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_mshr_update_en_0                             ;
     logic  [MSHR_ENTRY_NUM-1         :0]                v_mshr_update_en_1                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_mshr_update_en_2                             ;
-
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_entry_active                                 ;  
-    mshr_entry_t                                        v_mshr_entry_pld_in[MSHR_ENTRY_NUM-1:0]        ;        
+    //mshr_entry_t                                        v_mshr_entry_pld_in[MSHR_ENTRY_NUM-1:0]        ;        
 
     logic  [MSHR_ENTRY_NUM-1         :0]                v_alloc_vld                                    ; 
     logic  [MSHR_ENTRY_NUM-1         :0]                v_alloc_rdy                                    ;
@@ -125,14 +119,11 @@ module vec_cache_mshr
     logic  [MSHR_ENTRY_NUM-1         :0]                v_e_dataram_rd_vld                             ;
     logic  [MSHR_ENTRY_NUM-1         :0]                v_s_dataram_rd_vld                             ;
     logic  [MSHR_ENTRY_NUM-1         :0]                v_n_dataram_rd_vld                             ;
-    arb_out_req_t                                       v_w_dataram_rd_pld  [MSHR_ENTRY_NUM-1:0]       ;
-    arb_out_req_t                                       v_e_dataram_rd_pld  [MSHR_ENTRY_NUM-1:0]       ;
-    arb_out_req_t                                       v_s_dataram_rd_pld  [MSHR_ENTRY_NUM-1:0]       ;
-    arb_out_req_t                                       v_n_dataram_rd_pld  [MSHR_ENTRY_NUM-1:0]       ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_w_dataram_rd_rdy                              ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_e_dataram_rd_rdy                              ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_s_dataram_rd_rdy                              ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_n_dataram_rd_rdy                              ;
+
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_w_dataram_rd_rdy                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_e_dataram_rd_rdy                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_s_dataram_rd_rdy                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_n_dataram_rd_rdy                             ;
     arb_out_req_t                                       v_dataram_rd_pld   [MSHR_ENTRY_NUM-1:0]        ;
 
     //logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_wr_vld                               ;
@@ -158,95 +149,57 @@ module vec_cache_mshr
     logic  [MSHR_ENTRY_NUM-1         :0]                v_evict_rd_vld                                 ;
     logic  [MSHR_ENTRY_NUM-1         :0]                v_evict_rd_rdy                                 ;
     arb_out_req_t                                       v_evict_rd_pld[MSHR_ENTRY_NUM-1         :0]    ;
-
-    //logic  [MSHR_ENTRY_NUM-1         :0]                v_downstream_txrsp_vld                         ;
-    //logic  [ICACHE_REQ_OPCODE_WIDTH-1:0]                v_downstream_txrsp_opcode  [MSHR_ENTRY_NUM-1:0];
-
-    logic  [MSHR_ENTRY_IDX_WIDTH-1 :0]                  dataram_release_index                          ;
-    logic                                               dataram_release_index_vld                      ;
-    logic  [MSHR_ENTRY_IDX_WIDTH   :0]                  downstream_release_index                       ; 
-    
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_entry_release_done                           ;
      
     logic [MSHR_ENTRY_NUM-1         :0]                 v_release_en                                   ;
     logic [MSHR_ENTRY_NUM-1         :0]                 v_linefill_done                                ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_linefill_data_done                           ;
-    //logic [MSHR_ENTRY_NUM-1         :0]                 v_rd_done                                      ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_west_rd_done                                  ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_east_rd_done                                  ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_south_rd_done                                 ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_north_rd_done                                 ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_west_wr_done                                  ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_east_wr_done                                  ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_south_wr_done                                 ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_north_wr_done                                 ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_done                                    ;
-    logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_clean                                   ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_ds_txreq_done                           ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_west_rd_done                                 ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_east_rd_done                                 ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_south_rd_done                                ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_north_rd_done                                ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_west_wr_done                                 ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_east_wr_done                                 ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_south_wr_done                                ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_north_wr_done                                ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_done                                   ;
+    logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_clean                                  ;
     //logic [MSHR_ENTRY_NUM-1         :0]                 v_mshr_entry_pld_valid                          ;
 
-    logic [MSHR_ENTRY_IDX_WIDTH-1   :0]                 mshr_update_alloc_idx1;
-    logic [MSHR_ENTRY_IDX_WIDTH-1   :0]                 mshr_update_alloc_idx2;
+    //logic [MSHR_ENTRY_IDX_WIDTH-1   :0]                 mshr_update_alloc_idx1;
+    //logic [MSHR_ENTRY_IDX_WIDTH-1   :0]                 mshr_update_alloc_idx2;
 
-    logic [4    :0]                                     v_rd_rdy                                ;
-    logic [4    :0]                                     v_wr_rdy                                ;
+
     arb_out_req_t                                       linefill_req_pld                        ;
+    logic                                               linefill_req_vld                        ;
+    logic                                               linefill_req_rdy                        ;
+    arb_out_req_t                                       evict_rd_pld                            ;
+    logic                                               evict_rd_vld                            ;
+    logic                                               evict_rd_rdy                            ;
     arb_out_req_t                                       w_dataram_wr_pld                        ;
     arb_out_req_t                                       e_dataram_wr_pld                        ;
     arb_out_req_t                                       s_dataram_wr_pld                        ;
     arb_out_req_t                                       n_dataram_wr_pld                        ;
-    arb_out_req_t                                       evict_rd_pld                            ;
+    logic                                               w_dataram_wr_vld                        ;
+    logic                                               e_dataram_wr_vld                        ;
+    logic                                               s_dataram_wr_vld                        ;
+    logic                                               n_dataram_wr_vld                        ;
+    logic                                               w_dataram_wr_rdy                        ;
+    logic                                               e_dataram_wr_rdy                        ;
+    logic                                               s_dataram_wr_rdy                        ;
+    logic                                               n_dataram_wr_rdy                        ;
+
     arb_out_req_t                                       w_dataram_rd_pld                        ;
     arb_out_req_t                                       e_dataram_rd_pld                        ;
     arb_out_req_t                                       s_dataram_rd_pld                        ;
     arb_out_req_t                                       n_dataram_rd_pld                        ;
-
-    assign mshr_update_alloc_idx1 = mshr_update_pld_A.alloc_idx;
-    assign mshr_update_alloc_idx2 = mshr_update_pld_B.alloc_idx;
-    assign w_rd_alloc_rdy         = west_read_cmd_vld && west_read_cmd_rdy;
-    assign e_rd_alloc_rdy         = east_read_cmd_vld && east_read_cmd_rdy;
-    assign s_rd_alloc_rdy         = south_read_cmd_vld && south_read_cmd_rdy;
-    assign n_rd_alloc_rdy         = north_read_cmd_vld && north_read_cmd_rdy;
-    assign linefill_alloc_rdy     = lf_wrreq_vld && lf_wrreq_rdy;
-    assign evit_alloc_rdy         = evict_req_vld && evict_req_rdy;
-
-    
-
-    //always_ff@(posedge clk )begin
-    //    v_mshr_entry_pld[mshr_update_alloc_idx1]   <= mshr_update_pld_A;
-    //    v_mshr_entry_pld[mshr_update_alloc_idx2]   <= mshr_update_pld_B;
-    //end
-    //always_ff@(posedge clk or negedge rst_n) begin
-    //    if(!rst_n)begin
-    //        for(int i=0;i<MSHR_ENTRY_NUM;i=i+1)begin
-    //            v_mshr_entry_pld[i].valid <= 1'b0 ;
-    //        end
-    //    end
-    //    else if(mshr_update_en && v_mshr_update_en_1[alloc_index_1] && v_mshr_update_en_2[alloc_index_2])begin
-    //        v_mshr_entry_pld[alloc_index_1].valid <= 1'b1;
-    //        v_mshr_entry_pld[alloc_index_2].valid <= 1'b1;
-    //    end 
-    //    else begin
-    //        v_mshr_entry_pld[entry_release_done_index].valid <= 1'b0;
-    //    end
-    //end
-    //always_ff@(posedge clk or negedge rst_n) begin
-    //    if(!rst_n)begin
-    //        for(int i=0;i<MSHR_ENTRY_NUM;i=i+1)begin
-    //            v_mshr_entry_pld_valid[i] <= 1'b0 ;
-    //        end
-    //    end
-    //    //else if(mshr_update_en && v_mshr_update_en_1[mshr_update_alloc_idx1] && v_mshr_update_en_2[mshr_update_alloc_idx2])begin
-    //    else if(v_mshr_update_en_1[mshr_update_alloc_idx1] && v_mshr_update_en_2[mshr_update_alloc_idx2])begin
-//
-    //        v_mshr_entry_pld_valid[mshr_update_alloc_idx1] <= 1'b1;
-    //        v_mshr_entry_pld_valid[mshr_update_alloc_idx2] <= 1'b1;
-    //    end 
-    //    else begin
-    //        v_mshr_entry_pld_valid[entry_release_done_index] <= 1'b0;
-    //    end
-    //end
-
-    assign mshr_stall = ( (&v_entry_active)==1'b1);
+    logic                                               w_dataram_rd_vld                        ;
+    logic                                               e_dataram_rd_vld                        ;
+    logic                                               s_dataram_rd_vld                        ;
+    logic                                               n_dataram_rd_vld                        ;
+    logic                                               w_dataram_rd_rdy                        ;
+    logic                                               e_dataram_rd_rdy                        ;
+    logic                                               s_dataram_rd_rdy                        ;
+    logic                                               n_dataram_rd_rdy                        ;
 
 
     pre_alloc_two #(
@@ -257,52 +210,49 @@ module vec_cache_mshr
         .rst_n      (rst_n        ),
         .v_in_vld   (v_alloc_vld  ),
         .v_in_rdy   (v_alloc_rdy  ),
-        .out_vld    (alloc_vld    ),
-        .out_rdy    (alloc_rdy    ),
-        .out_index_1(alloc_index_1),
-        .out_index_2(alloc_index_2));
+        .out_vld_0  (alloc_vld_0  ),
+        .out_vld_1  (alloc_vld_1  ),
+        .out_rdy_0  (alloc_rdy_0  ),
+        .out_rdy_1  (alloc_rdy_1  ),
+        .out_idx_0  (alloc_idx_0),
+        .out_idx_1  (alloc_idx_1));
 
 // mshr entry enable decode
     v_en_decode #(
         .WIDTH          (MSHR_ENTRY_NUM )
     )   u_update_entry_dec1 (
-        .enable         (mshr_update_en    ),
-        .enable_index   (mshr_update_alloc_idx1),
-        .v_out_en       (v_mshr_update_en_1));
+        .enable         (mshr_update_en_0    ),
+        .enable_index   (mshr_update_pld_0.alloc_idx),
+        .v_out_en       (v_mshr_update_en_0));
     v_en_decode #(
         .WIDTH          (MSHR_ENTRY_NUM )
     )   u_update_entry_dec2 (
-        .enable         (mshr_update_en    ),
-        .enable_index   (mshr_update_alloc_idx2),
-        .v_out_en       (v_mshr_update_en_2));
+        .enable         (mshr_update_en_1    ),
+        .enable_index   (mshr_update_pld_1.alloc_idx),
+        .v_out_en       (v_mshr_update_en_1));
 
-    //always_ff@(posedge clk or negedge rst_n)begin
-    //    v_mshr_update_en <= v_mshr_update_en_1 | v_mshr_update_en_2;
+
+    assign v_mshr_update_en = v_mshr_update_en_0 | v_mshr_update_en_1;
+
+    //always_comb begin
+    //    for(int i=0;i<MSHR_ENTRY_NUM;i=i+1)begin
+    //        v_mshr_entry_pld_in[i] = '0;
+    //        //v_mshr_entry_pld[i].valid = 1'b0;
+    //    end
+    //    if(mshr_update_en)begin
+    //        v_mshr_entry_pld_in[mshr_update_alloc_idx1] = mshr_update_pld_0;
+    //        v_mshr_entry_pld_in[mshr_update_alloc_idx2] = mshr_update_pld_1;   
+    //    end
     //end
-    assign v_mshr_update_en = v_mshr_update_en_1 | v_mshr_update_en_2;
-    //always_ff@(posedge clk )begin
-    //    v_mshr_entry_pld[mshr_update_alloc_idx1]   <= mshr_update_pld_A;
-    //    v_mshr_entry_pld[mshr_update_alloc_idx2]   <= mshr_update_pld_B;
-    //end
-    always_comb begin
-        for(int i=0;i<MSHR_ENTRY_NUM;i=i+1)begin
-            v_mshr_entry_pld_in[i] = '0;
-            //v_mshr_entry_pld[i].valid = 1'b0;
-        end
-        if(mshr_update_en)begin
-            v_mshr_entry_pld_in[mshr_update_alloc_idx1] = mshr_update_pld_A;
-            v_mshr_entry_pld_in[mshr_update_alloc_idx2] = mshr_update_pld_B;   
-        end
-    end
 
 // entry_done decode
     //rxdata 进入LFDB，linefill请求可以举手参与仲裁
     v_en_decode #(
         .WIDTH          (MSHR_ENTRY_NUM )
     )   u_lf_data_dec (
-        .enable         (linefill_data_done    ),
-        .enable_index   (linefill_data_done_idx),
-        .v_out_en       (v_linefill_data_done  ));
+        .enable         (ds_txreq_done    ),
+        .enable_index   (ds_txreq_done_idx),
+        .v_out_en       (v_ds_txreq_done  ));
     v_en_decode #(
         .WIDTH          (MSHR_ENTRY_NUM   )
     )   u_linefill_done_dec (
@@ -377,36 +327,17 @@ module vec_cache_mshr
         .enable_index   (evict_clean_idx),
         .v_out_en       (v_evict_clean  ));
 
-    
-
-////entry_release_done  index
-    onehot2bin2  #(
-        .ONEHOT_WIDTH   (MSHR_ENTRY_NUM      )
-    ) u_release_done_index(
-        .onehot_in      (v_release_en            ),
-        .bin_out        (entry_release_done_index));
-    
-    onehot2bin2   #(
-        .ONEHOT_WIDTH   (MSHR_ENTRY_NUM      )
-    ) u_ds_req_entry_index(
-        .onehot_in      (v_downstream_txreq_rdy  ),
-        .bin_out        (downstream_release_index));
-   
-
     //check state
     generate
         for (genvar i=0;i<MSHR_ENTRY_NUM;i=i+1)begin:MSHR_ENTRY_ARRAY
             vec_cache_mshr_entry  u_vec_cache_mshr_entry(
             .clk                    (clk                        ),
             .rst_n                  (rst_n                      ),
-            .mshr_update_en         (v_mshr_update_en[i]        ),
-            .mshr_entry_pld        (v_mshr_entry_pld_in[i]      ),
+            .mshr_update_en_0       (v_mshr_update_en_0[i]      ),
+            .mshr_update_en_1       (v_mshr_update_en_1[i]      ),
+            .mshr_update_pld_0      (mshr_update_pld_0          ),
+            .mshr_update_pld_1      (mshr_update_pld_1          ),
             .mshr_out_pld           (v_mshr_entry_pld_out[i]    ),
-            //.mshr_entry_pld_A       (mshr_entry_pld_A           ),
-            //.mshr_entry_pld_B       (mshr_entry_pld_B           ),
-            //.mshr_entry_vld         (v_mshr_entry_pld_valid[i]  ),
-
-            .entry_active           (v_entry_active[i]          ),
             .alloc_vld              (v_alloc_vld[i]             ),
             .alloc_rdy              (v_alloc_rdy[i]             ),
 
@@ -414,26 +345,22 @@ module vec_cache_mshr
             .e_dataram_rd_rdy       (v_e_dataram_rd_rdy[i]      ),
             .s_dataram_rd_rdy       (v_s_dataram_rd_rdy[i]      ),
             .n_dataram_rd_rdy       (v_n_dataram_rd_rdy[i]      ),
-            //.dataram_rd_pld         (v_dataram_rd_pld[i]        ),
             .w_dataram_rd_vld       (v_w_dataram_rd_vld[i]      ),
             .e_dataram_rd_vld       (v_e_dataram_rd_vld[i]      ),
             .s_dataram_rd_vld       (v_s_dataram_rd_vld[i]      ),
             .n_dataram_rd_vld       (v_n_dataram_rd_vld[i]      ),
-            .w_dataram_rd_pld       (v_w_dataram_rd_pld[i]      ),
-            .e_dataram_rd_pld       (v_e_dataram_rd_pld[i]      ),
-            .s_dataram_rd_pld       (v_s_dataram_rd_pld[i]      ),
-            .n_dataram_rd_pld       (v_n_dataram_rd_pld[i]      ),
+            .dataram_rd_pld         (v_dataram_rd_pld[i]      ),
 
             //.wr_rdy                 (v_dataram_wr_rdy[i]        ),
             .w_dataram_wr_rdy       (v_w_dataram_wr_rdy[i]      ),
             .e_dataram_wr_rdy       (v_e_dataram_wr_rdy[i]      ),
             .s_dataram_wr_rdy       (v_s_dataram_wr_rdy[i]      ),
             .n_dataram_wr_rdy       (v_n_dataram_wr_rdy[i]      ),
-            .dataram_wr_pld         (v_dataram_wr_pld[i]        ),
             .w_dataram_wr_vld       (v_w_dataram_wr_vld[i]      ),
             .e_dataram_wr_vld       (v_e_dataram_wr_vld[i]      ),
             .s_dataram_wr_vld       (v_s_dataram_wr_vld[i]      ),
             .n_dataram_wr_vld       (v_n_dataram_wr_vld[i]      ),
+            .dataram_wr_pld         (v_dataram_wr_pld[i]        ),
 
             .evict_rdy              (v_evict_rd_rdy[i]          ),
             .evict_rd_vld           (v_evict_rd_vld[i]          ),  
@@ -448,9 +375,8 @@ module vec_cache_mshr
             .linefill_req_pld       (v_linefill_req_pld[i]      ),
             .linefill_req_rdy       (v_linefill_req_rdy[i]      ),
 
-            .linefill_data_done     (v_linefill_data_done[i]    ),
+            .ds_txreq_done          (v_ds_txreq_done[i]    ),
             .linefill_done          (v_linefill_done[i]         ),
-            //.rd_done                (v_rd_done[i]               ),
             .west_rd_done           (v_west_rd_done[i]          ),
             .east_rd_done           (v_east_rd_done[i]          ),
             .south_rd_done          (v_south_rd_done[i]         ),
@@ -464,16 +390,13 @@ module vec_cache_mshr
 
             .linefill_alloc_vld     (linefill_alloc_vld         ),
             .linefill_alloc_idx     (linefill_alloc_idx         ),
-            .evict_alloc_vld        (evict_alloc_vld            ),
-            .evict_alloc_idx        (evict_alloc_idx            ),
-            .w_rd_alloc_vld         (w_rd_alloc_vld             ),
-            .w_rd_alloc_idx         (w_rd_alloc_idx             ),
-            .e_rd_alloc_vld         (e_rd_alloc_vld             ),
-            .e_rd_alloc_idx         (e_rd_alloc_idx             ),
-            .s_rd_alloc_vld         (s_rd_alloc_vld             ),
-            .s_rd_alloc_idx         (s_rd_alloc_idx             ),
-            .n_rd_alloc_vld         (n_rd_alloc_vld             ),
-            .n_rd_alloc_idx         (n_rd_alloc_idx             ),
+            //.evict_alloc_vld        (evict_alloc_vld            ),
+            //.evict_alloc_idx        (evict_alloc_idx            ),
+
+            .w_rdb_alloc_nfull       (w_rdb_alloc_nfull         ),
+            .e_rdb_alloc_nfull       (e_rdb_alloc_nfull         ),
+            .s_rdb_alloc_nfull       (s_rdb_alloc_nfull         ),
+            .n_rdb_alloc_nfull       (n_rdb_alloc_nfull         ),
 
             .v_release_en           (v_release_en               ),
             .release_en             (v_release_en[i]            ));
@@ -502,9 +425,9 @@ module vec_cache_mshr
     ) u_w_dataram_rd_arb (
         .v_vld_s(v_w_dataram_rd_vld ),
         .v_rdy_s(v_w_dataram_rd_rdy ),
-        .v_pld_s(v_w_dataram_rd_pld ),
+        .v_pld_s(v_dataram_rd_pld   ),
         .vld_m  (w_dataram_rd_vld   ),
-        .rdy_m  (v_rd_rdy[4]         ),
+        .rdy_m  (w_dataram_rd_rdy   ),
         .pld_m  (w_dataram_rd_pld   ));
     
     vrp_arb #(
@@ -513,9 +436,9 @@ module vec_cache_mshr
     ) u_e_dataram_rd_arb (
         .v_vld_s(v_e_dataram_rd_vld ),
         .v_rdy_s(v_e_dataram_rd_rdy ),
-        .v_pld_s(v_e_dataram_rd_pld ),
+        .v_pld_s(v_dataram_rd_pld   ),
         .vld_m  (e_dataram_rd_vld   ),
-        .rdy_m  (v_rd_rdy[3]        ),
+        .rdy_m  (e_dataram_rd_rdy   ),
         .pld_m  (e_dataram_rd_pld   ));
         
     vrp_arb #(
@@ -524,10 +447,10 @@ module vec_cache_mshr
     ) u_s_dataram_rd_arb (
         .v_vld_s(v_s_dataram_rd_vld ),
         .v_rdy_s(v_s_dataram_rd_rdy ),
-        .v_pld_s(v_s_dataram_rd_pld ),
+        .v_pld_s(v_dataram_rd_pld   ),
         .vld_m  (s_dataram_rd_vld   ),
-        .rdy_m  (v_rd_rdy[2]         ),
-        .pld_m  (s_dataram_rd_pld     ));
+        .rdy_m  (s_dataram_rd_rdy   ),
+        .pld_m  (s_dataram_rd_pld   ));
         
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
@@ -535,14 +458,11 @@ module vec_cache_mshr
     ) u_n_dataram_rd_arb (
         .v_vld_s(v_n_dataram_rd_vld ),
         .v_rdy_s(v_n_dataram_rd_rdy ),
-        .v_pld_s(v_n_dataram_rd_pld ),
+        .v_pld_s(v_dataram_rd_pld   ),
         .vld_m  (n_dataram_rd_vld   ),
-        .rdy_m  (v_rd_rdy[1]        ),
+        .rdy_m  (n_dataram_rd_rdy   ),
         .pld_m  (n_dataram_rd_pld   ));
-        //assign n_out_dataram_rd_vld = n_dataram_rd_vld && n_rd_alloc_vld;
-        //assign n_out_dataram_rd_pld.db_entry_id = n_rd_alloc_idx;
 
-        assign v_data_rd_rdy = v_w_dataram_rd_rdy |v_e_dataram_rd_rdy |v_s_dataram_rd_rdy |v_n_dataram_rd_rdy;
 //--------------------------------------------------------------------
 
 //写arb----------------------------------------------------------------
@@ -554,7 +474,7 @@ module vec_cache_mshr
         .v_rdy_s(v_w_dataram_wr_rdy   ),
         .v_pld_s(v_dataram_wr_pld     ),
         .vld_m  (w_dataram_wr_vld     ),
-        .rdy_m  (v_wr_rdy[4]          ),
+        .rdy_m  (w_dataram_wr_rdy     ),
         .pld_m  (w_dataram_wr_pld    ));
 
     vrp_arb #(
@@ -565,7 +485,7 @@ module vec_cache_mshr
         .v_rdy_s(v_e_dataram_wr_rdy   ),
         .v_pld_s(v_dataram_wr_pld     ),
         .vld_m  (e_dataram_wr_vld     ),
-        .rdy_m  (v_wr_rdy[3]           ),
+        .rdy_m  (e_dataram_wr_rdy     ),
         .pld_m  (e_dataram_wr_pld    ));
 
     vrp_arb #(
@@ -576,7 +496,7 @@ module vec_cache_mshr
         .v_rdy_s(v_s_dataram_wr_rdy   ),
         .v_pld_s(v_dataram_wr_pld     ),
         .vld_m  (s_dataram_wr_vld     ),
-        .rdy_m  (v_wr_rdy[2]          ),
+        .rdy_m  (s_dataram_wr_rdy     ),
         .pld_m  (s_dataram_wr_pld    ));
 
     vrp_arb #(
@@ -587,7 +507,7 @@ module vec_cache_mshr
         .v_rdy_s(v_n_dataram_wr_rdy   ),
         .v_pld_s(v_dataram_wr_pld     ),
         .vld_m  (n_dataram_wr_vld     ),
-        .rdy_m  (v_wr_rdy[1]           ),
+        .rdy_m  (n_dataram_wr_rdy     ),
         .pld_m  (n_dataram_wr_pld    ));
 
     assign v_dataram_wr_rdy =   v_w_dataram_wr_rdy | v_e_dataram_wr_rdy | v_s_dataram_wr_rdy | v_n_dataram_wr_rdy;
@@ -602,7 +522,7 @@ module vec_cache_mshr
         .v_rdy_s(v_evict_rd_rdy   ),
         .v_pld_s(v_evict_rd_pld   ),
         .vld_m  (evict_rd_vld     ),
-        .rdy_m  (v_rd_rdy[0]      ),
+        .rdy_m  (evict_rd_rdy     ),
         .pld_m  (evict_rd_pld     ));
 //------------------------------------------------------------------------
 
@@ -615,7 +535,7 @@ module vec_cache_mshr
         .v_rdy_s(v_linefill_req_rdy   ),
         .v_pld_s(v_linefill_req_pld   ),
         .vld_m  (linefill_req_vld     ),
-        .rdy_m  (v_wr_rdy[0]          ),
+        .rdy_m  (linefill_req_rdy     ),
         .pld_m  (linefill_req_pld     ));
 
 //------------------------------------------------------------------------
@@ -628,32 +548,29 @@ module vec_cache_mshr
 
     //assign grant_ram_rdy = dataram_rdy && lf_wrreq_rdy;
     assign grant_ram_rdy = dataram_rdy && lf_wrreq_rdy && west_write_cmd_rdy && east_write_cmd_rdy && south_write_cmd_rdy && north_write_cmd_rdy; //sram 输入的rdy信号,还需要& WDB输入的rdy
-        ten_to_two_arb #(
-            .RD_REQ_NUM (5),
-            .WR_REQ_NUM (5),
-            .CHANNEL_SHIFT_REG_WIDTH (20),
-            .RAM_SHIFT_REG_WIDTH (20)
-            //.REQ_NUM (10)
+        stage2_arbiter #(
+            .RD_REQ_NUM             (5 ),
+            .WR_REQ_NUM             (5 ),
+            .CHANNEL_SHIFT_REG_WIDTH(20),
+            .RAM_SHIFT_REG_WIDTH    (20)
         ) u_10to2_arb (
-            .clk            (clk                      ),
-            .rst_n          (rst_n                    ),
+            .clk            (clk                          ),
+            .rst_n          (rst_n                        ),
             .rd_vld         ({w_dataram_rd_vld,e_dataram_rd_vld,s_dataram_rd_vld,n_dataram_rd_vld,evict_rd_vld}),
             .rd_pld         ({w_dataram_rd_pld,e_dataram_rd_pld,s_dataram_rd_pld,n_dataram_rd_pld,evict_rd_pld}),
-            .rd_rdy         (v_rd_rdy                 ),
+            .rd_rdy         ({w_dataram_rd_rdy,e_dataram_rd_rdy,s_dataram_rd_rdy,n_dataram_rd_rdy,evict_rd_rdy}),
             .wr_vld         ({w_dataram_wr_vld,e_dataram_wr_vld,s_dataram_wr_vld,n_dataram_wr_vld,linefill_req_vld}),
             .wr_pld         ({w_dataram_wr_pld,e_dataram_wr_pld,s_dataram_wr_pld,n_dataram_wr_pld,linefill_req_pld}),
-            .wr_rdy         (v_wr_rdy                 ),
-            .grant_req_vld_0(req_ram_vld_0            ),
-            .grant_req_pld_0(req_ram_pld_0            ),
-            .grant_req_vld_1(req_ram_vld_1            ),
-            .grant_req_pld_1(req_ram_pld_1            ),
+            .wr_rdy         ({w_dataram_wr_rdy,e_dataram_wr_rdy,s_dataram_wr_rdy,n_dataram_wr_rdy,linefill_req_rdy}),
+            .grant_req_vld_0(req_ram_vld_0                ),
+            .grant_req_pld_0(req_ram_pld_0                ),
+            .grant_req_vld_1(req_ram_vld_1                ),
+            .grant_req_pld_1(req_ram_pld_1                ),
             .grant_req_rdy  ({grant_ram_rdy,grant_ram_rdy})    //sram 输入的rdy信号
         );
 
 
- //arbiter 选出的2个请求做decode，确定是哪个方向的读或写，
-//输出应该是10个？
-
+ //arbiter 选出的2个请求做decode
     always_comb begin
         west_read_cmd_vld  = 'b0;
         west_read_cmd_pld  = 'b0;
@@ -663,6 +580,26 @@ module vec_cache_mshr
         south_read_cmd_pld = 'b0;
         north_read_cmd_vld = 'b0;
         north_read_cmd_pld = 'b0;
+        if(req_ram_pld_0.opcode== `VEC_CACHE_READ | req_ram_pld_1.opcode== `VEC_CACHE_READ)begin
+            west_read_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_WEST)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`VEC_CACHE_WEST));//west
+            west_read_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_WEST)) ? req_ram_pld_0 : req_ram_pld_1;//west
+            east_read_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_EAST)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`VEC_CACHE_EAST));//east
+            east_read_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_EAST)) ? req_ram_pld_0 : req_ram_pld_1;//east
+            south_read_cmd_vld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_SOUTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`VEC_CACHE_SOUTH));//south
+            south_read_cmd_pld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_SOUTH)) ? req_ram_pld_0 : req_ram_pld_1;//south
+            north_read_cmd_vld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_NORTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`VEC_CACHE_NORTH));//north    
+            north_read_cmd_pld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_NORTH)) ? req_ram_pld_0 : req_ram_pld_1;//west
+        end
+    end
+    always_comb begin
+        evict_req_pld        = 'b0;  
+        evict_req_vld        = 'b0;
+        if(req_ram_pld_0.opcode== `VEC_CACHE_EVICT | req_ram_pld_1.opcode== `VEC_CACHE_EVICT)begin
+            evict_req_pld        = req_ram_vld_0 | req_ram_vld_1;
+            evict_req_vld        = req_ram_vld_0 ? req_ram_pld_0 : req_ram_pld_1; 
+        end
+    end
+    always_comb begin
         west_write_cmd_vld  = 'b0;
         west_write_cmd_pld  = 'b0;
         east_write_cmd_vld  = 'b0;
@@ -671,98 +608,23 @@ module vec_cache_mshr
         south_write_cmd_pld = 'b0;
         north_write_cmd_vld = 'b0;
         north_write_cmd_pld = 'b0;
-        evict_req_pld       = 'b0;//TODO
-        evict_req_vld       = 'b0; 
+        if(req_ram_pld_0.opcode== `VEC_CACHE_WRITE | req_ram_pld_1.opcode== `VEC_CACHE_WRITE)begin
+            west_write_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_WEST)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`VEC_CACHE_WEST));//west
+            west_write_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_WEST)) ? req_ram_pld_0 : req_ram_pld_1;//west
+            east_write_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_EAST)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`VEC_CACHE_EAST));//east
+            east_write_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_EAST)) ? req_ram_pld_0 : req_ram_pld_1;//east
+            south_write_cmd_vld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_SOUTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`VEC_CACHE_SOUTH));//south
+            south_write_cmd_pld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_SOUTH)) ? req_ram_pld_0 : req_ram_pld_1;//south
+            north_write_cmd_vld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_NORTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`VEC_CACHE_NORTH));//north    
+            north_write_cmd_pld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`VEC_CACHE_NORTH)) ? req_ram_pld_0 : req_ram_pld_1;//west
+        end
+    end
+    always_comb begin
         lf_wrreq_pld        = 'b0;  
-        lf_wrreq_vld        = 'b0; //opcode 0write;1read;2evict;3linefill
- 
-        if(req_ram_pld_0.opcode== `READ | req_ram_pld_1.opcode== `READ )begin
-            west_read_cmd_vld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`WEST))  | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`WEST));//west
-            west_read_cmd_pld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`WEST))  ? req_ram_pld_0 : req_ram_pld_1;//west
-            east_read_cmd_vld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`EAST))  | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`EAST));//east
-            east_read_cmd_pld   = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`EAST))  ? req_ram_pld_0 : req_ram_pld_1;//east
-            south_read_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`SOUTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`SOUTH));//south
-            south_read_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`SOUTH)) ? req_ram_pld_0 : req_ram_pld_1;//south
-            north_read_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`NORTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`NORTH));//north
-            north_read_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`NORTH)) ? req_ram_pld_0 : req_ram_pld_1;//west
-            west_write_cmd_vld  = 1'b0;
-            west_write_cmd_pld  = 'b0 ;
-            east_write_cmd_vld  = 1'b0;
-            east_write_cmd_pld  = 'b0 ;
-            south_write_cmd_vld = 1'b0;
-            south_write_cmd_pld = 'b0 ;
-            north_write_cmd_vld = 1'b0;
-            north_write_cmd_pld = 'b0 ;
-            evict_req_vld       = 'b0;
-            evict_req_pld       = 'b0;
-            lf_wrreq_vld        = 'b0;
-            lf_wrreq_pld        = 'b0;
-        end
-        else if(req_ram_pld_0.opcode== `LINEFILL | req_ram_pld_1.opcode== `LINEFILL)begin
-            west_read_cmd_vld   = 1'b0;
-            west_read_cmd_pld   = 'b0 ;
-            east_read_cmd_vld   = 1'b0;
-            east_read_cmd_pld   = 'b0 ;
-            south_read_cmd_vld  = 1'b0;
-            south_read_cmd_pld  = 'b0 ;
-            north_read_cmd_vld  = 1'b0;
-            north_read_cmd_pld  = 'b0 ;
-            west_write_cmd_vld  = 1'b0;
-            west_write_cmd_pld  = 'b0 ;
-            east_write_cmd_vld  = 1'b0;
-            east_write_cmd_pld  = 'b0 ;
-            south_write_cmd_vld = 1'b0;
-            south_write_cmd_pld = 'b0 ;
-            north_write_cmd_vld = 1'b0;
-            north_write_cmd_pld = 'b0 ;
-            evict_req_vld       = 'b0 ;
-            evict_req_pld       = 'b0 ;
+        lf_wrreq_vld        = 'b0;
+        if(req_ram_pld_0.opcode== `VEC_CACHE_LINEFILL | req_ram_pld_1.opcode== `VEC_CACHE_LINEFILL)begin
             lf_wrreq_vld        = req_ram_vld_0 | req_ram_vld_1;
-            lf_wrreq_pld        = req_ram_vld_0 ? req_ram_pld_0 : req_ram_pld_1;  
-        end
-        else if(req_ram_pld_0.opcode== `WRITE | req_ram_pld_1.opcode== `WRITE)begin
-            west_read_cmd_vld   = 1'b0;
-            west_read_cmd_pld   = 'b0 ;
-            east_read_cmd_vld   = 1'b0;
-            east_read_cmd_pld   = 'b0 ;
-            south_read_cmd_vld  = 1'b0;
-            south_read_cmd_pld  = 'b0 ;
-            north_read_cmd_vld  = 1'b0;
-            north_read_cmd_pld  = 'b0 ;
-            west_write_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`WEST)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`WEST));//west
-            west_write_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`WEST)) ? req_ram_pld_0 : req_ram_pld_1;//west
-            east_write_cmd_vld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`EAST)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`EAST));//east
-            east_write_cmd_pld  = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`EAST)) ? req_ram_pld_0 : req_ram_pld_1;//east
-            south_write_cmd_vld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`SOUTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`SOUTH));//south
-            south_write_cmd_pld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`SOUTH)) ? req_ram_pld_0 : req_ram_pld_1;//south
-            north_write_cmd_vld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`NORTH)) | (req_ram_vld_1 && (req_ram_pld_1.txnid.direction_id==`NORTH));//north    
-            north_write_cmd_pld = (req_ram_vld_0 && (req_ram_pld_0.txnid.direction_id==`NORTH)) ? req_ram_pld_0 : req_ram_pld_1;//west
-            evict_req_vld       = 'b0;
-            evict_req_pld       = 'b0;
-            lf_wrreq_vld        = 'b0;
-            lf_wrreq_pld        = 'b0;
-        end
-        else if(req_ram_pld_0.opcode== `EVICT | req_ram_pld_1.opcode== `EVICT)begin
-            west_read_cmd_vld   = 1'b0;
-            west_read_cmd_pld   = 'b0 ;
-            east_read_cmd_vld   = 1'b0;
-            east_read_cmd_pld   = 'b0 ;
-            south_read_cmd_vld  = 1'b0;
-            south_read_cmd_pld  = 'b0 ;
-            north_read_cmd_vld  = 1'b0;
-            north_read_cmd_pld  = 'b0 ;
-            west_write_cmd_vld  = 1'b0;
-            west_write_cmd_pld  = 'b0 ;
-            east_write_cmd_vld  = 1'b0;
-            east_write_cmd_pld  = 'b0 ;
-            south_write_cmd_vld = 1'b0;
-            south_write_cmd_pld = 'b0 ;
-            north_write_cmd_vld = 1'b0;
-            north_write_cmd_pld = 'b0 ;
-            evict_req_vld       = req_ram_vld_0 | req_ram_vld_1;
-            evict_req_pld       = req_ram_vld_0 ? req_ram_pld_0 : req_ram_pld_1;
-            lf_wrreq_vld        = 'b0;
-            lf_wrreq_pld        = 'b0;
+            lf_wrreq_pld        = req_ram_vld_0 ? req_ram_pld_0 : req_ram_pld_1; 
         end
     end
 
