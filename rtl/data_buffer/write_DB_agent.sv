@@ -30,7 +30,7 @@ module write_DB_agent
 
     logic [RW_DB_ENTRY_NUM-1    :0]         v_wdb_entry_idle ;
     logic [RW_DB_ENTRY_NUM-1    :0]         v_wdb_entry_active;
-    logic [RW_DB_ENTRY_NUM-1    :0]         v_wdb_rdy   ;
+    logic [RW_DB_ENTRY_NUM-1    :0]         v_wdb_rdy       ;
     logic [WRITE_DONE_DELAY-1   :0]         delay_shift_reg ;
     arb_out_req_t                           pld_shift_reg[WRITE_DONE_DELAY-1:0] ;
     logic                                   read_wdb_vld    ;//read WDB 高优先级
@@ -110,7 +110,7 @@ module write_DB_agent
     
     //WDB ram
     toy_mem_model_bit #(
-        .ADDR_WIDTH  ($clog2(RW_DB_ENTRY_NUM)  ),
+        .ADDR_WIDTH ($clog2(RW_DB_ENTRY_NUM)  ),
         .DATA_WIDTH (1024 )
     ) u_write_data_buffer (
         .clk    (clk        ),
@@ -141,8 +141,6 @@ module write_DB_agent
         end
     end
 
-
-
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n) begin
             for(int i=0;i<RW_DB_ENTRY_NUM;i=i+1)begin
@@ -151,7 +149,7 @@ module write_DB_agent
         end
         else begin
             if(write_wdb_vld)begin
-                v_wdb_entry_active[write_wdb_pld.db_entry_id] <= 'b1;
+                v_wdb_entry_active[write_wdb_pld.db_entry_id]<= 'b1;
             end
             else if(read_wdb_vld && write_sram_rdy)begin
                 v_wdb_entry_active[read_wdb_pld.db_entry_id] <= 'b0;

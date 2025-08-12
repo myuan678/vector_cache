@@ -23,8 +23,8 @@ module linefillDB
     output write_ram_pld_t                  lfdb_to_ram_pld         ,
     input  logic                            lfdb_to_ram_rdy         ,
 
-    output logic                            linefill_data_done      ,//to rob
-    output logic [MSHR_ENTRY_IDX_WIDTH-1:0] linefill_data_done_idx  ,
+    output logic                            ds_txreq_done      ,//to rob
+    output logic [MSHR_ENTRY_IDX_WIDTH-1:0] ds_txreq_done_idx  ,
     output logic                            linefill_to_ram_done    ,
     output logic [MSHR_ENTRY_IDX_WIDTH-1:0] linefill_to_ram_done_idx
 );
@@ -100,7 +100,7 @@ module linefillDB
             hold_req_pld <= 'b0;
         end
         else begin
-            if(!sending && delay_shift_reg[ARB_TO_LFDB_DELAY-1])begin//ARB_TO_LFDB_DELAY-1拍后开始发送,linefill_data_done
+            if(!sending && delay_shift_reg[ARB_TO_LFDB_DELAY-1])begin//ARB_TO_LFDB_DELAY-1拍后开始发送,ds_txreq_done
                 sending <= 1'b1;
                 req_cnt <= 2'd0;
                 hold_req_pld <= delay_pld_reg[ARB_TO_LFDB_DELAY-1];
@@ -129,7 +129,7 @@ module linefillDB
     //        read_lfdb_pld   <= '0;
     //    end 
     //    else begin//开始发送4拍
-    //        if (!sending && delay_shift_reg[ARB_TO_LFDB_DELAY-1]) begin//ARB_TO_LFDB_DELAY-1拍后开始发送,linefill_data_done
+    //        if (!sending && delay_shift_reg[ARB_TO_LFDB_DELAY-1]) begin//ARB_TO_LFDB_DELAY-1拍后开始发送,ds_txreq_done
     //            sending                   <= 1'b1;
     //            req_cnt                   <= 2'd0;
     //            read_lfdb_vld             <= 1'b1;
@@ -196,11 +196,11 @@ module linefillDB
 
 
 
-    //linefill_data_done表示数据写入了LFDB，应该是ds_to_lfdb_vld
+    //ds_txreq_done
     //arb出的linefill_wrreq，读LFDB
     
-    assign linefill_data_done       = ds_to_lfdb_rdy && ds_to_lfdb_vld && ds_to_lfdb_pld.last;
-    assign linefill_data_done_idx   = ds_to_lfdb_pld.linefill_cmd.rob_entry_id;
+    assign ds_txreq_done       = ds_to_lfdb_rdy && ds_to_lfdb_vld && ds_to_lfdb_pld.last;
+    assign ds_txreq_done_idx   = ds_to_lfdb_pld.linefill_cmd.rob_entry_id;
 
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n)begin
@@ -250,9 +250,6 @@ module linefillDB
             end
         end
     end
-
-
-
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n) begin
             for(int i=0;i<RW_DB_ENTRY_NUM;i=i+1)begin
