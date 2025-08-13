@@ -51,7 +51,8 @@ module vec_cache_mshr_entry
     input  logic                               linefill_req_rdy           ,
     output arb_out_req_t                       linefill_req_pld           ,
 
-    input  logic                               ds_txreq_done         ,
+    input  logic                               ds_txreq_done              ,
+    input  logic [$clog2(LFDB_ENTRY_NUM/4)-1:0]ds_txreq_done_db_id        ,
     input  logic                               linefill_done              ,
     input  logic                               evict_clean                ,
     input  logic                               evict_done                 ,
@@ -134,16 +135,12 @@ module vec_cache_mshr_entry
     arb_out_req_t              evict_rd_pld_0          ;
     arb_out_req_t              evict_rd_pld_1          ;
     arb_out_req_t              evict_rd_pld_2          ;
-    arb_out_req_t              evict_rd_pld_3          ;   
-    logic idle;
-    logic active;
+    arb_out_req_t              evict_rd_pld_3          ;  
+    logic [LFDB_ENTRY_NUM-1:0] lfdb_entry_id           ; 
+    logic                      idle                    ;
+    logic                      active                  ;
+    mshr_entry_t               mshr_entry_pld_reg_file ;
 
-    mshr_entry_t mshr_entry_pld_reg_file;
-    //always_ff@(posedge clk )begin
-    //    if(mshr_update_en)begin
-    //        mshr_entry_pld_reg_file <= mshr_entry_pld;
-    //    end
-    //end
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n)begin
             mshr_entry_pld_reg_file <=  'b0;
@@ -216,11 +213,10 @@ module vec_cache_mshr_entry
         else              hazard_free <= (hzd_checkpass && mshr_update_en) || ( hzd_release && active);
     end
 
-    logic [LFDB_ENTRY_NUM-1:0] lfdb_entry_id ;
     always_ff@(posedge clk or negedge rst_n)begin
-        if(!rst_n)                                             lfdb_entry_id <= 'b0;
-        else if(downstream_txreq_vld && downstream_txreq_rdy)  lfdb_entry_id <= downstream_txreq_pld.db_entry_id;
-        else                                                   lfdb_entry_id <=  lfdb_entry_id ;
+        if(!rst_n)                  lfdb_entry_id <= 'b0;
+        else if(ds_txreq_done )     lfdb_entry_id <= ds_txreq_done_db_id;
+        else                        lfdb_entry_id <= lfdb_entry_id;
     end
 
 
@@ -230,7 +226,6 @@ module vec_cache_mshr_entry
         if(!rst_n)                                              state_evict_sent <= 1'b1 ;
         else if(mshr_update_en && need_evict)                   state_evict_sent <= 1'b0 ;
         else if(evict_rd_vld && evict_rdy && evict_rd_pld.last) state_evict_sent <= 1'b1 ;
-        //else if(evict_rd_pld.last)                              state_evict_sent <= 1'b1 ;
     end
 
     always_ff@(posedge clk or negedge rst_n)begin
@@ -243,15 +238,14 @@ module vec_cache_mshr_entry
         else if(mshr_update_en && need_evict)     state_evdb_to_ds_done <= 1'b0       ;
         else if(evict_done)                       state_evdb_to_ds_done <= 1'b1       ;
     end
-    //
-    //assign evict_alloc_rdy              = evict_rd_vld && evict_rdy;
+    
     //assign evict_rd_vld_0                   = evict_alloc_vld && hazard_free && ~state_evict_sent;//evict is read, readout data, write into Evict data buffer
     assign evict_rd_vld_0                   =  hazard_free && ~state_evict_sent;
     assign evict_rd_pld_0.txnid.direction_id= mshr_entry_pld_reg_file.txnid.direction_id            ;
     assign evict_rd_pld_0.txnid.master_id   = mshr_entry_pld_reg_file.txnid.master_id               ;
     assign evict_rd_pld_0.txnid.mode        = mshr_entry_pld_reg_file.txnid.mode                    ;
     assign evict_rd_pld_0.txnid.byte_sel    = 2'd0                                                  ;
-    assign evict_rd_pld_0.opcode            = `VEC_CACHE_EVICT                                       ; // evict opcode
+    assign evict_rd_pld_0.opcode            = `VEC_CACHE_EVICT                                      ; // evict opcode
     assign evict_rd_pld_0.way               = mshr_entry_pld_reg_file.way                           ;
     assign evict_rd_pld_0.tag               = mshr_entry_pld_reg_file.req_tag                       ;
     assign evict_rd_pld_0.index             = mshr_entry_pld_reg_file.index                         ; 
@@ -338,22 +332,22 @@ module vec_cache_mshr_entry
 
     // linefill 
     always_ff@(posedge clk or negedge rst_n) begin
-        if(~rst_n)                                                          state_linefill_sent <= 1'b1;
-        else if(mshr_update_en && (need_linefill||need_evict))              state_linefill_sent <= 1'b0;
+        if(~rst_n)                                                     state_linefill_sent <= 1'b1;
+        else if(mshr_update_en && (need_linefill||need_evict))         state_linefill_sent <= 1'b0;
         //else if(mshr_update_en && need_linefill &&state_evict_dram_clean) state_linefill_sent <= 1'b0
-        else if(downstream_txreq_vld && downstream_txreq_rdy)               state_linefill_sent <= 1'b1;
+        else if(downstream_txreq_vld && downstream_txreq_rdy)          state_linefill_sent <= 1'b1;
     end
     
     always_ff@(posedge clk or negedge rst_n) begin
-        if(!rst_n)                                                          state_ds_to_lfdb_done<= 1'b1; 
-        else if(mshr_update_en && (need_linefill||need_evict))              state_ds_to_lfdb_done<= 1'b0;
+        if(!rst_n)                                                     state_ds_to_lfdb_done<= 1'b1; 
+        else if(mshr_update_en && (need_linefill||need_evict))         state_ds_to_lfdb_done<= 1'b0;
         else if(ds_txreq_done)                                         state_ds_to_lfdb_done<= 1'b1;//lfdb 收到linefill_data
     end
 
     always_ff@(posedge clk or negedge rst_n)begin
-        if(!rst_n)                                              state_linefill_rd_sent <= 1'b1;
-        else if(mshr_update_en && (need_linefill||need_evict))  state_linefill_rd_sent <= 1'b0;
-        else if(linefill_req_vld && linefill_req_rdy)           state_linefill_rd_sent <= 1'b1;
+        if(!rst_n)                                                     state_linefill_rd_sent <= 1'b1;
+        else if(mshr_update_en && (need_linefill||need_evict))         state_linefill_rd_sent <= 1'b0;
+        else if(linefill_req_vld && linefill_req_rdy)                  state_linefill_rd_sent <= 1'b1;
     end
 
     //assign linefill_req_vld           = state_ds_to_lfdb_done && state_evict_dram_clean && ~state_linefill_done;//需要发4个，offset+1作为下一个地址
@@ -407,11 +401,6 @@ module vec_cache_mshr_entry
         else if(west_rd_done | east_rd_done | south_rd_done | north_rd_done)state_rd_dataram_done <= 1'b1    ;
     end
 
-    //txnid的高2bit表示方向：00：west；01：east；10：south；11：north
-    //assign w_rd_alloc_rdy   = w_dataram_rd_vld && w_dataram_rd_rdy;
-    //assign e_rd_alloc_rdy   = w_dataram_rd_vld && e_dataram_rd_rdy;
-    //assign s_rd_alloc_rdy   = w_dataram_rd_vld && s_dataram_rd_rdy;
-    //assign n_rd_alloc_rdy   = w_dataram_rd_vld && n_dataram_rd_rdy;
     assign w_dataram_rd_vld = w_rdb_alloc_nfull &&  hazard_free && state_linefill_done && ~state_rd_dataram_sent  && (direc_id==`VEC_CACHE_WEST );
     assign e_dataram_rd_vld = e_rdb_alloc_nfull &&  hazard_free && state_linefill_done && ~state_rd_dataram_sent  && (direc_id==`VEC_CACHE_EAST );
     assign s_dataram_rd_vld = s_rdb_alloc_nfull &&  hazard_free && state_linefill_done && ~state_rd_dataram_sent  && (direc_id==`VEC_CACHE_SOUTH);
