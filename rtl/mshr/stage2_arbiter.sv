@@ -1,7 +1,7 @@
 module stage2_arbiter 
     import vector_cache_pkg::*; 
     #(
-    parameter integer unsigned  CHANNEL_SHIFT_REG_WIDTH = 10,
+    parameter integer unsigned  CHANNEL_SHIFT_REG_WIDTH = 20,
     parameter integer unsigned  RAM_SHIFT_REG_WIDTH     = 20
     ) (
     input  logic                    clk                     ,
@@ -58,7 +58,12 @@ module stage2_arbiter
     output arb_out_req_t            arbout_e_dataram_wr_pld ,
     output arb_out_req_t            arbout_s_dataram_wr_pld ,
     output arb_out_req_t            arbout_n_dataram_wr_pld ,
-    output arb_out_req_t            arbout_linefill_req_pld ,    
+    output arb_out_req_t            arbout_linefill_req_pld ,   
+    
+    output arb_out_req_t            read_cmd_pld_0,
+    output arb_out_req_t            read_cmd_pld_1,
+    output logic                    read_cmd_vld_0,
+    output logic                    read_cmd_vld_1,
     input                           arb_rdy                 
     );
 
@@ -124,7 +129,7 @@ module stage2_arbiter
     assign lf_wr_ram_sel = linefill_req_pld.dest_ram_id[2:0];
 
     //=============================================================================================
-    //read直接上channel，所以检查channel_timer的最低bit是否为1，不为1则说明下一拍没有写冲突
+    //channel_timer的最低bit是否为1，不为1则说明下一拍没有写冲突
     //read channel mask
     assign w_rd_pre_allow_bit = (channel_timer_shift_reg[w_dataram_rd_pld.dest_ram_id[0]][0]==1'b0) ;
     assign e_rd_pre_allow_bit = (channel_timer_shift_reg[e_dataram_rd_pld.dest_ram_id[0]][0]==1'b0) ;
@@ -255,7 +260,7 @@ module stage2_arbiter
         .arbout_s_dataram_wr_vld(arbout_s_dataram_wr_vld    ),
         .arbout_n_dataram_wr_vld(arbout_n_dataram_wr_vld    ),
         .arbout_linefill_req_vld(arbout_linefill_req_vld    ),
-        .grant_rdy              (1'b1));
+        .grant_rdy              (1'b1                       ));
 
 
     channel_shift_reg  #( 
@@ -291,5 +296,39 @@ module stage2_arbiter
         .n_wr_ram_sel       (n_wr_ram_sel             ),
         .lf_wr_ram_sel      (lf_wr_ram_sel            ),
         .ram_shift_reg      (ram_timer_shift_reg      ));
+
+        logic [4:0]     rd_vld      ;
+        arb_out_req_t   rd_pld[4:0] ;
+        assign rd_vld[4] = arbout_w_dataram_rd_vld;
+        assign rd_vld[3] = arbout_e_dataram_rd_vld;
+        assign rd_vld[2] = arbout_s_dataram_rd_vld;
+        assign rd_vld[1] = arbout_n_dataram_rd_vld;
+        assign rd_vld[0] = arbout_evict_rd_vld    ;
+        assign rd_pld[4] = arbout_w_dataram_rd_pld;
+        assign rd_pld[3] = arbout_e_dataram_rd_pld;
+        assign rd_pld[2] = arbout_s_dataram_rd_pld;
+        assign rd_pld[1] = arbout_n_dataram_rd_pld;
+        assign rd_pld[0] = arbout_evict_rd_pld    ;
+
+        always_comb begin
+            read_cmd_vld_0 = 1'b0;
+            read_cmd_pld_0 = '0;
+            read_cmd_vld_1 = 1'b0;
+            read_cmd_pld_1 = '0;
+            for (int i=0; i<5; i=i+1) begin
+                if (rd_vld[i]) begin
+                    if (!read_cmd_vld_0) begin
+                        read_cmd_vld_0 = 1'b1;
+                        read_cmd_pld_0 = rd_pld[i];
+                    end
+                    else if (!read_cmd_vld_1) begin
+                        read_cmd_vld_1 = 1'b1;
+                        read_cmd_pld_1 = rd_pld[i];
+                    end
+                end
+            end
+        end
+
+
 
 endmodule

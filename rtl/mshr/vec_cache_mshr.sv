@@ -25,6 +25,11 @@ module vec_cache_mshr
     output logic                                        north_read_cmd_vld      ,
     output arb_out_req_t                                north_read_cmd_pld      ,
 
+    output arb_out_req_t                                read_cmd_pld_0          ,
+    output arb_out_req_t                                read_cmd_pld_1          ,
+    output logic                                        read_cmd_vld_0          ,
+    output logic                                        read_cmd_vld_1          ,
+
     output logic                                        west_write_cmd_vld      ,
     output arb_out_req_t                                west_write_cmd_pld      ,
     output logic                                        east_write_cmd_vld      ,
@@ -541,6 +546,10 @@ module vec_cache_mshr
         .arbout_s_dataram_wr_pld(south_write_cmd_pld),
         .arbout_n_dataram_wr_pld(north_write_cmd_pld),
         .arbout_linefill_req_pld(lf_wrreq_pld       ),
+        .read_cmd_pld_0         (read_cmd_pld_0     ),
+        .read_cmd_pld_1         (read_cmd_pld_1     ),
+        .read_cmd_vld_0         (read_cmd_vld_0     ),
+        .read_cmd_vld_1         (read_cmd_vld_1     ),
         .arb_rdy                (1'b1               ));
     
 endmodule

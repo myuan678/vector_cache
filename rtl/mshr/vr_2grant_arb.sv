@@ -46,6 +46,7 @@ module vr_2grant_arb (
     logic [9  :0]          second_grant_oh      ;   
     logic [9  :0]          remaining_reqs       ; 
 
+
     assign v_req_vld = {w_dataram_rd_vld,e_dataram_rd_vld,s_dataram_rd_vld,n_dataram_rd_vld,evict_rd_vld,w_dataram_wr_vld,e_dataram_wr_vld,s_dataram_wr_vld,n_dataram_wr_vld,linefill_req_vld};
     
     // 查找第一优先级请求
@@ -65,7 +66,7 @@ module vr_2grant_arb (
     ) u_second_lead_one (
         .v_entry_vld    (remaining_reqs     ),
         .v_free_idx_oh  (second_grant_oh    ),
-        .v_free_idx_bin (   ),
+        .v_free_idx_bin (),
         .v_free_vld     ()
     );
     
