@@ -22,25 +22,6 @@ module write_cmd_sel
     output write_ram_pld_t  toram_north_write_cmd_pld_in[7:0]  
 );
 
-    logic [3:0]         south_wr_cmd_vld;
-    write_ram_pld_t     south_wr_cmd_pld[3:0];
-    
-    generate
-        for(genvar i=0;i<4;i=i+1)begin
-            assign south_wr_cmd_vld[i] = v_lfdb_to_ram_vld[i] | south_write_cmd_vld_in[i];
-            assign south_wr_cmd_pld[i] = v_lfdb_to_ram_vld[i] ? v_lfdb_to_ram_pld[i] : south_write_cmd_pld_in[i];
-        end
-    endgenerate
-    ////assert 同一个hash中，south_wr和linefill不会同时有效
-    //generate
-    //    for (genvar i=0;i<4;i=i+1)begin
-    //        always_comb begin
-    //            assert ((v_lfdb_to_ram_vld[i] && south_write_cmd_vld_in[i])==1'b0)
-    //            else $error("ERROR: linefill && sourth write conflict!!");
-    //        end
-    //    end
-    //endgenerate
-
     generate
         for(genvar i=0;i<4;i=i+1)begin:WEST_WRITE_GEN
             always_comb begin
@@ -122,22 +103,21 @@ module write_cmd_sel
                 toram_south_write_cmd_vld_in[2*i+1]= 'b0;
                 toram_south_write_cmd_pld_in[2*i]  = 'b0;
                 toram_south_write_cmd_pld_in[2*i+1]= 'b0;
-                if(south_wr_cmd_vld[i])begin
-                    if(south_wr_cmd_pld[i].write_cmd.req_cmd_pld.dest_ram_id[0])begin
-                        toram_south_write_cmd_vld_in[2*i]      = 1'b0;
-                        toram_south_write_cmd_vld_in[2*i+1]    = south_wr_cmd_vld[i];
-                        toram_south_write_cmd_pld_in[2*i]      = south_wr_cmd_pld[i];
-                        toram_south_write_cmd_pld_in[2*i+1]    = south_wr_cmd_pld[i];
-                    end
-                    else begin
-                        toram_south_write_cmd_vld_in[2*i]      = south_wr_cmd_vld[i];
-                        toram_south_write_cmd_vld_in[2*i+1]    = 1'b0;
-                        toram_south_write_cmd_pld_in[2*i]      = south_wr_cmd_pld[i];
-                        toram_south_write_cmd_pld_in[2*i+1]    = south_wr_cmd_pld[i];
-                    end
+                if(v_lfdb_to_ram_vld[i] && v_lfdb_to_ram_pld[i].write_cmd.req_cmd_pld.dest_ram_id[0])begin
+                    toram_south_write_cmd_vld_in[2*i]   = v_lfdb_to_ram_vld[i];
+                    toram_south_write_cmd_vld_in[2*i+1] = south_write_cmd_vld_in[i];
+                    toram_south_write_cmd_pld_in[2*i]   = v_lfdb_to_ram_pld[i];
+                    toram_south_write_cmd_pld_in[2*i+1] = south_write_cmd_pld_in[i];
+                end
+                else if(v_lfdb_to_ram_vld[i] && (v_lfdb_to_ram_pld[i].write_cmd.req_cmd_pld.dest_ram_id[0]==1'b0))begin
+                    toram_south_write_cmd_vld_in[2*i]   = south_write_cmd_vld_in[i];
+                    toram_south_write_cmd_vld_in[2*i+1] = v_lfdb_to_ram_vld[i];
+                    toram_south_write_cmd_pld_in[2*i]   = south_write_cmd_pld_in[i];
+                    toram_south_write_cmd_pld_in[2*i+1] = v_lfdb_to_ram_pld[i];
                 end
             end
         end
     endgenerate
+    
 
 endmodule
