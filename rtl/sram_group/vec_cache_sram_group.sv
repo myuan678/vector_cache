@@ -105,12 +105,12 @@ module vec_cache_sram_group
         for(genvar j=0;j<8;j=j+1)begin:SOUTH_WR_CMD_GEN
             assign sn_write_cmd_pld_wire [4][0][j] = south_write_cmd_pld_in[j];
             assign sn_write_cmd_vld_wire [4][0][j] = south_write_cmd_vld_in[j];
-            assign sn_write_cmd_pld_wire [4][1][j] = shift_sn_write_cmd_wire_tmp[j][2];
-            assign sn_write_cmd_vld_wire [4][1][j] = shift_sn_write_cmd_vld_wire_tmp[j][2];
-            assign sn_write_cmd_pld_wire [4][2][j] = shift_sn_write_cmd_wire_tmp[j][4];
-            assign sn_write_cmd_vld_wire [4][2][j] = shift_sn_write_cmd_vld_wire_tmp[j][4];
-            assign sn_write_cmd_pld_wire [4][3][j] = shift_sn_write_cmd_wire_tmp[j][6];
-            assign sn_write_cmd_vld_wire [4][3][j] = shift_sn_write_cmd_vld_wire_tmp[j][6];
+            assign sn_write_cmd_pld_wire [4][1][j] = shift_sn_write_cmd_wire_tmp[j][1];
+            assign sn_write_cmd_vld_wire [4][1][j] = shift_sn_write_cmd_vld_wire_tmp[j][1];
+            assign sn_write_cmd_pld_wire [4][2][j] = shift_sn_write_cmd_wire_tmp[j][3];
+            assign sn_write_cmd_vld_wire [4][2][j] = shift_sn_write_cmd_vld_wire_tmp[j][3];
+            assign sn_write_cmd_pld_wire [4][3][j] = shift_sn_write_cmd_wire_tmp[j][5];
+            assign sn_write_cmd_vld_wire [4][3][j] = shift_sn_write_cmd_vld_wire_tmp[j][5];
         end
     endgenerate
     
@@ -151,20 +151,20 @@ module vec_cache_sram_group
             //assign sn_data_wire[4][3][i].cmd_pld  = south_data_in[i].cmd_pld;
             assign sn_data_wire[4][0][i].data     = south_data_in[i].data[255:0];//south写需要平衡延迟
             assign sn_data_wire[4][0][i].cmd_pld  = south_data_in[i].cmd_pld;
-            assign sn_data_wire[4][1][i].data     = shift_sn_data_wire_tmp[i][2].data[511:256];
-            assign sn_data_wire[4][1][i].cmd_pld  = shift_sn_data_wire_tmp[i][2].cmd_pld;
-            assign sn_data_wire[4][2][i].data     = shift_sn_data_wire_tmp[i][4].data[767:512];
-            assign sn_data_wire[4][2][i].cmd_pld  = shift_sn_data_wire_tmp[i][4].cmd_pld;
-            assign sn_data_wire[4][3][i].data     = shift_sn_data_wire_tmp[i][6].data[1023:768];
-            assign sn_data_wire[4][3][i].cmd_pld  = shift_sn_data_wire_tmp[i][6].cmd_pld;
+            assign sn_data_wire[4][1][i].data     = shift_sn_data_wire_tmp[i][1].data[511:256];
+            assign sn_data_wire[4][1][i].cmd_pld  = shift_sn_data_wire_tmp[i][1].cmd_pld;
+            assign sn_data_wire[4][2][i].data     = shift_sn_data_wire_tmp[i][3].data[767:512];
+            assign sn_data_wire[4][2][i].cmd_pld  = shift_sn_data_wire_tmp[i][3].cmd_pld;
+            assign sn_data_wire[4][3][i].data     = shift_sn_data_wire_tmp[i][5].data[1023:768];
+            assign sn_data_wire[4][3][i].cmd_pld  = shift_sn_data_wire_tmp[i][5].cmd_pld;
             //assign sn_data_vld_wire[4][0][i]      = south_data_in_vld[i];
             //assign sn_data_vld_wire[4][1][i]      = south_data_in_vld[i];
             //assign sn_data_vld_wire[4][2][i]      = south_data_in_vld[i];
             //assign sn_data_vld_wire[4][3][i]      = south_data_in_vld[i];
             assign sn_data_vld_wire[4][0][i]      = south_data_in_vld[i];
-            assign sn_data_vld_wire[4][1][i]      = shift_sn_data_vld_wire_tmp[i][2];
-            assign sn_data_vld_wire[4][2][i]      = shift_sn_data_vld_wire_tmp[i][4];
-            assign sn_data_vld_wire[4][3][i]      = shift_sn_data_vld_wire_tmp[i][6];
+            assign sn_data_vld_wire[4][1][i]      = shift_sn_data_vld_wire_tmp[i][1];
+            assign sn_data_vld_wire[4][2][i]      = shift_sn_data_vld_wire_tmp[i][3];
+            assign sn_data_vld_wire[4][3][i]      = shift_sn_data_vld_wire_tmp[i][5];
             assign ns_data_wire[0][0][i].data     = north_data_in[i].data[255:0];
             assign ns_data_wire[0][0][i].cmd_pld  = north_data_in[i].cmd_pld;
             assign ns_data_wire[0][1][i].data     = north_data_in[i].data[511:256];
