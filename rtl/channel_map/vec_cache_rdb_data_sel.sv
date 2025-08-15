@@ -1,4 +1,4 @@
-module rdb_data_sel 
+module vec_cache_rdb_data_sel 
     import vector_cache_pkg::*;
     (   input  logic [7:0]         east_data_out_vld_todb              ,
         input  group_data_pld_t    east_data_out_todb       [7:0]      ,    

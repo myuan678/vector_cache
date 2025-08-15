@@ -1,4 +1,4 @@
-module write_cmd_sel 
+module vec_cache_write_cmd_sel 
     import vector_cache_pkg::*;
     (
     input logic [3:0]       v_lfdb_to_ram_vld                   ,
@@ -30,7 +30,7 @@ module write_cmd_sel
                 toram_west_write_cmd_pld_in[2*i]  = 'b0;
                 toram_west_write_cmd_pld_in[2*i+1]= 'b0;
                 if(west_write_cmd_vld_in[i])begin
-                    if(west_write_cmd_pld_in[i].write_cmd.req_cmd_pld.dest_ram_id[0])begin
+                    if(west_write_cmd_pld_in[i].write_cmd.req_cmd_pld.dest_ram_id.channel_id)begin
                         toram_west_write_cmd_vld_in[2*i]      = 1'b0;
                         toram_west_write_cmd_vld_in[2*i+1]    = west_write_cmd_vld_in[i];
                         toram_west_write_cmd_pld_in[2*i]      = west_write_cmd_pld_in[i];
@@ -54,7 +54,7 @@ module write_cmd_sel
                 toram_east_write_cmd_pld_in[2*i]  = 'b0;
                 toram_east_write_cmd_pld_in[2*i+1]= 'b0;
                 if(east_write_cmd_vld_in[i])begin
-                    if(east_write_cmd_pld_in[i].write_cmd.req_cmd_pld.dest_ram_id[0])begin
+                    if(east_write_cmd_pld_in[i].write_cmd.req_cmd_pld.dest_ram_id.channel_id)begin
                         toram_east_write_cmd_vld_in[2*i]      = 1'b0;
                         toram_east_write_cmd_vld_in[2*i+1]    = east_write_cmd_vld_in[i];
                         toram_east_write_cmd_pld_in[2*i]      = east_write_cmd_pld_in[i];
@@ -79,7 +79,7 @@ module write_cmd_sel
                 toram_north_write_cmd_pld_in[2*i]  = 'b0;
                 toram_north_write_cmd_pld_in[2*i+1]= 'b0;
                 if(north_write_cmd_vld_in[i])begin
-                    if(north_write_cmd_pld_in[i].write_cmd.req_cmd_pld.dest_ram_id[0])begin
+                    if(north_write_cmd_pld_in[i].write_cmd.req_cmd_pld.dest_ram_id.channel_id)begin
                         toram_north_write_cmd_vld_in[2*i]      = 1'b0;
                         toram_north_write_cmd_vld_in[2*i+1]    = north_write_cmd_vld_in[i];
                         toram_north_write_cmd_pld_in[2*i]      = north_write_cmd_pld_in[i];
@@ -103,13 +103,13 @@ module write_cmd_sel
                 toram_south_write_cmd_vld_in[2*i+1]= 'b0;
                 toram_south_write_cmd_pld_in[2*i]  = 'b0;
                 toram_south_write_cmd_pld_in[2*i+1]= 'b0;
-                if(v_lfdb_to_ram_vld[i] && v_lfdb_to_ram_pld[i].write_cmd.req_cmd_pld.dest_ram_id[0])begin
+                if(v_lfdb_to_ram_vld[i] && v_lfdb_to_ram_pld[i].write_cmd.req_cmd_pld.dest_ram_id.channel_id)begin
                     toram_south_write_cmd_vld_in[2*i]   = v_lfdb_to_ram_vld[i];
                     toram_south_write_cmd_vld_in[2*i+1] = south_write_cmd_vld_in[i];
                     toram_south_write_cmd_pld_in[2*i]   = v_lfdb_to_ram_pld[i];
                     toram_south_write_cmd_pld_in[2*i+1] = south_write_cmd_pld_in[i];
                 end
-                else if(v_lfdb_to_ram_vld[i] && (v_lfdb_to_ram_pld[i].write_cmd.req_cmd_pld.dest_ram_id[0]==1'b0))begin
+                else if(v_lfdb_to_ram_vld[i] && (v_lfdb_to_ram_pld[i].write_cmd.req_cmd_pld.dest_ram_id.channel_id==1'b0))begin
                     toram_south_write_cmd_vld_in[2*i]   = south_write_cmd_vld_in[i];
                     toram_south_write_cmd_vld_in[2*i+1] = v_lfdb_to_ram_vld[i];
                     toram_south_write_cmd_pld_in[2*i]   = south_write_cmd_pld_in[i];
