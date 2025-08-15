@@ -1,6 +1,8 @@
-module evictDB 
+module vec_cache_evictDB 
     import vector_cache_pkg::*;
-    (
+    #(
+        parameter integer unsigned READ_SRAM_DELAY = 10
+    )(
     input  logic                            clk,
     input  logic                            rst_n,
 

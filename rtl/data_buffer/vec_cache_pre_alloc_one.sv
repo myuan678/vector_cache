@@ -1,4 +1,4 @@
-module pre_alloc_one #(
+module vec_cache_pre_alloc_one #(
     parameter integer unsigned ENTRY_NUM = 32,
     parameter integer unsigned ENTRY_ID_WIDTH = $clog2(ENTRY_NUM),
     parameter integer unsigned PRE_ALLO_NUM = 1

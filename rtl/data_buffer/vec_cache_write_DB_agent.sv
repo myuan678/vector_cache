@@ -1,10 +1,9 @@
-module write_DB_agent 
+module vec_cache_write_DB_agent 
     import vector_cache_pkg::*;
     #( 
-        parameter integer unsigned ARB_TO_WDB_DELAY     = 5     ,
+        parameter integer unsigned ARB_TO_WDB_DELAY     = 5 ,
         parameter integer unsigned WRITE_DONE_DELAY     = 20    
-    )
-    (
+    )(
     input  logic                                clk             ,
     input  logic                                rst_n           ,
 
@@ -120,9 +119,7 @@ module write_DB_agent
         .wr_data(data_in    ),
         .rd_data(data_out   )
     );
-
-
-        
+    
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n)begin
             for(int i=0;i<RW_DB_ENTRY_NUM;i=i+1)begin
@@ -158,7 +155,7 @@ module write_DB_agent
     end
 
 
-    pre_alloc_one #(
+    vec_cache_pre_alloc_one #(
         .ENTRY_NUM(RW_DB_ENTRY_NUM),
         .ENTRY_ID_WIDTH($clog2(RW_DB_ENTRY_NUM))
     ) u_pre_alloc_rdb (

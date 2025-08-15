@@ -1,4 +1,4 @@
-module rdb_agent 
+module vec_cache_rdb_agent 
     import vector_cache_pkg::*;
     #( 
         parameter integer unsigned READ_SRAM_DELAY    = 10//read_sram delay,data to rdb
@@ -26,9 +26,8 @@ module rdb_agent
     rw_rdb_pld_t                            read_rdb_pld        ;
     logic                                   read_rdb_vld_d      ; 
     rw_rdb_pld_t                            read_rdb_pld_d      ;
-    //arb_out_req_t                         read_rdb_pld        ; //rdb entry id 作为地址，并带着其他的id，txnid/sideband
     logic                                   read_rdb_rdy        ; //应该是arb发出一个读请求，可以确定N拍之后数据进入到RDB，所以把rd_req delayN拍后作为read_rdb_vld
-    logic                                   ram_write_rdb_vld   ;//write RDB
+    logic                                   ram_write_rdb_vld   ; //write RDB
     rw_rdb_pld_t                            ram_write_rdb_pld   ;
     logic                                   ram_write_rdb_rdy   ;
     logic [RW_DB_ENTRY_NUM/2-1 :0]          v_rdb_entry_idle_0  ;
@@ -47,15 +46,16 @@ module rdb_agent
     logic                                   alloc_rdy_1         ;
 
     logic                                   rdb_sel             ;
+    logic                                   rdb_sel_d           ;
     logic                                   rdb0_mem_en         ;
     logic                                   rdb0_wr_en          ;       
-    logic [DB_ENTRY_IDX_WIDTH-1:0]          rdb0_addr           ;
+    logic [$clog2(RW_DB_ENTRY_NUM/2)-1:0]   rdb0_addr           ;
     logic [1023:0]                          rdb0_data_in        ;
     logic [1023:0]                          rdb0_data_out       ;
 
     logic                                   rdb1_mem_en         ;
     logic                                   rdb1_wr_en          ;       
-    logic [DB_ENTRY_IDX_WIDTH-1:0]          rdb1_addr           ;
+    logic [$clog2(RW_DB_ENTRY_NUM/2)-1:0]   rdb1_addr           ;
     logic [1023:0]                          rdb1_data_in        ;
     logic [1023:0]                          rdb1_data_out       ;
 
@@ -97,9 +97,9 @@ module rdb_agent
 
     //write rdb 请求的下一拍 read_rdb
     always_ff@(posedge clk or negedge rst_n)begin
-        if(!rst_n)                           read_rdb_vld <= 1'b0;
-        else if(ram_write_rdb_vld)           read_rdb_vld <= 1'b1;
-        else if(read_rdb_vld && read_rdb_rdy)read_rdb_vld <= 1'b0;
+        if(!rst_n)                              read_rdb_vld <= 1'b0;
+        else if(ram_write_rdb_vld)              read_rdb_vld <= 1'b1;
+        else if(read_rdb_vld && read_rdb_rdy)   read_rdb_vld <= 1'b0;
     end
     always_ff@(posedge clk)begin
         read_rdb_pld <= ram_write_rdb_pld;
@@ -113,34 +113,49 @@ module rdb_agent
     end
 
     //3.再延迟,data to US, to_us_done，//TODO:
-    assign to_us_done     = shift_reg[TO_US_DONE_DELAY-1];
-    assign to_us_done_idx = delay_pld_reg[TO_US_DONE_DELAY-1].rob_entry_id;
+    //change
+    //assign to_us_done     = shift_reg[TO_US_DONE_DELAY-1];
+    //assign to_us_done_idx = delay_pld_reg[TO_US_DONE_DELAY-1].rob_entry_id;
+    always_ff@(posedge clk or negedge rst_n)begin
+        if(!rst_n)begin
+            to_us_done     <= 'b0;
+            to_us_done_idx <= 'b0;
+        end
+        else if(read_rdb_vld && read_rdb_rdy)begin
+            to_us_done     <= 1'b1;
+            to_us_done_idx <= read_rdb_pld.rob_entry_id;
+        end
+        else begin
+            to_us_done     <= 'b0;
+            to_us_done_idx <= 'b0;
+        end
+    end
 
 //----------------------------------------------------------------------------------------
     //读写RDB的arbiter  写优先(ram_to_rdb_vld ：read_rdb_vld);
-    assign rdb0_mem_en       = rdb_sel ? (ram_write_rdb_vld | read_rdb_vld) : 'b0;
-    assign rdb0_wr_en        = (rdb_sel && ram_write_rdb_vld) ? 1'b1 : 1'b0 ;
-    assign rdb0_addr         = ram_write_rdb_vld ? ram_write_rdb_pld.db_entry_id : read_rdb_pld.db_entry_id; 
+
+    assign rdb0_mem_en       = (~rdb_sel  && ram_write_rdb_vld) || (~rdb_sel_d && read_rdb_vld);
+    assign rdb0_wr_en        = ~rdb_sel && ram_write_rdb_vld && ram_to_rdb_data_vld;
+    assign rdb0_addr         = rdb0_wr_en ? ram_write_rdb_pld.db_entry_id : read_rdb_pld.db_entry_id;
     assign rdb0_data_in      = ram_to_rdb_data_in.data ;
     
-    assign rdb1_mem_en       = ~rdb_sel ? (ram_write_rdb_vld | read_rdb_vld) : 'b0;
-    assign rdb1_wr_en        = (~rdb_sel && ram_write_rdb_vld) ? 1'b1 : 1'b0 ;
-    assign rdb1_addr         = ram_write_rdb_vld ? ram_write_rdb_pld.db_entry_id : read_rdb_pld.db_entry_id;
+    assign rdb1_mem_en       = (rdb_sel  && ram_write_rdb_vld) || (rdb_sel_d && read_rdb_vld);
+    assign rdb1_wr_en        = rdb_sel && ram_write_rdb_vld && ram_to_rdb_data_vld;
+    assign rdb1_addr         = rdb1_wr_en ? ram_write_rdb_pld.db_entry_id : read_rdb_pld.db_entry_id;
     assign rdb1_data_in      = ram_to_rdb_data_in.data ;
 
-    assign ram_write_rdb_rdy = RDB_rdy && ram_write_rdb_vld;
+    assign ram_write_rdb_rdy = RDB_rdy && ram_write_rdb_vld && ram_to_rdb_data_vld;
     assign read_rdb_rdy      = RDB_rdy && (~ram_write_rdb_vld);
     assign dataram_rd_rdy    = RDB_rdy ;
-
-
+    //
 
     always_ff@(posedge clk or negedge rst_n)begin
-        if(!rst_n)begin
-            rdb_sel <= 1'b0;
-        end
-        else if(ram_write_rdb_vld && ram_write_rdb_rdy)begin
-            rdb_sel <= ~rdb_sel; 
-        end
+        if(!rst_n)                                      rdb_sel <= 1'b0;
+        else if(ram_write_rdb_vld && ram_write_rdb_rdy) rdb_sel <= ~rdb_sel; 
+        //else if(read_rdb_vld && read_rdb_rdy) rdb_sel <= ~rdb_sel;
+    end
+    always_ff@(posedge clk )begin
+        rdb_sel_d <= rdb_sel;
     end
 
     assign alloc_rdy_0 = rdb_sel  && ram_write_rdb_vld && ram_write_rdb_rdy;
@@ -153,19 +168,20 @@ module rdb_agent
             end
         end                                    
         else begin
-            for(int i=0;i<RW_DB_ENTRY_NUM;i=i+1)begin
+            for(int i=0;i<RW_DB_ENTRY_NUM/2;i=i+1)begin
                 if(v_rdb_entry_idle_0[i] && v_rdb_rdy_0[i])begin
                     v_rdb_entry_idle_0[i] <= 1'b0;
                 end
             end    
-            if(read_rdb_vld && read_rdb_rdy && v_rdb_entry_active_0[read_rdb_pld.db_entry_id] )begin
+            //if(read_rdb_vld && read_rdb_rdy && v_rdb_entry_active_0[read_rdb_pld.db_entry_id] )begin
+            if(~rdb_sel_d && read_rdb_vld && read_rdb_rdy && v_rdb_entry_active_0[read_rdb_pld.db_entry_id] )begin
                 v_rdb_entry_idle_0[read_rdb_pld.db_entry_id]<= 1'b1;
             end
         end
     end
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n)begin
-            for(int i=0;i<RW_DB_ENTRY_NUM;i=i+1)begin
+            for(int i=0;i<RW_DB_ENTRY_NUM/2;i=i+1)begin
                 v_rdb_entry_idle_1[i]  <= 1'b1;
             end
         end                                    
@@ -175,37 +191,37 @@ module rdb_agent
                     v_rdb_entry_idle_1[i] <= 1'b0;
                 end
             end    
-            if(read_rdb_vld && read_rdb_rdy && v_rdb_entry_active_1[read_rdb_pld.db_entry_id] )begin
+            if(rdb_sel_d && read_rdb_vld && read_rdb_rdy && v_rdb_entry_active_1[read_rdb_pld.db_entry_id] )begin
                 v_rdb_entry_idle_1[read_rdb_pld.db_entry_id]<= 1'b1;
             end
         end
     end
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n) begin
-            for(int i=0;i<RW_DB_ENTRY_NUM;i=i+1)begin
+            for(int i=0;i<RW_DB_ENTRY_NUM/2;i=i+1)begin
                 v_rdb_entry_active_0[i] <= 'b0;
             end
         end
         else begin
-            if(ram_write_rdb_vld)begin
+            if(~rdb_sel && ram_write_rdb_vld)begin
                 v_rdb_entry_active_0[ram_write_rdb_pld.db_entry_id] <= 'b1;
             end
-            else if(read_rdb_vld && read_rdb_rdy)begin
+            else if(~rdb_sel_d && read_rdb_vld && read_rdb_rdy)begin
                 v_rdb_entry_active_0[read_rdb_pld.db_entry_id] <= 'b0;
             end               
         end                              
     end
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n) begin
-            for(int i=0;i<RW_DB_ENTRY_NUM;i=i+1)begin
+            for(int i=0;i<RW_DB_ENTRY_NUM/2;i=i+1)begin
                 v_rdb_entry_active_1[i] <= 'b0;
             end
         end
         else begin
-            if(ram_write_rdb_vld)begin
+            if(rdb_sel && ram_write_rdb_vld)begin
                 v_rdb_entry_active_1[ram_write_rdb_pld.db_entry_id] <= 'b1;
             end
-            else if(read_rdb_vld && read_rdb_rdy)begin
+            else if(rdb_sel_d && read_rdb_vld && read_rdb_rdy)begin
                 v_rdb_entry_active_1[read_rdb_pld.db_entry_id] <= 'b0;
             end               
         end                              
@@ -221,8 +237,8 @@ module rdb_agent
         rdb_nfull = (idle_cnt >= READ_SRAM_DELAY/2);
     end
 
-    pre_alloc_one #(
-        .ENTRY_NUM      (RW_DB_ENTRY_NUM/2   ),
+    vec_cache_pre_alloc_one #(
+        .ENTRY_NUM      (RW_DB_ENTRY_NUM/2        ),
         .ENTRY_ID_WIDTH ($clog2(RW_DB_ENTRY_NUM/2))
     ) u_pre_alloc_rdb0 (
         .clk        (clk               ),
@@ -231,10 +247,9 @@ module rdb_agent
         .v_in_rdy   (v_rdb_rdy_0       ),
         .out_vld    (alloc_vld_0       ),
         .out_rdy    (alloc_rdy_0       ),
-        .out_index  (alloc_idx_0       )
-    );
-    pre_alloc_one #(
-        .ENTRY_NUM      (RW_DB_ENTRY_NUM/2   ),
+        .out_index  (alloc_idx_0       ));
+    vec_cache_pre_alloc_one #(
+        .ENTRY_NUM      (RW_DB_ENTRY_NUM/2        ),
         .ENTRY_ID_WIDTH ($clog2(RW_DB_ENTRY_NUM/2))
     ) u_pre_alloc_rdb1 (
         .clk        (clk               ),
@@ -243,11 +258,10 @@ module rdb_agent
         .v_in_rdy   (v_rdb_rdy_1       ),
         .out_vld    (alloc_vld_1       ),
         .out_rdy    (alloc_rdy_1       ),
-        .out_index  (alloc_idx_1       )
-    );
+        .out_index  (alloc_idx_1       ));
 
     toy_mem_model_bit #(
-        .ADDR_WIDTH  ($clog2(RW_DB_ENTRY_NUM)),
+        .ADDR_WIDTH  ($clog2(RW_DB_ENTRY_NUM/2)),
         .DATA_WIDTH  (DATA_WIDTH)
     ) u_read_data_buffer_0 (
         .clk    (clk            ),
@@ -258,7 +272,7 @@ module rdb_agent
         .rd_data(rdb0_data_out  )
     );
     toy_mem_model_bit #(
-        .ADDR_WIDTH  ($clog2(RW_DB_ENTRY_NUM)),
+        .ADDR_WIDTH  ($clog2(RW_DB_ENTRY_NUM/2)),
         .DATA_WIDTH  (DATA_WIDTH)
     ) u_read_data_buffer_1 (
         .clk    (clk            ),
@@ -275,7 +289,7 @@ module rdb_agent
         else if(read_rdb_vld && read_rdb_rdy)   rdb_to_us_data_vld <= 1'b1;
         else                                    rdb_to_us_data_vld <= 1'b0;                                            
     end
-    assign rdb_to_us_data_pld.data         = ~rdb_sel ? rdb0_data_out  : rdb1_data_out;
+    assign rdb_to_us_data_pld.data         = rdb_sel ? rdb1_data_out  : rdb0_data_out;
     assign rdb_to_us_data_pld.txnid        = read_rdb_pld_d.txnid       ;
     assign rdb_to_us_data_pld.rob_entry_id = read_rdb_pld_d.rob_entry_id;
     assign rdb_to_us_data_pld.sideband     = read_rdb_pld_d.sideband    ;
