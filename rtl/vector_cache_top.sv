@@ -173,9 +173,13 @@ import vector_cache_pkg::*;
     logic [MSHR_ENTRY_IDX_WIDTH-1  :0]  v_evict_clean_idx[3:0]         ;           
     logic [3:0]                         v_ds_txreq_done                ;
     logic [MSHR_ENTRY_IDX_WIDTH-1  :0]  v_ds_txreq_done_idx[3:0]       ;
+    logic [$clog2(LFDB_ENTRY_NUM/4)-1:0]v_ds_txreq_done_db_id[3:0]     ;
     logic [3:0]                         v_linefill_to_ram_done         ;
     logic [MSHR_ENTRY_IDX_WIDTH-1  :0]  v_linefill_to_ram_done_idx[3:0];
 
+
+    arb_out_req_t                        v_toram_read_cmd_pld[7:0]     ;
+    logic [7:0]                          v_toram_read_cmd_vld          ;
 
     logic [3:0]                         v_west_read_cmd_vld            ;//4hash
     logic [3:0]                         v_west_read_cmd_rdy            ;
@@ -202,13 +206,15 @@ import vector_cache_pkg::*;
     arb_out_req_t                       v_north_write_cmd_pld[3:0]     ;
     logic [3:0]                         v_north_write_cmd_rdy          ;
 
-    logic [3:0]                         v_lf_wrreq_vld                 ;
-    arb_out_req_t                       v_lf_wrreq_pld[3:0]            ;
-    logic [3:0]                         v_lf_wrreq_rdy                 ;
+    logic [3:0]                         v_lfdb_write_cmd_vld           ;
+    arb_out_req_t                       v_lfdb_write_cmd_pld[3:0]      ;
+    logic [3:0]                         v_lfdb_write_cmd_rdy           ;
 
-    logic [3:0]                         v_evict_req_vld                ;
-    arb_out_req_t                       v_evict_req_pld[3:0]           ;
-    logic [3:0]                         v_evict_req_rdy                ;
+    logic [3:0]                         v_evdb_read_cmd_vld           ;
+    arb_out_req_t                       v_evdb_read_cmd_pld[3:0]      ;
+    logic [3:0]                         v_evdb_read_cmd_rdy           ;
+
+
 
     logic [3:0]                         v_west_write_alloc_vld         ;
     logic [DB_ENTRY_IDX_WIDTH-1:0]      v_west_write_alloc_idx[3:0]    ;
@@ -321,7 +327,7 @@ import vector_cache_pkg::*;
     
     
 
-    read_req_xbar #(
+    vec_cache_read_req_xbar #(
         .R_REQ_NUM (WR_REQ_NUM)
     ) u_west_read_req_xbar(
         .clk         (clk           ),
@@ -333,7 +339,7 @@ import vector_cache_pkg::*;
         .sel_rd_pld  (w_rd_pld      ),
         .sel_rd_rdy  ({v_hash_req_rdy[3][7],v_hash_req_rdy[2][7],v_hash_req_rdy[1][7],v_hash_req_rdy[0][7]}));
 
-    read_req_xbar #(
+    vec_cache_read_req_xbar #(
         .R_REQ_NUM (ER_REQ_NUM)
     ) u_east_read_req_xbar(
         .clk         (clk           ),
@@ -345,7 +351,7 @@ import vector_cache_pkg::*;
         .sel_rd_pld  (e_rd_pld      ),
         .sel_rd_rdy  ({v_hash_req_rdy[3][5],v_hash_req_rdy[2][5],v_hash_req_rdy[1][5],v_hash_req_rdy[0][5]}));
 
-    read_req_xbar #(
+    vec_cache_read_req_xbar #(
         .R_REQ_NUM (SR_REQ_NUM)
     ) u_south_read_req_xbar(
         .clk         (clk           ),
@@ -357,7 +363,7 @@ import vector_cache_pkg::*;
         .sel_rd_pld  (s_rd_pld      ),
         .sel_rd_rdy  ({v_hash_req_rdy[3][3],v_hash_req_rdy[2][3],v_hash_req_rdy[1][3],v_hash_req_rdy[0][3]}      ));
 
-    read_req_xbar #(
+    vec_cache_read_req_xbar #(
         .R_REQ_NUM (SR_REQ_NUM)
     ) u_north_read_req_xbar(
         .clk         (clk           ),
@@ -369,7 +375,7 @@ import vector_cache_pkg::*;
         .sel_rd_pld  (n_rd_pld      ),
         .sel_rd_rdy  ({v_hash_req_rdy[3][1],v_hash_req_rdy[2][1],v_hash_req_rdy[1][1],v_hash_req_rdy[0][1]}      ));
 
-    write_req_xbar #(
+    vec_cache_write_req_xbar #(
         .W_REQ_NUM(WW_REQ_NUM)
     ) u_west_write_req_xbar(
         .clk             (clk                   ),
@@ -385,7 +391,7 @@ import vector_cache_pkg::*;
         .sel_wr_data_pld (w_wdb_data_pld        ),
         .sel_wr_rdy      ({v_hash_req_rdy[3][6],v_hash_req_rdy[2][6],v_hash_req_rdy[1][6],v_hash_req_rdy[0][6]}              ));
 
-    write_req_xbar #(
+    vec_cache_write_req_xbar #(
         .W_REQ_NUM(EW_REQ_NUM)
     ) u_east_write_req_xbar(
         .clk             (clk                   ),
@@ -401,7 +407,7 @@ import vector_cache_pkg::*;
         .sel_wr_data_pld (e_wdb_data_pld        ),
         .sel_wr_rdy      ({v_hash_req_rdy[3][4],v_hash_req_rdy[2][4],v_hash_req_rdy[1][4],v_hash_req_rdy[0][4]}              ));
 
-    write_req_xbar #(
+    vec_cache_write_req_xbar #(
         .W_REQ_NUM(SW_REQ_NUM)
     ) u_south_write_req_xbar(
         .clk             (clk                    ),
@@ -417,7 +423,7 @@ import vector_cache_pkg::*;
         .sel_wr_data_pld (s_wdb_data_pld         ),
         .sel_wr_rdy      ({v_hash_req_rdy[3][2],v_hash_req_rdy[2][2],v_hash_req_rdy[1][2],v_hash_req_rdy[0][2]}               ));
 
-    write_req_xbar #(
+    vec_cache_write_req_xbar #(
         .W_REQ_NUM(NW_REQ_NUM)
     ) u_north_write_req_xbar(
         .clk             (clk                    ),
@@ -448,84 +454,81 @@ import vector_cache_pkg::*;
     generate
         for(genvar i=0;i<4;i=i+1)begin:hash_cache_ctrl_gen
             vec_cache_ctrl u_hash_cache_ctrl(
-                .clk                    (clk                      ),
-                .rst_n                  (rst_n                    ),
-                .hash_req_vld           (v_hash_req_vld[i]        ),//每个hash的8个请求，8选2
-                .hash_req_pld           (v_hash_req_pld[i]        ),//每个hash的8个请求，8选2
-                .hash_req_rdy           (v_hash_req_rdy[i]        ),//TODO:to req xbar
-                .v_wr_resp_vld_0        (vv_wr_resp_vld_0[i]      ),//wr resp
-                .v_wr_resp_pld_0        (vv_wr_resp_pld_0[i]      ),//wr resp
-                .v_wr_resp_vld_1        (vv_wr_resp_vld_1[i]      ),//wr resp
-                .v_wr_resp_pld_1        (vv_wr_resp_pld_1[i]      ),//wr resp
-                .down_txreq_rdy         (v_down_txreq_rdy[i]      ),
-                .down_txreq_vld         (v_down_txreq_vld[i]      ),
-                .down_txreq_pld         (v_down_txreq_pld[i]      ),
+                .clk                    (clk                            ),
+                .rst_n                  (rst_n                          ),
+                .hash_req_vld           (v_hash_req_vld[i]              ),//每个hash的8个请求，8选2
+                .hash_req_pld           (v_hash_req_pld[i]              ),//每个hash的8个请求，8选2
+                .hash_req_rdy           (v_hash_req_rdy[i]              ),//TODO:to req xbar
+                .v_wr_resp_vld_0        (vv_wr_resp_vld_0[i]            ),//wr resp
+                .v_wr_resp_pld_0        (vv_wr_resp_pld_0[i]            ),//wr resp
+                .v_wr_resp_vld_1        (vv_wr_resp_vld_1[i]            ),//wr resp
+                .v_wr_resp_pld_1        (vv_wr_resp_pld_1[i]            ),//wr resp
+                .down_txreq_rdy         (v_down_txreq_rdy[i]            ),
+                .down_txreq_vld         (v_down_txreq_vld[i]            ),
+                .down_txreq_pld         (v_down_txreq_pld[i]            ),
 
-                .west_read_cmd_vld      (v_west_read_cmd_vld[i]   ),
-                .west_read_cmd_pld      (v_west_read_cmd_pld[i]   ),
-                .east_read_cmd_vld      (v_east_read_cmd_vld[i]   ),
-                .east_read_cmd_pld      (v_east_read_cmd_pld[i]   ),
-                .south_read_cmd_vld     (v_south_read_cmd_vld[i]  ),
-                .south_read_cmd_pld     (v_south_read_cmd_pld[i]  ),
-                .north_read_cmd_vld     (v_north_read_cmd_vld[i]  ),//arb出访问sram的请求
-                .north_read_cmd_pld     (v_north_read_cmd_pld[i]  ),//arb出访问sram的请求
+                .read_cmd_vld_west      (v_west_read_cmd_vld[i]         ),
+                .read_cmd_vld_east      (v_east_read_cmd_vld[i]         ),
+                .read_cmd_vld_south     (v_south_read_cmd_vld[i]        ),
+                .read_cmd_vld_north     (v_north_read_cmd_vld[i]        ),
+                .read_cmd_vld_evict     (v_evdb_read_cmd_vld[i]         ),
+                .read_cmd_pld_west      (v_west_read_cmd_pld[i]         ),
+                .read_cmd_pld_east      (v_east_read_cmd_pld[i]         ),
+                .read_cmd_pld_south     (v_south_read_cmd_pld[i]        ),
+                .read_cmd_pld_north     (v_north_read_cmd_pld[i]        ),
+                .read_cmd_pld_evict     (v_evdb_read_cmd_pld[i]         ),
+                .read_cmd_to_ram_pld_0  (v_toram_read_cmd_pld[2*i]      ),
+                .read_cmd_to_ram_pld_1  (v_toram_read_cmd_pld[2*i+1]    ),
+                .read_cmd_to_ram_vld_0  (v_toram_read_cmd_vld[2*i]      ),
+                .read_cmd_to_ram_vld_1  (v_toram_read_cmd_vld[2*i+1]    ),
+                .write_cmd_vld_west     (v_west_write_cmd_vld[i]        ),
+                .write_cmd_vld_east     (v_east_write_cmd_vld[i]        ),
+                .write_cmd_vld_south    (v_south_write_cmd_vld[i]       ),
+                .write_cmd_vld_north    (v_north_write_cmd_vld[i]       ),
+                .write_cmd_vld_linefill (v_lfdb_write_cmd_vld[i]        ),
+                .write_cmd_pld_west     (v_west_write_cmd_pld[i]        ),
+                .write_cmd_pld_east     (v_east_write_cmd_pld[i]        ),
+                .write_cmd_pld_south    (v_south_write_cmd_pld[i]       ),
+                .write_cmd_pld_north    (v_north_write_cmd_pld[i]       ),
+                .write_cmd_pld_linefill (v_lfdb_write_cmd_pld[i]        ),
 
-                .west_write_cmd_rdy     (w_wr_rdy[i]              ),
-                .east_write_cmd_rdy     (e_wr_rdy[i]              ),
-                .south_write_cmd_rdy    (s_wr_rdy[i]              ),
-                .north_write_cmd_rdy    (n_wr_rdy[i]              ),
-                .west_write_cmd_vld     (v_west_write_cmd_vld[i]  ),//arb出访问sram的请求
-                .west_write_cmd_pld     (v_west_write_cmd_pld[i]  ),//arb出访问sram的请求
-                .east_write_cmd_vld     (v_east_write_cmd_vld[i]  ),
-                .east_write_cmd_pld     (v_east_write_cmd_pld[i]  ),
-                .south_write_cmd_vld    (v_south_write_cmd_vld[i] ),
-                .south_write_cmd_pld    (v_south_write_cmd_pld[i] ),
-                .north_write_cmd_vld    (v_north_write_cmd_vld[i] ),
-                .north_write_cmd_pld    (v_north_write_cmd_pld[i] ),
-                .evict_req_pld          (v_evict_req_pld[i]       ),
-                .evict_req_vld          (v_evict_req_vld[i]       ),
-                .evict_req_rdy          (v_evict_req_rdy[i]       ),
-                .lf_wrreq_vld           (v_lf_wrreq_vld[i]        ),
-                .lf_wrreq_pld           (v_lf_wrreq_pld[i]        ),
-                .lf_wrreq_rdy           (v_lf_wrreq_rdy[i]        ),
+                .bresp_vld              (v_bresp_vld[i]                 ),
+                .bresp_pld              (v_bresp_pld[i]                 ),
+                .bresp_rdy              (v_bresp_rdy[i]                 ),
 
-                .bresp_vld              (v_bresp_vld[i]           ),
-                .bresp_pld              (v_bresp_pld[i]           ),
-                .bresp_rdy              (v_bresp_rdy[i]           ),
+                .linefill_alloc_vld     (v_linefill_alloc_vld[i]        ),
+                .linefill_alloc_idx     (v_linefill_alloc_idx[i]        ),
+                .linefill_alloc_rdy     (v_linefill_alloc_rdy[i]        ),
 
-                .linefill_alloc_vld     (v_linefill_alloc_vld[i]  ),
-                .linefill_alloc_idx     (v_linefill_alloc_idx[i]  ),
-                .linefill_alloc_rdy     (v_linefill_alloc_rdy[i]  ),
+                .w_rdb_alloc_nfull      (v_west_rdb_alloc_nfull[i]      ),
+                .e_rdb_alloc_nfull      (v_east_rdb_alloc_nfull[i]      ),
+                .s_rdb_alloc_nfull      (v_south_rdb_alloc_nfull[i]     ),
+                .n_rdb_alloc_nfull      (v_north_rdb_alloc_nfull[i]     ),
 
-                .w_rdb_alloc_nfull      (v_west_rdb_alloc_nfull[i] ),//TODO:
-                .e_rdb_alloc_nfull      (v_east_rdb_alloc_nfull[i] ),//TODO:
-                .s_rdb_alloc_nfull      (v_south_rdb_alloc_nfull[i]),//TODO:
-                .n_rdb_alloc_nfull      (v_north_rdb_alloc_nfull[i]),//TODO:
+                .evict_clean_idx        (v_evict_clean_idx[i]           ),
+                .evict_clean            (v_evict_clean[i]               ),
+                .ds_txreq_done          (v_ds_txreq_done[i]             ),
+                .ds_txreq_done_idx      (v_ds_txreq_done_idx[i]         ),
+                .ds_txreq_done_db_id    (v_ds_txreq_done_db_id[i]       ),
+                .linefill_done          (v_linefill_to_ram_done[i]      ),
+                .linefill_done_idx      (v_linefill_to_ram_done_idx[i]  ),
 
-                .evict_clean_idx        (v_evict_clean_idx[i]          ),
-                .evict_clean            (v_evict_clean[i]              ),
-                .ds_txreq_done          (v_ds_txreq_done[i]            ),
-                .ds_txreq_done_idx      (v_ds_txreq_done_idx[i]        ),
-                .linefill_done          (v_linefill_to_ram_done[i]     ),
-                .linefill_done_idx      (v_linefill_to_ram_done_idx[i] ),
-
-                .west_rd_done           (v_west_read_to_us_done[i]     ),
-                .west_rd_done_idx       (v_west_read_to_us_done_idx[i] ),
-                .east_rd_done           (v_east_read_to_us_done[i]     ),
-                .east_rd_done_idx       (v_east_read_to_us_done_idx[i] ),
-                .south_rd_done          (v_south_read_to_us_done[i]    ),
-                .south_rd_done_idx      (v_south_read_to_us_done_idx[i]),
-                .north_rd_done          (v_north_read_to_us_done[i]    ),
-                .north_rd_done_idx      (v_north_read_to_us_done_idx[i]),
-                .west_wr_done           (v_west_write_done[i]          ),
-                .west_wr_done_idx       (v_west_write_done_idx[i]      ),
-                .east_wr_done           (v_east_write_done[i]          ),
-                .east_wr_done_idx       (v_east_write_done_idx[i]      ),
-                .south_wr_done          (v_south_write_done[i]         ),
-                .south_wr_done_idx      (v_south_write_done_idx[i]     ),
-                .north_wr_done          (v_north_write_done[i]         ),
-                .north_wr_done_idx      (v_north_write_done_idx[i]     )
-            );
+                .west_rd_done           (v_west_read_to_us_done[i]      ),
+                .west_rd_done_idx       (v_west_read_to_us_done_idx[i]  ),
+                .east_rd_done           (v_east_read_to_us_done[i]      ),
+                .east_rd_done_idx       (v_east_read_to_us_done_idx[i]  ),
+                .south_rd_done          (v_south_read_to_us_done[i]     ),
+                .south_rd_done_idx      (v_south_read_to_us_done_idx[i] ),
+                .north_rd_done          (v_north_read_to_us_done[i]     ),
+                .north_rd_done_idx      (v_north_read_to_us_done_idx[i] ),
+                .west_wr_done           (v_west_write_done[i]           ),
+                .west_wr_done_idx       (v_west_write_done_idx[i]       ),
+                .east_wr_done           (v_east_write_done[i]           ),
+                .east_wr_done_idx       (v_east_write_done_idx[i]       ),
+                .south_wr_done          (v_south_write_done[i]          ),
+                .south_wr_done_idx      (v_south_write_done_idx[i]      ),
+                .north_wr_done          (v_north_write_done[i]          ),
+                .north_wr_done_idx      (v_north_write_done_idx[i]      ));
         end
     endgenerate
 //---------------------------------------------------------------------------------------
@@ -536,7 +539,6 @@ import vector_cache_pkg::*;
 //WResp decode
 //每个hash输出每方向各两个wresp,共8个，4个hash共输出32个wresp
 //每个方向会有8个wresp，将这8个decode到具体的master,所以是4个8toN的decode cross bar
-//TODO：
     logic [7:0]     west_wresp_vld          ;
     wr_resp_pld_t   west_wresp_pld  [7:0]   ;
     logic [7:0]     east_wresp_vld          ;
@@ -566,7 +568,7 @@ import vector_cache_pkg::*;
                             vv_wr_resp_pld_0[2][3],vv_wr_resp_pld_1[2][3],vv_wr_resp_pld_0[3][3],vv_wr_resp_pld_1[3][3]};
     
 
-    wr_resp_master_decode #(
+    vec_cache_wr_resp_master_decode #(
         .IN_NUM (8),
         .OUT_NUM(WB_REQ_NUM),
         .PLD_WIDTH()
@@ -578,7 +580,7 @@ import vector_cache_pkg::*;
         .out_resp_vld(w_resp_vld    ),
         .out_resp_pld(w_resp_pld    ));
 
-    wr_resp_master_decode #(
+    vec_cache_wr_resp_master_decode #(
         .IN_NUM(8),
         .OUT_NUM(WB_REQ_NUM),
         .PLD_WIDTH()
@@ -590,7 +592,7 @@ import vector_cache_pkg::*;
         .out_resp_vld(e_resp_vld    ),
         .out_resp_pld(e_resp_pld    ));
 
-    wr_resp_master_decode #(
+    vec_cache_wr_resp_master_decode #(
         .IN_NUM(8),
         .OUT_NUM(WB_REQ_NUM),
         .PLD_WIDTH()
@@ -602,7 +604,7 @@ import vector_cache_pkg::*;
         .out_resp_vld(s_resp_vld     ),
         .out_resp_pld(s_resp_pld     ));
 
-    wr_resp_master_decode #(
+    vec_cache_wr_resp_master_decode #(
         .IN_NUM(8),
         .OUT_NUM(WB_REQ_NUM),
         .PLD_WIDTH()
@@ -634,7 +636,7 @@ import vector_cache_pkg::*;
 //R  RXDATA decode 
     logic [1:0] ds_to_lfdb_decode_idx;
     assign ds_to_lfdb_decode_idx = ds_to_lfdb_pld.linefill_cmd.addr[63:62];
-    v_1toN_decode #(
+    vec_cache_v_1toN_decode #(
         .N(4)
     ) u_linefill_rxdata_decode (
         .vld      (ds_to_lfdb_vld       ), //1 to 4hash
@@ -661,11 +663,11 @@ import vector_cache_pkg::*;
 //bresp
         logic [1:0]bresp_decode_idx;
         assign bresp_decode_idx = bresp_pld.hash_id;
-    v_1toN_decode #(
+    vec_cache_v_1toN_decode #(
         .N(4)
     ) u_Bresp_decode (
-        .vld      (bresp_vld           ),//1to4
-        .vld_index(bresp_decode_idx   ),//hash id //这是evict_down，用它来release rob entry
+        .vld      (bresp_vld           ),
+        .vld_index(bresp_decode_idx    ),//hash id //这是evict_down，用它来release rob entry
         .v_out_vld(v_bresp_vld         ));
     generate
         for(genvar i=0;i<4;i=i+1)begin
@@ -681,40 +683,42 @@ import vector_cache_pkg::*;
 
 generate
     for(genvar i=0;i<4;i=i+1)begin:hash_linefillDB_gen
-        linefillDB # ( 
+        vec_cache_linefillDB # ( 
             .ARB_TO_LFDB_DELAY(WR_CMD_DELAY_LF))
          u_linefill_data_buffer(
             .clk                     (clk                          ),
             .rst_n                   (rst_n                        ),
             .ds_txreq_done           (v_ds_txreq_done[i]           ),
             .ds_txreq_done_idx       (v_ds_txreq_done_idx[i]       ),
+            .ds_txreq_done_db_id     (v_ds_txreq_done_db_id[i]     ),
             .linefill_to_ram_done    (v_linefill_to_ram_done[i]    ),
             .linefill_to_ram_done_idx(v_linefill_to_ram_done_idx[i]),
             .ds_to_lfdb_vld          (v_ds_to_lfdb_vld[i]          ),
             .ds_to_lfdb_pld          (v_ds_to_lfdb_pld[i]          ),
             .ds_to_lfdb_rdy          (v_ds_to_lfdb_rdy[i]          ),
-            .lfdb_rdreq_vld          (v_lf_wrreq_vld[i]            ),//arb decode出的linefill 请求
-            .lfdb_rdreq_pld          (v_lf_wrreq_pld[i]            ),//arb decode出的linefill 请求
-            .lfdb_rdreq_rdy          (v_lf_wrreq_rdy[i]            ),//arb decode出的linefill 请求
+            .lfdb_rdreq_vld          (v_lfdb_write_cmd_vld[i]      ),//arb decode出的linefill 请求
+            .lfdb_rdreq_pld          (v_lfdb_write_cmd_pld[i]      ),//arb decode出的linefill 请求
+            .lfdb_rdreq_rdy          (v_lfdb_write_cmd_rdy[i]      ),//arb decode出的linefill 请求
             .lfdb_to_ram_vld         (v_lfdb_to_ram_vld[i]         ),//to sram
             .lfdb_to_ram_pld         (v_lfdb_to_ram_pld[i]         ),//to sram
             .lfdb_to_ram_rdy         (1'b1                         ),//to sram
             .alloc_vld               (v_linefill_alloc_vld[i]      ),
             .alloc_idx               (v_linefill_alloc_idx[i]      ),
-            .alloc_rdy               (v_linefill_alloc_rdy[i]      )
-        );
+            .alloc_rdy               (v_linefill_alloc_rdy[i]      ));
     end
 endgenerate
 generate
     for(genvar i=0;i<4;i=i+1)begin:hash_evictDB_gen
-        evictDB   u_evict_data_buffer (
-            .clk                (clk),
-            .rst_n              (rst_n),  
+        vec_cache_evictDB   #( 
+            .READ_SRAM_DELAY (8))
+        u_evict_data_buffer (
+            .clk                (clk                            ),
+            .rst_n              (rst_n                          ),  
             .evict_clean        (v_evict_clean[i]               ),   
             .evict_clean_idx    (v_evict_clean_idx[i]           ),
-            .evict_req_pld      (v_evict_req_pld[i]             ),
-            .evict_req_vld      (v_evict_req_vld[i]             ),
-            .evict_req_rdy      (v_evict_req_rdy[i]             ),
+            .evict_req_pld      (v_evdb_read_cmd_pld[i]         ),
+            .evict_req_vld      (v_evdb_read_cmd_vld[i]         ),
+            .evict_req_rdy      (v_evdb_read_cmd_rdy[i]         ),
             .ram_to_evdb_data_in(evict_data_out_to_evdb[i]      ),//sram input data
             .ram_to_evdb_data_vld(evict_data_out_vld_to_evdb[i] ),   
             .evict_to_ds_vld    (v_evict_to_ds_vld[i]           ),
@@ -726,7 +730,7 @@ endgenerate
     
 generate
     for(genvar i=0;i<4;i=i+1)begin:hash_RDB_gen
-        rdb_agent #( 
+        vec_cache_rdb_agent #( 
             .READ_SRAM_DELAY ( 8))
         u_west_rdb_agent(
             .clk                (clk                            ),      
@@ -742,22 +746,9 @@ generate
             .ram_to_rdb_data_vld(west_data_out_vld_to_rdb[i]    ),
             .rdb_to_us_data_vld (v_west_rdb_to_us_data_vld[i]   ),
             .rdb_to_us_data_pld (v_west_rdb_to_us_data_pld[i]   ));
-            //.rdb_mem_en         (west_rdb_mem_en[i]             ),
-            //.rdb_wr_en          (west_rdb_wr_en[i]              ),
-            //.rdb_addr           (west_rdb_addr[i]               ));
 
-        //readDB u_west_read_data_buffer(
-        //    .clk                (clk                            ),        
-        //    .rst_n              (rst_n                          ),
-        //    .rdb_addr           (west_rdb_addr[i]               ),
-        //    .rdb_mem_en         (west_rdb_mem_en[i]             ),
-        //    .rdb_wr_en          (west_rdb_wr_en[i]              ),
-        //    .ram_to_rdb_data_in (west_data_out_to_rdb[i]        ),//from sram array
-        //    .ram_to_rdb_data_vld(west_data_out_vld_to_rdb[i]    ),//from sram
-        //    .rdb_to_us_data_vld (v_west_rdb_to_us_data_vld[i]   ),
-        //    .rdb_to_us_data_pld (v_west_rdb_to_us_data_pld[i]   ));// top output 
 
-        rdb_agent #( 
+        vec_cache_rdb_agent #( 
             .READ_SRAM_DELAY (4 ))
         u_east_rdb_agent(
             .clk                (clk                            ),      
@@ -773,21 +764,9 @@ generate
             .ram_to_rdb_data_vld(east_data_out_vld_to_rdb[i]    ),
             .rdb_to_us_data_vld (v_east_rdb_to_us_data_vld[i]   ),
             .rdb_to_us_data_pld (v_east_rdb_to_us_data_pld[i]   ));
-            //.rdb_mem_en         (east_rdb_mem_en[i]             ),
-            //.rdb_wr_en          (east_rdb_wr_en[i]              ),
-            //.rdb_addr           (east_rdb_addr[i]               ));
-        //readDB u_east_read_data_buffer(
-        //    .clk                (clk                            ),        
-        //    .rst_n              (rst_n                          ),
-        //    .rdb_addr           (east_rdb_addr[i]               ),
-        //    .rdb_mem_en         (east_rdb_mem_en[i]             ),
-        //    .rdb_wr_en          (east_rdb_wr_en [i]             ),
-        //    .ram_to_rdb_data_in (east_data_out_to_rdb[i]        ),//from sram array
-        //    .ram_to_rdb_data_vld(east_data_out_vld_to_rdb[i]    ),//from sram
-        //    .rdb_to_us_data_vld (v_east_rdb_to_us_data_vld[i]   ),
-        //    .rdb_to_us_data_pld (v_east_rdb_to_us_data_pld[i]   ));// top output
+
             
-        rdb_agent #( 
+        vec_cache_rdb_agent #( 
             .READ_SRAM_DELAY (8 ))
         u_south_rdb_agent(
             .clk                (clk                            ),      
@@ -803,21 +782,9 @@ generate
             .ram_to_rdb_data_vld(south_data_out_vld_to_rdb[i]   ),
             .rdb_to_us_data_vld (v_south_rdb_to_us_data_vld[i]  ),
             .rdb_to_us_data_pld (v_south_rdb_to_us_data_pld[i]  ));
-            //.rdb_mem_en         (south_rdb_mem_en[i]            ),
-            //.rdb_wr_en          (south_rdb_wr_en[i]             ),
-            //.rdb_addr           (south_rdb_addr[i]              ));
-        //readDB u_south_read_data_buffer(
-        //    .clk                (clk                            ),        
-        //    .rst_n              (rst_n                          ),
-        //    .rdb_addr           (south_rdb_addr[i]              ),
-        //    .rdb_mem_en         (south_rdb_mem_en[i]            ),
-        //    .rdb_wr_en          (south_rdb_wr_en[i]             ),
-        //    .ram_to_rdb_data_in (south_data_out_to_rdb[i]       ),//from sram array
-        //    .ram_to_rdb_data_vld(south_data_out_vld_to_rdb[i]   ),//from sram
-        //    .rdb_to_us_data_vld (v_south_rdb_to_us_data_vld[i]  ),
-        //    .rdb_to_us_data_pld (v_south_rdb_to_us_data_pld[i]  ));// top output 
 
-        rdb_agent #( 
+
+        vec_cache_rdb_agent #( 
             .READ_SRAM_DELAY ( 8))
         u_north_rdb_agent(
             .clk                (clk                            ),      
@@ -833,60 +800,43 @@ generate
             .ram_to_rdb_data_vld(north_data_out_vld_to_rdb[i]   ),
             .rdb_to_us_data_vld (v_north_rdb_to_us_data_vld[i]  ),
             .rdb_to_us_data_pld (v_north_rdb_to_us_data_pld[i]  ));
-            //.rdb_mem_en         (north_rdb_mem_en[i]            ),
-            //.rdb_wr_en          (north_rdb_wr_en[i]             ),
-            //.rdb_addr           (north_rdb_addr[i]              ));
-        //readDB u_north_read_data_buffer(                
-        //    .clk                (clk                            ),        
-        //    .rst_n              (rst_n                          ),
-        //    .rdb_addr           (north_rdb_addr[i]              ),
-        //    .rdb_mem_en         (north_rdb_mem_en[i]            ),
-        //    .rdb_wr_en          (north_rdb_wr_en[i]             ),
-        //    .ram_to_rdb_data_in (north_data_out_to_rdb[i]       ),//from sram array
-        //    .ram_to_rdb_data_vld(north_data_out_vld_to_rdb[i]   ),//from sram
-        //    .rdb_to_us_data_vld (v_north_rdb_to_us_data_vld[i]  ),
-        //    .rdb_to_us_data_pld (v_north_rdb_to_us_data_pld[i]  ));// top output 
     end
 endgenerate
 
 
 //============= data to us decode===========================
-    rd_data_master_decode #( 
+    vec_cache_rd_data_master_decode #( 
         .M(4),
         .N(WRD_REQ_NUM)
     ) u_west_rdata_switch_xbar(
         .in_vld  (v_west_rdb_to_us_data_vld),
         .in_pld  (v_west_rdb_to_us_data_pld),
-        //.select  (v_west_rdb_to_us_data_pld.txnid.master_id),
         .out_vld (w_rd_data_vld            ),
         .out_pld (w_rd_data_pld            ));
-    rd_data_master_decode #( 
+    vec_cache_rd_data_master_decode #( 
         .M(4),
         .N(ERD_REQ_NUM)
     ) u_east_rdata_switch_xbar(
         .in_vld  (v_east_rdb_to_us_data_vld),
         .in_pld  (v_east_rdb_to_us_data_pld),
-        //.select  (v_east_rdb_to_us_data_pld.txnid.master_id),
         .out_vld (e_rd_data_vld            ),
         .out_pld (e_rd_data_pld            ));
 
-    rd_data_master_decode #( 
+    vec_cache_rd_data_master_decode #( 
         .M(4),
         .N(SRD_REQ_NUM)
     ) u_south_rdata_switch_xbar(
         .in_vld  (v_south_rdb_to_us_data_vld),
         .in_pld  (v_south_rdb_to_us_data_pld),
-        //.select  (v_south_rdb_to_us_data_pld.txnid.master_id),
         .out_vld (s_rd_data_vld             ),
         .out_pld (s_rd_data_pld             ));
 
-    rd_data_master_decode #( 
+    vec_cache_rd_data_master_decode #( 
         .M(4),
         .N(NRD_REQ_NUM)
     ) u_north_rdata_switch_xbar(
         .in_vld  (v_north_rdb_to_us_data_vld),
         .in_pld  (v_north_rdb_to_us_data_pld),
-        //.select  (v_north_rdb_to_us_data_pld.txnid.master_id),
         .out_vld (n_rd_data_vld             ),
         .out_pld (n_rd_data_pld             ));
 
@@ -895,7 +845,7 @@ endgenerate
 //WDB
     generate
         for(genvar i=0;i<4;i=i+1)begin:hash_WDB_gen
-            write_DB_agent #( 
+            vec_cache_write_DB_agent #( 
                 .ARB_TO_WDB_DELAY(WR_CMD_DELAY_WEST),
                 .WRITE_DONE_DELAY(8))//WEST_WRITE_DELAY假设都是8
             u_west_write_DB_agent(
@@ -916,7 +866,7 @@ endgenerate
                 .write_sram_pld (west_write_cmd_pld_in[i]    ),//output to sram
                 .write_sram_rdy (1'b1       ));
 
-            write_DB_agent  #( 
+            vec_cache_write_DB_agent  #( 
                 .ARB_TO_WDB_DELAY(WR_CMD_DELAY_EAST),
                 .WRITE_DONE_DELAY(4))//east EAST_WRITE_DELAY 假设是4，需要统一arb//TODO:
             u_east_write_DB_agent(
@@ -935,9 +885,9 @@ endgenerate
                 .dataram_wr_rdy (v_east_write_cmd_rdy[i]     ),
                 .write_sram_vld (east_write_cmd_vld_in[i]    ),
                 .write_sram_pld (east_write_cmd_pld_in[i]    ),
-                .write_sram_rdy (1'b1       ));
+                .write_sram_rdy (1'b1                        ));
         
-            write_DB_agent #( 
+            vec_cache_write_DB_agent #( 
                 .ARB_TO_WDB_DELAY(WR_CMD_DELAY_SOUTH),
                 .WRITE_DONE_DELAY(12))//SOUTH_WRITE_DELAY假设是12
              u_south_write_DB_agent(
@@ -956,9 +906,9 @@ endgenerate
                 .dataram_wr_rdy (v_south_write_cmd_rdy[i]    ),
                 .write_sram_vld (south_write_cmd_vld_in[i]   ),
                 .write_sram_pld (south_write_cmd_pld_in[i]   ),
-                .write_sram_rdy (1'b1      ));
+                .write_sram_rdy (1'b1                        ));
         
-            write_DB_agent #( 
+            vec_cache_write_DB_agent #( 
                 .ARB_TO_WDB_DELAY(WR_CMD_DELAY_NORTH),
                 .WRITE_DONE_DELAY(10))//NORTH_WRITE_DELAY假设是10
             u_north_write_DB_agent(
@@ -981,21 +931,7 @@ endgenerate
         end
     endgenerate
 
-    read_cmd_sel u_read_cmd_sel ( 
-        .v_west_read_cmd_vld    (v_west_read_cmd_vld    ),
-        .v_east_read_cmd_vld    (v_east_read_cmd_vld    ),
-        .v_south_read_cmd_vld   (v_south_read_cmd_vld   ),
-        .v_north_read_cmd_vld   (v_north_read_cmd_vld   ),
-        .v_evict_req_vld        (v_evict_req_vld        ),
-        .v_west_read_cmd_pld    (v_west_read_cmd_pld    ),
-        .v_east_read_cmd_pld    (v_east_read_cmd_pld    ),
-        .v_south_read_cmd_pld   (v_south_read_cmd_pld   ),
-        .v_north_read_cmd_pld   (v_north_read_cmd_pld   ),
-        .v_evict_req_pld        (v_evict_req_pld        ),
-        .toram_west_rd_cmd_vld  (toram_west_rd_cmd_vld  ),
-        .toram_west_rd_cmd_pld  (toram_west_rd_cmd_pld  ));
-
-    write_cmd_sel u_write_cmd_sel( 
+    vec_cache_write_cmd_sel u_write_cmd_sel( 
         .v_lfdb_to_ram_vld              (v_lfdb_to_ram_vld              ),
         .west_write_cmd_vld_in          (west_write_cmd_vld_in          ),
         .east_write_cmd_vld_in          (east_write_cmd_vld_in          ),
@@ -1015,25 +951,25 @@ endgenerate
         .toram_south_write_cmd_pld_in   (toram_south_write_cmd_pld_in   ),
         .toram_north_write_cmd_pld_in   (toram_north_write_cmd_pld_in   ));
 
-    rdb_data_sel u_rd_data_sel ( 
-        .east_data_out_vld_todb   (east_data_out_vld_todb   ),
-        .east_data_out_todb       (east_data_out_todb       ),
-        .west_data_out_vld_todb   (west_data_out_vld_todb   ),
-        .west_data_out_todb       (west_data_out_todb       ),
-        .south_data_out_vld_todb  (south_data_out_vld_todb  ),
-        .south_data_out_todb      (south_data_out_todb      ),
-        .north_data_out_vld_todb  (north_data_out_vld_todb  ),
-        .north_data_out_todb      (north_data_out_todb      ),
-        .east_data_out_vld_to_rdb (east_data_out_vld_to_rdb ),
-        .east_data_out_to_rdb     (east_data_out_to_rdb     ),
-        .west_data_out_vld_to_rdb (west_data_out_vld_to_rdb ),
-        .west_data_out_to_rdb     (west_data_out_to_rdb     ),
-        .south_data_out_vld_to_rdb(south_data_out_vld_to_rdb),
-        .south_data_out_to_rdb    (south_data_out_to_rdb    ),
-        .evict_data_out_vld_to_evdb(evict_data_out_vld_to_evdb),
-        .evict_data_out_to_evdb    (evict_data_out_to_evdb  ),
-        .north_data_out_vld_to_rdb(north_data_out_vld_to_rdb),
-        .north_data_out_to_rdb    (north_data_out_to_rdb    ));
+    vec_cache_rdb_data_sel u_rd_data_sel ( 
+        .east_data_out_vld_todb         (east_data_out_vld_todb         ),
+        .east_data_out_todb             (east_data_out_todb             ),
+        .west_data_out_vld_todb         (west_data_out_vld_todb         ),
+        .west_data_out_todb             (west_data_out_todb             ),
+        .south_data_out_vld_todb        (south_data_out_vld_todb        ),
+        .south_data_out_todb            (south_data_out_todb            ),
+        .north_data_out_vld_todb        (north_data_out_vld_todb        ),
+        .north_data_out_todb            (north_data_out_todb            ),
+        .east_data_out_vld_to_rdb       (east_data_out_vld_to_rdb       ),
+        .east_data_out_to_rdb           (east_data_out_to_rdb           ),
+        .west_data_out_vld_to_rdb       (west_data_out_vld_to_rdb       ),
+        .west_data_out_to_rdb           (west_data_out_to_rdb           ),
+        .south_data_out_vld_to_rdb      (south_data_out_vld_to_rdb      ),
+        .south_data_out_to_rdb          (south_data_out_to_rdb          ),
+        .evict_data_out_vld_to_evdb     (evict_data_out_vld_to_evdb     ),
+        .evict_data_out_to_evdb         (evict_data_out_to_evdb         ),
+        .north_data_out_vld_to_rdb      (north_data_out_vld_to_rdb      ),
+        .north_data_out_to_rdb          (north_data_out_to_rdb          ));
 
 
 //---------------------------------------------------------------------------------------
@@ -1065,19 +1001,19 @@ endgenerate
         endgenerate
 
     
-    sram_group  u_vec_data_ram_array(
+    vec_cache_sram_group  u_vec_data_ram_array(
         .clk                      (clk                                      ),
         .clk_div                  (clk_div                                  ),
         .rst_n                    (rst_n                                    ),
-        .west_read_cmd_pld_in     (toram_west_rd_cmd_pld                    ),
-        .west_read_cmd_vld_in     (toram_west_rd_cmd_vld                    ),
-        .west_write_cmd_pld_in    (toram_west_write_cmd_pld_in_cmd    ),
+        .west_read_cmd_pld_in     (v_toram_read_cmd_pld                     ),
+        .west_read_cmd_vld_in     (v_toram_read_cmd_vld                     ),
+        .west_write_cmd_pld_in    (toram_west_write_cmd_pld_in_cmd          ),
         .west_write_cmd_vld_in    (toram_west_write_cmd_vld_in              ),
         .east_write_cmd_pld_in    (west_write_cmd_pld_out                   ),//from loopback
         .east_write_cmd_vld_in    (west_write_cmd_vld_out                   ),//from loopback
-        .south_write_cmd_pld_in   (toram_south_write_cmd_pld_in_cmd   ),
+        .south_write_cmd_pld_in   (toram_south_write_cmd_pld_in_cmd         ),
         .south_write_cmd_vld_in   (toram_south_write_cmd_vld_in             ),
-        .north_write_cmd_pld_in   (toram_north_write_cmd_pld_in_cmd   ),
+        .north_write_cmd_pld_in   (toram_north_write_cmd_pld_in_cmd         ),
         .north_write_cmd_vld_in   (toram_north_write_cmd_vld_in             ),
         .east_write_cmd_pld_out   (east_write_cmd_pld_out                   ),
         .east_write_cmd_vld_out   (east_write_cmd_vld_out                   ),
@@ -1107,7 +1043,7 @@ endgenerate
         
 
  
-    loop_back  u_loop_back ( 
+    vec_cache_loop_back  u_loop_back ( 
         .clk                     (clk                               ),
         .clk_div                 (clk_div                           ),
         .rst_n                   (rst_n                             ),
@@ -1118,9 +1054,9 @@ endgenerate
         .west_data_in_vld        (east_data_out_vld_toloop          ),//from sram
         .west_data_in            (east_data_out_toloop              ),//from sram
         .east_write_cmd_pld_in   (toram_east_write_cmd_pld_in_cmd   ),//from east wdb
-        .east_write_cmd_vld_in   (toram_east_write_cmd_vld_in             ),//from east wdb
-        .east_data_in_vld        (toram_east_write_cmd_vld_in             ),//from east wdb
-        .east_data_in            (toram_east_write_cmd_pld_in_data        ),//from east wdb
+        .east_write_cmd_vld_in   (toram_east_write_cmd_vld_in       ),//from east wdb
+        .east_data_in_vld        (toram_east_write_cmd_vld_in       ),//from east wdb
+        .east_data_in            (toram_east_write_cmd_pld_in_data  ),//from east wdb
         .west_read_cmd_pld_out   (west_read_cmd_pld_out             ),//to sram
         .west_read_cmd_vld_out   (west_read_cmd_vld_out             ),//to sram
         .west_write_cmd_pld_out  (west_write_cmd_pld_out            ),//to sram

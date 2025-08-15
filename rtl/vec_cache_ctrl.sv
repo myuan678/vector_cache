@@ -15,37 +15,31 @@ module vec_cache_ctrl
     output wr_resp_pld_t                                v_wr_resp_pld_1[3:0]                   , //txnid+sideband
 
     //arb out
-    output logic                                        west_read_cmd_vld                      ,
-    output arb_out_req_t                                west_read_cmd_pld                      ,
-    //input  logic                                        west_read_cmd_rdy                      ,
-    output logic                                        east_read_cmd_vld                      ,
-    output arb_out_req_t                                east_read_cmd_pld                      ,
-    //input  logic                                        east_read_cmd_rdy                      ,
-    output logic                                        south_read_cmd_vld                     ,
-    output arb_out_req_t                                south_read_cmd_pld                     ,
-    //input  logic                                        south_read_cmd_rdy                     ,
-    output logic                                        north_read_cmd_vld                     ,
-    output arb_out_req_t                                north_read_cmd_pld                     ,
-    //input  logic                                        north_read_cmd_rdy                     ,
 
-    input  logic                                        west_write_cmd_rdy                     ,
-    input  logic                                        east_write_cmd_rdy                     ,
-    input  logic                                        south_write_cmd_rdy                    ,
-    input  logic                                        north_write_cmd_rdy                    ,
-    output logic                                        west_write_cmd_vld                     ,
-    output arb_out_req_t                                west_write_cmd_pld                     ,
-    output logic                                        east_write_cmd_vld                     ,
-    output arb_out_req_t                                east_write_cmd_pld                     ,
-    output logic                                        south_write_cmd_vld                    ,
-    output arb_out_req_t                                south_write_cmd_pld                    ,
-    output logic                                        north_write_cmd_vld                    ,
-    output arb_out_req_t                                north_write_cmd_pld                    ,
-    output arb_out_req_t                                evict_req_pld                          ,
-    output logic                                        evict_req_vld                          ,
-    input  logic                                        evict_req_rdy                          ,
-    output arb_out_req_t                                lf_wrreq_pld                           ,//linefill write request
-    output logic                                        lf_wrreq_vld                           ,//linefill write request
-    input  logic                                        lf_wrreq_rdy                           ,
+    output logic                                        read_cmd_vld_west                   ,
+    output logic                                        read_cmd_vld_east                   ,
+    output logic                                        read_cmd_vld_south                  ,
+    output logic                                        read_cmd_vld_north                  ,
+    output logic                                        read_cmd_vld_evict                  ,
+    output arb_out_req_t                                read_cmd_pld_west                   ,
+    output arb_out_req_t                                read_cmd_pld_east                   ,
+    output arb_out_req_t                                read_cmd_pld_south                  ,
+    output arb_out_req_t                                read_cmd_pld_north                  ,
+    output arb_out_req_t                                read_cmd_pld_evict                  ,
+    output arb_out_req_t                                read_cmd_to_ram_pld_0               ,
+    output arb_out_req_t                                read_cmd_to_ram_pld_1               ,
+    output logic                                        read_cmd_to_ram_vld_0               ,
+    output logic                                        read_cmd_to_ram_vld_1               ,
+    output logic                                        write_cmd_vld_west                  ,
+    output logic                                        write_cmd_vld_east                  ,
+    output logic                                        write_cmd_vld_south                 ,
+    output logic                                        write_cmd_vld_north                 ,
+    output logic                                        write_cmd_vld_linefill              ,
+    output arb_out_req_t                                write_cmd_pld_west                  ,
+    output arb_out_req_t                                write_cmd_pld_east                  ,
+    output arb_out_req_t                                write_cmd_pld_south                 ,
+    output arb_out_req_t                                write_cmd_pld_north                 ,
+    output arb_out_req_t                                write_cmd_pld_linefill              ,
 
     //AR
     input  logic                                        down_txreq_rdy                          ,
@@ -65,6 +59,7 @@ module vec_cache_ctrl
     input  logic                                        evict_clean                             ,
     input  logic                                        ds_txreq_done                           ,
     input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             ds_txreq_done_idx                       ,
+    input  logic [$clog2(LFDB_ENTRY_NUM/4)-1:0]         ds_txreq_done_db_id                     ,
     input  logic                                        linefill_done                           ,
     input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             linefill_done_idx                       ,
 
@@ -93,8 +88,8 @@ module vec_cache_ctrl
 
     logic                                               tag_req_vld_A                       ;
     logic                                               tag_req_vld_B                       ;
-    input_req_pld_t                                     tag_req_grantA_pld                  ;
-    input_req_pld_t                                     tag_req_grantB_pld                  ;
+    input_req_pld_t                                     tag_req_pld_A                       ;
+    input_req_pld_t                                     tag_req_pld_B                       ;
     logic                                               tag_req_rdy                         ;
     hzd_mshr_pld_t                                      v_mshr_entry_pld[MSHR_ENTRY_NUM-1:0];
     logic                                               mshr_alloc_vld_0                    ;
@@ -108,7 +103,7 @@ module vec_cache_ctrl
     logic                                               mshr_update_en_1                    ;
     mshr_entry_t                                        mshr_update_pld_1                   ;
 
-    eightto2_req_arbiter #(
+    vec_cache_8to2_req_arbiter #(
         .REQ_NUM        (8),
         .ENTRY_IDX_WIDTH(MSHR_ENTRY_IDX_WIDTH)
     ) u_8to2_req_arb (
@@ -125,8 +120,8 @@ module vec_cache_ctrl
         .mshr_alloc_rdy_1               (mshr_alloc_rdy_1           ),
         .out_grant_vld_0                (tag_req_vld_A              ),
         .out_grant_vld_1                (tag_req_vld_B              ),
-        .out_grant_pld_0                (tag_req_grantA_pld         ),
-        .out_grant_pld_1                (tag_req_grantB_pld         ),
+        .out_grant_pld_0                (tag_req_pld_A              ),
+        .out_grant_pld_1                (tag_req_pld_B              ),
         .out_grant_rdy                  (tag_req_rdy                ));
 
     vec_cache_tag_ctrl u_tag_pipe(
@@ -138,12 +133,14 @@ module vec_cache_ctrl
         .v_wr_resp_pld_1                (v_wr_resp_pld_1            ),
         .tag_req_vld_A                  (tag_req_vld_A              ),
         .tag_req_vld_B                  (tag_req_vld_B              ),
-        .tag_req_grantA_pld             (tag_req_grantA_pld         ),
-        .tag_req_grantB_pld             (tag_req_grantB_pld         ),
+        .tag_req_pld_A                  (tag_req_pld_A              ),
+        .tag_req_pld_B                  (tag_req_pld_B              ),
         .tag_req_rdy                    (tag_req_rdy                ),
         .v_mshr_entry_pld               (v_mshr_entry_pld           ),
         .mshr_alloc_idx_0               (mshr_alloc_idx_0           ),
         .mshr_alloc_idx_1               (mshr_alloc_idx_1           ),
+        .mshr_alloc_vld_0               (mshr_alloc_vld_0           ),
+        .mshr_alloc_vld_1               (mshr_alloc_vld_1           ),
         .mshr_update_en_0               (mshr_update_en_0           ),
         .mshr_update_pld_0              (mshr_update_pld_0          ),
         .mshr_update_en_1               (mshr_update_en_1           ),
@@ -162,46 +159,39 @@ module vec_cache_ctrl
         .alloc_vld_1                    (mshr_alloc_vld_1           ),
         .alloc_idx_1                    (mshr_alloc_idx_1           ),
         .alloc_rdy_1                    (mshr_alloc_rdy_1           ),
-        
-        //.west_read_cmd_rdy              (west_read_cmd_rdy          ),
-        //.east_read_cmd_rdy              (east_read_cmd_rdy          ),
-        //.south_read_cmd_rdy             (south_read_cmd_rdy         ),
-        //.north_read_cmd_rdy             (north_read_cmd_rdy         ),
-        .west_read_cmd_vld              (west_read_cmd_vld          ),
-        .west_read_cmd_pld              (west_read_cmd_pld          ),
-        .east_read_cmd_vld              (east_read_cmd_vld          ),
-        .east_read_cmd_pld              (east_read_cmd_pld          ),
-        .south_read_cmd_vld             (south_read_cmd_vld         ),
-        .south_read_cmd_pld             (south_read_cmd_pld         ),
-        .north_read_cmd_vld             (north_read_cmd_vld         ),
-        .north_read_cmd_pld             (north_read_cmd_pld         ),
 
-        .west_write_cmd_rdy             (west_write_cmd_rdy         ),
-        .east_write_cmd_rdy             (east_write_cmd_rdy         ),
-        .south_write_cmd_rdy            (south_write_cmd_rdy        ),
-        .north_write_cmd_rdy            (north_write_cmd_rdy        ),
-        .west_write_cmd_vld             (west_write_cmd_vld         ),
-        .west_write_cmd_pld             (west_write_cmd_pld         ),
-        .east_write_cmd_vld             (east_write_cmd_vld         ),
-        .east_write_cmd_pld             (east_write_cmd_pld         ),
-        .south_write_cmd_vld            (south_write_cmd_vld        ),
-        .south_write_cmd_pld            (south_write_cmd_pld        ),
-        .north_write_cmd_vld            (north_write_cmd_vld        ),
-        .north_write_cmd_pld            (north_write_cmd_pld        ),
-        .evict_req_pld                  (evict_req_pld              ),
-        .evict_req_vld                  (evict_req_vld              ),
-        .evict_req_rdy                  (evict_req_rdy              ),
-        .lf_wrreq_pld                   (lf_wrreq_pld               ),
-        .lf_wrreq_vld                   (lf_wrreq_vld               ),
-        .lf_wrreq_rdy                   (lf_wrreq_rdy               ),
+        .read_cmd_vld_west              (read_cmd_vld_west          ),
+        .read_cmd_vld_east              (read_cmd_vld_east          ),
+        .read_cmd_vld_south             (read_cmd_vld_south         ),
+        .read_cmd_vld_north             (read_cmd_vld_north         ),
+        .read_cmd_vld_evict             (read_cmd_vld_evict         ),
+        .read_cmd_pld_west              (read_cmd_pld_west          ),
+        .read_cmd_pld_east              (read_cmd_pld_east          ),
+        .read_cmd_pld_south             (read_cmd_pld_south         ),
+        .read_cmd_pld_north             (read_cmd_pld_north         ),
+        .read_cmd_pld_evict             (read_cmd_pld_evict         ),
+        .read_cmd_to_ram_pld_0          (read_cmd_to_ram_pld_0      ),
+        .read_cmd_to_ram_pld_1          (read_cmd_to_ram_pld_1      ),
+        .read_cmd_to_ram_vld_0          (read_cmd_to_ram_vld_0      ),
+        .read_cmd_to_ram_vld_1          (read_cmd_to_ram_vld_1      ),
+        .write_cmd_vld_west             (write_cmd_vld_west         ),
+        .write_cmd_vld_east             (write_cmd_vld_east         ),
+        .write_cmd_vld_south            (write_cmd_vld_south        ),
+        .write_cmd_vld_north            (write_cmd_vld_north        ),
+        .write_cmd_vld_linefill         (write_cmd_vld_linefill     ),
+        .write_cmd_pld_west             (write_cmd_pld_west         ),
+        .write_cmd_pld_east             (write_cmd_pld_east         ),
+        .write_cmd_pld_south            (write_cmd_pld_south        ),
+        .write_cmd_pld_north            (write_cmd_pld_north        ),
+        .write_cmd_pld_linefill         (write_cmd_pld_linefill     ),
 
-        .dataram_rdy                    (1'b1                       ),
         .downstream_txreq_rdy           (down_txreq_rdy             ),
         .downstream_txreq_vld           (down_txreq_vld             ),
         .downstream_txreq_pld           (down_txreq_pld             ),
         
         .ds_txreq_done                  (ds_txreq_done              ),
         .ds_txreq_done_idx              (ds_txreq_done_idx          ),
+        .ds_txreq_done_db_id            (ds_txreq_done_db_id        ),
         .linefill_done                  (linefill_done              ),
         .linefill_done_idx              (linefill_done_idx          ),
 
