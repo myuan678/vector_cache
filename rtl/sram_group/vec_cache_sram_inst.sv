@@ -1,4 +1,4 @@
-module sram_inst 
+module vec_cache_sram_inst 
     import vector_cache_pkg::*;
     (
     input  logic              clk        ,
@@ -26,31 +26,45 @@ module sram_inst
     logic   [8      :0]     addr            ;
     
     // enable  
-    assign en          = write_vld | read_vld       ;
-    assign wr_en       = write_vld                  ;
+    assign en          = (write_vld | read_vld) ? 1'b1: 1'b0 ;
+    assign wr_en       = write_vld ? 1'b1:1'b0      ;
     assign wr_byte_sel = write_cmd.byte_sel         ;
     assign wr_mode     = write_cmd.mode             ;//mode=0,读写连续的32bit; mode=1 每32bit中读写一个byte
     assign rd_byte_sel = read_cmd.byte_sel          ;
     assign rd_mode     = read_cmd.mode              ;//mode=0,读写连续的32bit; mode=1 每32bit中读写一个byte
     assign addr        = write_vld ? write_cmd.addr : read_cmd.addr;
 
+    //mem_model #(
+    //    //.ARGPARSE_KEY("HEX"),
+    //    .ALLOW_NO_HEX(1),
+    //    .ADDR_WIDTH  (9  ),
+    //    .DATA_WIDTH  (128))
+    //sram_inst (
+    //  .clk       (clk        ),
+    //  .en        (en         ),
+    //  .wr_en     (wr_en      ),
+    //  .addr      (addr       ),
+    //  .wr_byte_en(byte_wr_en ),
+    //  .wr_data   (ram_wr_data),
+    //  .rd_data   (ram_rd_data)
+    //);
     mem_model #(
-        //.ARGPARSE_KEY(HEX),
-        //.ALLOW_NO_HEX(0),
         .ADDR_WIDTH  (9  ),
         .DATA_WIDTH  (128))
-    sram_inst (
-      .clk       (clk        ),
-      .en        (en         ),
-      .wr_en     (wr_en      ),
-      .addr      (addr       ),
-      .wr_byte_en(byte_wr_en ),
-      .wr_data   (ram_wr_data),
-      .rd_data   (ram_rd_data)
-    );
+    u_sram_inst ( 
+        .clk     (clk),
+        .rst_n   (rst_n),
+        .en      (en),
+        .wr      (wr_en),
+        .be      (byte_wr_en),
+        .addr    (addr),
+        .data_in (ram_wr_data),
+        .data_out(ram_rd_data));
 
     // 写
     always_comb begin
+        byte_wr_en  = 'b0;
+        ram_wr_data = 'b0;
         if (wr_mode == 1'b0) begin         //读写连续的32bit
             case (wr_byte_sel)
                 2'b00: begin
@@ -142,6 +156,7 @@ module sram_inst
     end
 
     always_comb begin
+        rd_data = 'b0;
         if (rd_mode_d == 1'b0) begin
             case (rd_byte_sel_d)
                 2'b00: rd_data   = ram_rd_data[31:0]  ;

@@ -1,4 +1,4 @@
-module sram_bank_group 
+module vec_cache_sram_bank_group 
 import vector_cache_pkg::*;
 #(
     parameter integer unsigned BLOCK_ID =0 ,
@@ -136,7 +136,7 @@ import vector_cache_pkg::*;
 
     generate
         for(genvar i=0;i<8;i=i+1)begin:SRAM_BANK_GEN
-            sram_bank #( 
+            vec_cache_sram_bank #( 
                 .BLOCK_ID(BLOCK_ID),
                 .ROW_ID  (ROW_ID)
             )u_sram_bank(

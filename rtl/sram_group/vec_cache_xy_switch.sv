@@ -1,4 +1,4 @@
-module xy_switch 
+module vec_cache_xy_switch 
 import vector_cache_pkg::*;
     #( 
     parameter integer unsigned BLOCK_ID =0,

@@ -1,4 +1,4 @@
-module sram_2inst
+module vec_cache_sram_2inst
     import vector_cache_pkg::*;
     (
     input  logic                clk         ,
@@ -38,8 +38,8 @@ module sram_2inst
     logic                 sram2_write_vld ;
     sram_inst_cmd_t       sram2_write_cmd ;
 
-    assign read_sel  = read_cmd_a.dest_ram_id[0];
-    assign write_sel = write_cmd_a.dest_ram_id[0];
+    assign read_sel  = read_cmd_a.dest_ram_id.channel_id;
+    assign write_sel = write_cmd_a.dest_ram_id.channel_id;
     
     //always_ff@(posedge clk)begin
     //    if(read_cmd_a.dest_ram_id[0] && read_cmd_b.dest_ram_id[0])begin
@@ -91,7 +91,7 @@ module sram_2inst
    
     
     
-    sram_inst u_sram_inst_a (
+    vec_cache_sram_inst u_sram_inst_a (
         .clk      (clk              ),
         .rst_n    (rst_n            ),
         .read_vld (sram1_read_vld   ),
@@ -101,7 +101,7 @@ module sram_2inst
         .wr_data  (sram1_wr_data    ),
         .rd_data  (sram1_rd_data    )
     );
-    sram_inst u_sram_inst_b (
+    vec_cache_sram_inst u_sram_inst_b (
         .clk      (clk              ),
         .rst_n    (rst_n            ),
         .read_vld (sram2_read_vld   ),

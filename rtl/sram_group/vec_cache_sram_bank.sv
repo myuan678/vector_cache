@@ -1,4 +1,4 @@
-module sram_bank 
+module vec_cache_sram_bank 
     import vector_cache_pkg::*;
     #(  parameter integer unsigned BLOCK_ID = 0 ,//ID是block的id
         parameter integer unsigned ROW_ID   = 0
@@ -60,7 +60,7 @@ module sram_bank
     logic [1:0] group_id_row[7:0];
     generate
         for(genvar i=0;i<8;i=i+1)begin:gen_block_id//group_id_col,访问第几列的block
-            assign group_id_col[i] = west_read_cmd_pld_in[i].dest_ram_id[2:1];
+            assign group_id_col[i] = west_read_cmd_pld_in[i].dest_ram_id.block_id;
         end
     endgenerate
     
@@ -79,7 +79,7 @@ module sram_bank
     data_pld_t      mem_east_data_out               [7:0]   ;     
 
 
-    mem_block #( 
+    vec_cache_mem_block #( 
         .BLOCK_ID (BLOCK_ID)
         //.ROW_ID (ROW_ID)
     ) u_mem_block ( 
@@ -113,7 +113,7 @@ module sram_bank
         .east_data_out          (mem_east_data_out            ));//mem_out
 
 
-        xy_switch #( 
+        vec_cache_xy_switch #( 
             .BLOCK_ID(BLOCK_ID),
             .ROW_ID(ROW_ID)
         )u_xy_switch( 

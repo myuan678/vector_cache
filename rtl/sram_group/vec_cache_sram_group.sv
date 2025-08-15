@@ -1,4 +1,4 @@
-module sram_group 
+module vec_cache_sram_group 
     import vector_cache_pkg::*;
     //#(
     //parameter integer unsigned BLOCK_ID =0 ,
@@ -52,6 +52,11 @@ module sram_group
     //output write_ram_cmd_t      north_write_cmd_pld_out      [7:0]    ,
     //output logic [7:0]          north_write_cmd_vld_out               ,
 );
+    logic [7:0]             shift_sn_data_vld_wire_tmp [7:0];
+    group_data_pld_t        shift_sn_data_wire_tmp[7:0][7:0];
+
+    logic [7:0]             shift_sn_write_cmd_vld_wire_tmp[7:0];
+    write_ram_cmd_t         shift_sn_write_cmd_wire_tmp[7:0][7:0];
     
     logic [7:0]             lr_read_cmd_vld_wire       [4:0][4:0];
     arb_out_req_t           lr_read_cmd_pld_wire  [4:0][4:0][7:0];
@@ -89,11 +94,23 @@ module sram_group
                 assign lr_write_cmd_vld_wire [i][0][j] = west_write_cmd_vld_in[j];
                 assign rl_write_cmd_pld_wire [i][4][j] = east_write_cmd_pld_in[j];
                 assign rl_write_cmd_vld_wire [i][4][j] = east_write_cmd_vld_in[j];
-                assign sn_write_cmd_pld_wire [4][i][j] = south_write_cmd_pld_in[j];
-                assign sn_write_cmd_vld_wire [4][i][j] = south_write_cmd_vld_in[j];
+                //assign sn_write_cmd_pld_wire [4][i][j] = south_write_cmd_pld_in[j];
+                //assign sn_write_cmd_vld_wire [4][i][j] = south_write_cmd_vld_in[j];
                 assign ns_write_cmd_pld_wire [0][i][j] = north_write_cmd_pld_in[j];
                 assign ns_write_cmd_vld_wire [0][i][j] = north_write_cmd_vld_in[j];
             end
+        end
+    endgenerate
+    generate
+        for(genvar j=0;j<8;j=j+1)begin:SOUTH_WR_CMD_GEN
+            assign sn_write_cmd_pld_wire [4][0][j] = south_write_cmd_pld_in[j];
+            assign sn_write_cmd_vld_wire [4][0][j] = south_write_cmd_vld_in[j];
+            assign sn_write_cmd_pld_wire [4][1][j] = shift_sn_write_cmd_wire_tmp[j][2];
+            assign sn_write_cmd_vld_wire [4][1][j] = shift_sn_write_cmd_vld_wire_tmp[j][2];
+            assign sn_write_cmd_pld_wire [4][2][j] = shift_sn_write_cmd_wire_tmp[j][4];
+            assign sn_write_cmd_vld_wire [4][2][j] = shift_sn_write_cmd_vld_wire_tmp[j][4];
+            assign sn_write_cmd_pld_wire [4][3][j] = shift_sn_write_cmd_wire_tmp[j][6];
+            assign sn_write_cmd_vld_wire [4][3][j] = shift_sn_write_cmd_vld_wire_tmp[j][6];
         end
     endgenerate
     
@@ -124,18 +141,30 @@ module sram_group
             assign rl_data_vld_wire[1][4][i]       = east_data_in_vld[i];
             assign rl_data_vld_wire[2][4][i]       = east_data_in_vld[i];
             assign rl_data_vld_wire[3][4][i]       = east_data_in_vld[i];
-            assign sn_data_wire[4][0][i].data     = south_data_in[i].data[255:0];
+            //assign sn_data_wire[4][0][i].data     = south_data_in[i].data[255:0];
+            //assign sn_data_wire[4][0][i].cmd_pld  = south_data_in[i].cmd_pld;
+            //assign sn_data_wire[4][1][i].data     = south_data_in[i].data[511:256];
+            //assign sn_data_wire[4][1][i].cmd_pld  = south_data_in[i].cmd_pld;
+            //assign sn_data_wire[4][2][i].data     = south_data_in[i].data[767:512];
+            //assign sn_data_wire[4][2][i].cmd_pld  = south_data_in[i].cmd_pld;
+            //assign sn_data_wire[4][3][i].data     = south_data_in[i].data[1023:768];
+            //assign sn_data_wire[4][3][i].cmd_pld  = south_data_in[i].cmd_pld;
+            assign sn_data_wire[4][0][i].data     = south_data_in[i].data[255:0];//south写需要平衡延迟
             assign sn_data_wire[4][0][i].cmd_pld  = south_data_in[i].cmd_pld;
-            assign sn_data_wire[4][1][i].data     = south_data_in[i].data[511:256];
-            assign sn_data_wire[4][1][i].cmd_pld  = south_data_in[i].cmd_pld;
-            assign sn_data_wire[4][2][i].data     = south_data_in[i].data[767:512];
-            assign sn_data_wire[4][2][i].cmd_pld  = south_data_in[i].cmd_pld;
-            assign sn_data_wire[4][3][i].data     = south_data_in[i].data[1023:768];
-            assign sn_data_wire[4][3][i].cmd_pld  = south_data_in[i].cmd_pld;
+            assign sn_data_wire[4][1][i].data     = shift_sn_data_wire_tmp[i][2].data[511:256];
+            assign sn_data_wire[4][1][i].cmd_pld  = shift_sn_data_wire_tmp[i][2].cmd_pld;
+            assign sn_data_wire[4][2][i].data     = shift_sn_data_wire_tmp[i][4].data[767:512];
+            assign sn_data_wire[4][2][i].cmd_pld  = shift_sn_data_wire_tmp[i][4].cmd_pld;
+            assign sn_data_wire[4][3][i].data     = shift_sn_data_wire_tmp[i][6].data[1023:768];
+            assign sn_data_wire[4][3][i].cmd_pld  = shift_sn_data_wire_tmp[i][6].cmd_pld;
+            //assign sn_data_vld_wire[4][0][i]      = south_data_in_vld[i];
+            //assign sn_data_vld_wire[4][1][i]      = south_data_in_vld[i];
+            //assign sn_data_vld_wire[4][2][i]      = south_data_in_vld[i];
+            //assign sn_data_vld_wire[4][3][i]      = south_data_in_vld[i];
             assign sn_data_vld_wire[4][0][i]      = south_data_in_vld[i];
-            assign sn_data_vld_wire[4][1][i]      = south_data_in_vld[i];
-            assign sn_data_vld_wire[4][2][i]      = south_data_in_vld[i];
-            assign sn_data_vld_wire[4][3][i]      = south_data_in_vld[i];
+            assign sn_data_vld_wire[4][1][i]      = shift_sn_data_vld_wire_tmp[i][2];
+            assign sn_data_vld_wire[4][2][i]      = shift_sn_data_vld_wire_tmp[i][4];
+            assign sn_data_vld_wire[4][3][i]      = shift_sn_data_vld_wire_tmp[i][6];
             assign ns_data_wire[0][0][i].data     = north_data_in[i].data[255:0];
             assign ns_data_wire[0][0][i].cmd_pld  = north_data_in[i].cmd_pld;
             assign ns_data_wire[0][1][i].data     = north_data_in[i].data[511:256];
@@ -151,11 +180,76 @@ module sram_group
         end
     endgenerate
 
+
+    //shift_reg south write data
+    generate
+        for(genvar i=0;i<8;i=i+1)begin
+            always_ff@(posedge clk or negedge rst_n)begin
+                if(!rst_n)begin
+                    for(int j=0;j<8;j=j+1)begin
+                        shift_sn_data_wire_tmp[i][j] <= 'b0;
+                    end
+                end
+                else begin
+                    shift_sn_data_wire_tmp[i][0] <= south_data_in[i];
+                    for(int j=1;j<8;j=j+1)begin
+                        shift_sn_data_wire_tmp[i][j] <= shift_sn_data_wire_tmp[i][j-1];
+                    end
+                end
+            end
+        end
+    endgenerate
+
+    generate
+        for(genvar i=0;i<8;i=i+1)begin
+            always_ff@(posedge clk or negedge rst_n)begin
+                if(!rst_n)begin
+                    shift_sn_data_vld_wire_tmp[i] <= 'b0;
+                end
+                else begin
+                    shift_sn_data_vld_wire_tmp[i] <= {shift_sn_data_vld_wire_tmp[i][6:0], south_data_in_vld[i]};
+                end
+            end
+        end
+    endgenerate
+    //shift_reg south write cmd
+    generate
+        for(genvar i=0;i<8;i=i+1)begin
+            always_ff@(posedge clk or negedge rst_n)begin
+                if(!rst_n)begin
+                    for(int j=0;j<8;j=j+1)begin
+                        shift_sn_write_cmd_wire_tmp[i][j] <= 'b0;
+                    end
+                end
+                else begin
+                    shift_sn_write_cmd_wire_tmp[i][0] <= south_write_cmd_pld_in[i];
+                    for(int j=1;j<8;j=j+1)begin
+                        shift_sn_write_cmd_wire_tmp[i][j] <= shift_sn_write_cmd_wire_tmp[i][j-1];
+                    end
+                end
+            end
+        end
+    endgenerate
+
+    generate
+        for(genvar i=0;i<8;i=i+1)begin
+            always_ff@(posedge clk or negedge rst_n)begin
+                if(!rst_n)begin
+                    shift_sn_write_cmd_vld_wire_tmp[i] <= 'b0;
+                end
+                else begin
+                    shift_sn_write_cmd_vld_wire_tmp[i] <= {shift_sn_write_cmd_vld_wire_tmp[i][6:0], south_write_cmd_vld_in[i]};
+                end
+            end
+        end
+    endgenerate
+    
+
       
     generate
         for(genvar i=0;i<4;i=i+1)begin:ROW_SRAM_BANK_GROUP//row_id
             for(genvar j=0;j<4;j=j+1)begin:COL_SRAM_BANK_GROUP//block_id
-                sram_bank_group #(
+                vec_cache_sram_bank_group #(
                     .ROW_ID  (i),
                     .BLOCK_ID(j))
                 u_sram_bank_group ( 

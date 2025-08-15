@@ -1,4 +1,4 @@
-module loop_back
+module vec_cache_loop_back
     import vector_cache_pkg::*; 
     (
     input  logic                clk                                   ,
@@ -51,7 +51,7 @@ module loop_back
      generate
         for(genvar i=0;i<8;i=i+1)begin
             assign west_data_out[i] = east_data_in_vld ? east_data_in[i] : west_data_in[i];
-            assign west_data_out_vld[i] = east_data_in_vld | west_data_in_vld;
+            assign west_data_out_vld[i] = east_data_in_vld[i] | west_data_in_vld[i];
         end
     endgenerate
 

@@ -1,4 +1,4 @@
-module mem_block
+module vec_cache_mem_block
 import vector_cache_pkg::*;
 #(parameter integer unsigned BLOCK_ID = 0           )
 (
@@ -152,7 +152,7 @@ import vector_cache_pkg::*;
 
     generate
         for(genvar i=0;i<4;i=i+1)begin:block_four_hashram
-            sram_2inst u_hash ( 
+            vec_cache_sram_2inst u_hash ( 
                 .clk        (clk                            ),
                 .rst_n      (rst_n                          ),
                 .read_vld_a (read_ram_cmd_vld[2*i]          ),//change
