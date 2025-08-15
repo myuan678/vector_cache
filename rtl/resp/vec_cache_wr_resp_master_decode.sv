@@ -1,4 +1,4 @@
-module wr_resp_master_decode 
+module vec_cache_wr_resp_master_decode 
     import vector_cache_pkg::*;
     #(
         parameter integer unsigned IN_NUM = 8,

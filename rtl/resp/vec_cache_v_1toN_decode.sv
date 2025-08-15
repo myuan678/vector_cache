@@ -1,4 +1,4 @@
-module v_1toN_decode #(
+module vec_cache_v_1toN_decode #(
     parameter integer unsigned N=8
     )(
     input  logic                  vld      ,

@@ -1,4 +1,4 @@
-module rd_data_master_decode 
+module vec_cache_rd_data_master_decode 
     import vector_cache_pkg::*;
     #(
     parameter int M = 8,

@@ -1,4 +1,4 @@
-module wr_resp_direction_decode 
+module vec_cache_wr_resp_direction_decode 
 import vector_cache_pkg::*;
 #(
     parameter integer unsigned WIDTH = 4//四个方向
