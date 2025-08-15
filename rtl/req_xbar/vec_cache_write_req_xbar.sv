@@ -1,4 +1,4 @@
-module write_req_xbar 
+module vec_cache_write_req_xbar 
 import vector_cache_pkg::*;
 #(
     parameter integer unsigned W_REQ_NUM = 8
@@ -42,11 +42,12 @@ import vector_cache_pkg::*;
             assign in_wr_pld[i].cmd_pld.cmd_sideband  = wr_cmd_pld[i].cmd_sideband  ;
             assign in_wr_pld[i].data                  = wr_cmd_pld[i].data          ;
             assign in_wr_pld[i].cmd_pld.strb          = wr_cmd_pld[i].strb          ;
-            assign in_wr_pld[i].cmd_pld.cmd_opcode    = `VEC_CACHE_CMD_WRITE        ; //1 is write
+            //assign in_wr_pld[i].cmd_pld.cmd_opcode    = `VEC_CACHE_CMD_WRITE        ; //1 is write
+            assign in_wr_pld[i].cmd_pld.cmd_opcode    = 2'd1        ; 
         end
     endgenerate
 
-    nto4_xbar #(
+    vec_cache_nto4_xbar #(
         .N (W_REQ_NUM),//input num
         .PLD_WIDTH($bits(input_wrreq_pld_t))
     ) u_west_wr_xbar(

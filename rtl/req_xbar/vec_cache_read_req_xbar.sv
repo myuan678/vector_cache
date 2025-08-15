@@ -1,4 +1,4 @@
-module read_req_xbar 
+module vec_cache_read_req_xbar 
     import vector_cache_pkg::*;
     #( 
         parameter integer unsigned R_REQ_NUM = 8
@@ -38,7 +38,7 @@ module read_req_xbar
         end
     endgenerate
 
-    nto4_xbar #(
+    vec_cache_nto4_xbar #(
         .N  (R_REQ_NUM),// read req num
         .PLD_WIDTH($bits(input_req_pld_t))//
     ) u_read_xbar(

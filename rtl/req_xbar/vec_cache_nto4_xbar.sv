@@ -1,4 +1,4 @@
-module nto4_xbar #(
+module vec_cache_nto4_xbar #(
     parameter integer unsigned  N = 8,
     parameter integer unsigned  PLD_WIDTH = 32
 )(
