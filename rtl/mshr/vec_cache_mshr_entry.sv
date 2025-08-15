@@ -157,7 +157,8 @@ module vec_cache_mshr_entry
     assign mshr_out_pld.tag                 = mshr_entry_pld_reg_file.req_tag;
     assign mshr_out_pld.index               = mshr_entry_pld_reg_file.index;
     assign mshr_out_pld.evict_tag           = mshr_entry_pld_reg_file.evict_tag;
-    assign mshr_out_pld.release_bitmap      = v_release_en;
+    //assign mshr_out_pld.release_bitmap      = v_release_en;
+    assign mshr_out_pld.release_bit         = release_en;
     assign alloc_vld                        = idle;
 
     
@@ -219,7 +220,7 @@ module vec_cache_mshr_entry
     end
     
     //assign evict_rd_vld_0                   = evict_alloc_vld && hazard_free && ~state_evict_sent;//evict is read, readout data, write into Evict data buffer
-    assign evict_rd_vld_0                   =  hazard_free && ~state_evict_sent;
+    assign evict_rd_vld_0                   = hazard_free && ~state_evict_sent;
     assign evict_rd_pld_0.txnid.direction_id= mshr_entry_pld_reg_file.txnid.direction_id            ;
     assign evict_rd_pld_0.txnid.master_id   = mshr_entry_pld_reg_file.txnid.master_id               ;
     assign evict_rd_pld_0.txnid.mode        = mshr_entry_pld_reg_file.txnid.mode                    ;

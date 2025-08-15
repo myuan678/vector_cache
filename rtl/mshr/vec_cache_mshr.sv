@@ -16,35 +16,36 @@ module vec_cache_mshr
     output logic [MSHR_ENTRY_IDX_WIDTH-1:0]             alloc_idx_1             ,
     input  logic                                        alloc_rdy_1             ,
 
-    output logic                                        west_read_cmd_vld       ,
-    output arb_out_req_t                                west_read_cmd_pld       ,
-    output logic                                        east_read_cmd_vld       ,
-    output arb_out_req_t                                east_read_cmd_pld       ,
-    output logic                                        south_read_cmd_vld      ,
-    output arb_out_req_t                                south_read_cmd_pld      ,
-    output logic                                        north_read_cmd_vld      ,
-    output arb_out_req_t                                north_read_cmd_pld      ,
+    output logic                                        read_cmd_vld_west       ,
+    output logic                                        read_cmd_vld_east       ,
+    output logic                                        read_cmd_vld_south      ,
+    output logic                                        read_cmd_vld_north      , 
+    output logic                                        read_cmd_vld_evict      ,
 
-    output arb_out_req_t                                read_cmd_pld_0          ,
-    output arb_out_req_t                                read_cmd_pld_1          ,
-    output logic                                        read_cmd_vld_0          ,
-    output logic                                        read_cmd_vld_1          ,
+    output arb_out_req_t                                read_cmd_pld_west       ,
+    output arb_out_req_t                                read_cmd_pld_east       ,
+    output arb_out_req_t                                read_cmd_pld_south      ,
+    output arb_out_req_t                                read_cmd_pld_north      ,
+    output arb_out_req_t                                read_cmd_pld_evict      ,
 
-    output logic                                        west_write_cmd_vld      ,
-    output arb_out_req_t                                west_write_cmd_pld      ,
-    output logic                                        east_write_cmd_vld      ,
-    output arb_out_req_t                                east_write_cmd_pld      ,
-    output logic                                        south_write_cmd_vld     ,
-    output arb_out_req_t                                south_write_cmd_pld     ,
-    output logic                                        north_write_cmd_vld     ,
-    output arb_out_req_t                                north_write_cmd_pld     ,
+    output arb_out_req_t                                read_cmd_to_ram_pld_0   ,
+    output arb_out_req_t                                read_cmd_to_ram_pld_1   ,
+    output logic                                        read_cmd_to_ram_vld_0   ,
+    output logic                                        read_cmd_to_ram_vld_1   ,
 
-    output arb_out_req_t                                evict_req_pld           ,
-    output logic                                        evict_req_vld           ,
-    input  logic                                        evict_req_rdy           ,
-    output arb_out_req_t                                lf_wrreq_pld            ,//linefill write request
-    output logic                                        lf_wrreq_vld            ,//linefill write request
-    input  logic                                        lf_wrreq_rdy            ,
+    output logic                                        write_cmd_vld_west      ,
+    output logic                                        write_cmd_vld_east      ,
+    output logic                                        write_cmd_vld_south     ,
+    output logic                                        write_cmd_vld_north     ,
+    output logic                                        write_cmd_vld_linefill  ,//linefill write request
+
+    output arb_out_req_t                                write_cmd_pld_west      ,
+    output arb_out_req_t                                write_cmd_pld_east      ,
+    output arb_out_req_t                                write_cmd_pld_south     ,
+    output arb_out_req_t                                write_cmd_pld_north     ,
+    output arb_out_req_t                                write_cmd_pld_linefill  ,//linefill write request
+
+    //input  logic                                        lf_wrreq_rdy            ,
 
     input  logic                                        downstream_txreq_rdy    ,// to ds
     output logic                                        downstream_txreq_vld    ,
@@ -95,38 +96,38 @@ module vec_cache_mshr
     logic  [MSHR_ENTRY_NUM-1         :0]                v_mshr_update_en_1                             ;    
     logic  [MSHR_ENTRY_NUM-1         :0]                v_alloc_vld                                    ; 
     logic  [MSHR_ENTRY_NUM-1         :0]                v_alloc_rdy                                    ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_w_dataram_rd_vld                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_e_dataram_rd_vld                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_s_dataram_rd_vld                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_n_dataram_rd_vld                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_rd_vld_w                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_rd_vld_e                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_rd_vld_s                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_rd_vld_n                             ;
 
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_w_dataram_rd_rdy                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_e_dataram_rd_rdy                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_s_dataram_rd_rdy                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_n_dataram_rd_rdy                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_rd_rdy_w                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_rd_rdy_e                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_rd_rdy_s                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_rd_rdy_n                             ;
     arb_out_req_t                                       v_dataram_rd_pld   [MSHR_ENTRY_NUM-1:0]        ;
 
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_w_dataram_wr_vld                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_e_dataram_wr_vld                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_s_dataram_wr_vld                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_n_dataram_wr_vld                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_w_dataram_wr_rdy                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_e_dataram_wr_rdy                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_s_dataram_wr_rdy                             ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_n_dataram_wr_rdy                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_wr_vld_w                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_wr_vld_e                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_wr_vld_s                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_wr_vld_n                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_wr_rdy_w                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_wr_rdy_e                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_wr_rdy_s                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_wr_rdy_n                             ;
     arb_out_req_t                                       v_dataram_wr_pld    [MSHR_ENTRY_NUM-1:0]       ;
 
     logic  [MSHR_ENTRY_NUM-1         :0]                v_downstream_txreq_vld                         ;
     downstream_txreq_pld_t                              v_downstream_txreq_pld[MSHR_ENTRY_NUM-1:0]     ;
     logic  [MSHR_ENTRY_NUM-1         :0]                v_downstream_txreq_rdy                         ;
 
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_linefill_req_vld                             ;
-    arb_out_req_t                                       v_linefill_req_pld  [MSHR_ENTRY_NUM-1 :0]      ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_linefill_req_rdy                             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_wr_vld_lf                             ;
+    arb_out_req_t                                       v_dataram_wr_pld_lf  [MSHR_ENTRY_NUM-1 :0]      ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_wr_rdy_lf                             ;
 
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_evict_rd_vld                                 ;
-    logic  [MSHR_ENTRY_NUM-1         :0]                v_evict_rd_rdy                                 ;
-    arb_out_req_t                                       v_evict_rd_pld[MSHR_ENTRY_NUM-1:0]             ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_rd_vld_ev                            ;
+    logic  [MSHR_ENTRY_NUM-1         :0]                v_dataram_rd_rdy_ev                            ;
+    arb_out_req_t                                       v_dataram_rd_pld_ev[MSHR_ENTRY_NUM-1:0]        ;
      
     logic [MSHR_ENTRY_NUM-1         :0]                 v_release_en                                   ;
     logic [MSHR_ENTRY_NUM-1         :0]                 v_linefill_done                                ;
@@ -141,38 +142,42 @@ module vec_cache_mshr
     logic [MSHR_ENTRY_NUM-1         :0]                 v_north_wr_done                                ;
     logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_done                                   ;
     logic [MSHR_ENTRY_NUM-1         :0]                 v_evict_clean                                  ;
+    
 
-    arb_out_req_t                                       linefill_req_pld                        ;
-    logic                                               linefill_req_vld                        ;
-    logic                                               linefill_req_rdy                        ;
-    arb_out_req_t                                       evict_rd_pld                            ;
-    logic                                               evict_rd_vld                            ;
-    logic                                               evict_rd_rdy                            ;
-    arb_out_req_t                                       w_dataram_wr_pld                        ;
-    arb_out_req_t                                       e_dataram_wr_pld                        ;
-    arb_out_req_t                                       s_dataram_wr_pld                        ;
-    arb_out_req_t                                       n_dataram_wr_pld                        ;
-    logic                                               w_dataram_wr_vld                        ;
-    logic                                               e_dataram_wr_vld                        ;
-    logic                                               s_dataram_wr_vld                        ;
-    logic                                               n_dataram_wr_vld                        ;
-    logic                                               w_dataram_wr_rdy                        ;
-    logic                                               e_dataram_wr_rdy                        ;
-    logic                                               s_dataram_wr_rdy                        ;
-    logic                                               n_dataram_wr_rdy                        ;
+    logic                                               dataram_wr_stg1_out_vld_w ;
+    logic                                               dataram_wr_stg1_out_vld_e ;
+    logic                                               dataram_wr_stg1_out_vld_s ;
+    logic                                               dataram_wr_stg1_out_vld_n ;
+    logic                                               dataram_wr_stg1_out_vld_lf;
+    arb_out_req_t                                       dataram_wr_stg1_out_pld_w ;
+    arb_out_req_t                                       dataram_wr_stg1_out_pld_e ;
+    arb_out_req_t                                       dataram_wr_stg1_out_pld_s ;
+    arb_out_req_t                                       dataram_wr_stg1_out_pld_n ;
+    arb_out_req_t                                       dataram_wr_stg1_out_pld_lf;
+    logic                                               dataram_wr_stg1_out_rdy_w ;
+    logic                                               dataram_wr_stg1_out_rdy_e ;
+    logic                                               dataram_wr_stg1_out_rdy_s ;
+    logic                                               dataram_wr_stg1_out_rdy_n ;
+    logic                                               dataram_wr_stg1_out_rdy_lf;
 
-    arb_out_req_t                                       w_dataram_rd_pld                        ;
-    arb_out_req_t                                       e_dataram_rd_pld                        ;
-    arb_out_req_t                                       s_dataram_rd_pld                        ;
-    arb_out_req_t                                       n_dataram_rd_pld                        ;
-    logic                                               w_dataram_rd_vld                        ;
-    logic                                               e_dataram_rd_vld                        ;
-    logic                                               s_dataram_rd_vld                        ;
-    logic                                               n_dataram_rd_vld                        ;
-    logic                                               w_dataram_rd_rdy                        ;
-    logic                                               e_dataram_rd_rdy                        ;
-    logic                                               s_dataram_rd_rdy                        ;
-    logic                                               n_dataram_rd_rdy                        ;
+    logic                                               dataram_rd_stg1_out_vld_w ;
+    logic                                               dataram_rd_stg1_out_vld_e ;
+    logic                                               dataram_rd_stg1_out_vld_s ;
+    logic                                               dataram_rd_stg1_out_vld_n ;
+    logic                                               dataram_rd_stg1_out_vld_ev;
+    arb_out_req_t                                       dataram_rd_stg1_out_pld_w ;
+    arb_out_req_t                                       dataram_rd_stg1_out_pld_e ;
+    arb_out_req_t                                       dataram_rd_stg1_out_pld_s ;
+    arb_out_req_t                                       dataram_rd_stg1_out_pld_n ;
+    arb_out_req_t                                       dataram_rd_stg1_out_pld_ev;
+    logic                                               dataram_rd_stg1_out_rdy_w ;
+    logic                                               dataram_rd_stg1_out_rdy_e ;
+    logic                                               dataram_rd_stg1_out_rdy_s ;
+    logic                                               dataram_rd_stg1_out_rdy_n ;
+    logic                                               dataram_rd_stg1_out_rdy_ev;
+
+    
+
 
 
     pre_alloc_two #(
@@ -298,33 +303,33 @@ module vec_cache_mshr
             .alloc_vld              (v_alloc_vld[i]             ),
             .alloc_rdy              (v_alloc_rdy[i]             ),
 
-            .w_dataram_rd_rdy       (v_w_dataram_rd_rdy[i]      ),
-            .e_dataram_rd_rdy       (v_e_dataram_rd_rdy[i]      ),
-            .s_dataram_rd_rdy       (v_s_dataram_rd_rdy[i]      ),
-            .n_dataram_rd_rdy       (v_n_dataram_rd_rdy[i]      ),
-            .w_dataram_rd_vld       (v_w_dataram_rd_vld[i]      ),
-            .e_dataram_rd_vld       (v_e_dataram_rd_vld[i]      ),
-            .s_dataram_rd_vld       (v_s_dataram_rd_vld[i]      ),
-            .n_dataram_rd_vld       (v_n_dataram_rd_vld[i]      ),
-            .dataram_rd_pld         (v_dataram_rd_pld[i]        ),
-            .w_dataram_wr_rdy       (v_w_dataram_wr_rdy[i]      ),
-            .e_dataram_wr_rdy       (v_e_dataram_wr_rdy[i]      ),
-            .s_dataram_wr_rdy       (v_s_dataram_wr_rdy[i]      ),
-            .n_dataram_wr_rdy       (v_n_dataram_wr_rdy[i]      ),
-            .w_dataram_wr_vld       (v_w_dataram_wr_vld[i]      ),
-            .e_dataram_wr_vld       (v_e_dataram_wr_vld[i]      ),
-            .s_dataram_wr_vld       (v_s_dataram_wr_vld[i]      ),
-            .n_dataram_wr_vld       (v_n_dataram_wr_vld[i]      ),
+            .w_dataram_rd_rdy       (v_dataram_rd_rdy_w[i]      ),
+            .e_dataram_rd_rdy       (v_dataram_rd_rdy_e[i]      ),
+            .s_dataram_rd_rdy       (v_dataram_rd_rdy_s[i]      ),
+            .n_dataram_rd_rdy       (v_dataram_rd_rdy_n[i]      ),
+            .w_dataram_rd_vld       (v_dataram_rd_vld_w[i]      ),
+            .e_dataram_rd_vld       (v_dataram_rd_vld_e[i]      ),
+            .s_dataram_rd_vld       (v_dataram_rd_vld_s[i]      ),
+            .n_dataram_rd_vld       (v_dataram_rd_vld_n[i]      ),
+            .dataram_rd_pld         (v_dataram_rd_pld  [i]        ),
+            .w_dataram_wr_rdy       (v_dataram_wr_rdy_w[i]      ),
+            .e_dataram_wr_rdy       (v_dataram_wr_rdy_e[i]      ),
+            .s_dataram_wr_rdy       (v_dataram_wr_rdy_s[i]      ),
+            .n_dataram_wr_rdy       (v_dataram_wr_rdy_n[i]      ),
+            .w_dataram_wr_vld       (v_dataram_wr_vld_w[i]      ),
+            .e_dataram_wr_vld       (v_dataram_wr_vld_e[i]      ),
+            .s_dataram_wr_vld       (v_dataram_wr_vld_s[i]      ),
+            .n_dataram_wr_vld       (v_dataram_wr_vld_n[i]      ),
             .dataram_wr_pld         (v_dataram_wr_pld[i]        ),
-            .evict_rdy              (v_evict_rd_rdy[i]          ),
-            .evict_rd_vld           (v_evict_rd_vld[i]          ),  
-            .evict_rd_pld           (v_evict_rd_pld[i]          ),
+            .evict_rdy              (v_dataram_rd_rdy_ev[i]     ),
+            .evict_rd_vld           (v_dataram_rd_vld_ev[i]     ),  
+            .evict_rd_pld           (v_dataram_rd_pld_ev[i]     ),
             .downstream_txreq_vld   (v_downstream_txreq_vld[i]  ),
             .downstream_txreq_rdy   (v_downstream_txreq_rdy[i]  ),
             .downstream_txreq_pld   (v_downstream_txreq_pld[i]  ),
-            .linefill_req_vld       (v_linefill_req_vld[i]      ),
-            .linefill_req_pld       (v_linefill_req_pld[i]      ),
-            .linefill_req_rdy       (v_linefill_req_rdy[i]      ),
+            .linefill_req_vld       (v_dataram_wr_vld_lf[i]     ),
+            .linefill_req_pld       (v_dataram_wr_pld_lf[i]     ),
+            .linefill_req_rdy       (v_dataram_wr_rdy_lf[i]     ),
 
             .ds_txreq_done          (v_ds_txreq_done[i]         ),
             .ds_txreq_done_db_id    (ds_txreq_done_db_id        ),
@@ -342,10 +347,10 @@ module vec_cache_mshr
 
             .linefill_alloc_vld     (linefill_alloc_vld         ),
             .linefill_alloc_idx     (linefill_alloc_idx         ),
-            .w_rdb_alloc_nfull       (w_rdb_alloc_nfull         ),
-            .e_rdb_alloc_nfull       (e_rdb_alloc_nfull         ),
-            .s_rdb_alloc_nfull       (s_rdb_alloc_nfull         ),
-            .n_rdb_alloc_nfull       (n_rdb_alloc_nfull         ),
+            .w_rdb_alloc_nfull      (w_rdb_alloc_nfull          ),
+            .e_rdb_alloc_nfull      (e_rdb_alloc_nfull          ),
+            .s_rdb_alloc_nfull      (s_rdb_alloc_nfull          ),
+            .n_rdb_alloc_nfull      (n_rdb_alloc_nfull          ),
 
             .v_release_en           (v_release_en               ),
             .release_en             (v_release_en[i]            ));
@@ -373,45 +378,45 @@ module vec_cache_mshr
         .WIDTH     (MSHR_ENTRY_NUM),
         .PLD_WIDTH ($bits(arb_out_req_t))
     ) u_w_dataram_rd_arb (
-        .v_vld_s(v_w_dataram_rd_vld ),
-        .v_rdy_s(v_w_dataram_rd_rdy ),
-        .v_pld_s(v_dataram_rd_pld   ),
-        .vld_m  (w_dataram_rd_vld   ),
-        .rdy_m  (w_dataram_rd_rdy   ),
-        .pld_m  (w_dataram_rd_pld   ));
+        .v_vld_s(v_dataram_rd_vld_w         ),
+        .v_rdy_s(v_dataram_rd_rdy_w         ),
+        .v_pld_s(v_dataram_rd_pld           ),
+        .vld_m  (dataram_rd_stg1_out_vld_w  ),
+        .rdy_m  (dataram_rd_stg1_out_rdy_w  ),
+        .pld_m  (dataram_rd_stg1_out_pld_w  ));
     
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
         .PLD_WIDTH ($bits(arb_out_req_t))
     ) u_e_dataram_rd_arb (
-        .v_vld_s(v_e_dataram_rd_vld ),
-        .v_rdy_s(v_e_dataram_rd_rdy ),
-        .v_pld_s(v_dataram_rd_pld   ),
-        .vld_m  (e_dataram_rd_vld   ),
-        .rdy_m  (e_dataram_rd_rdy   ),
-        .pld_m  (e_dataram_rd_pld   ));
+        .v_vld_s(v_dataram_rd_vld_e         ),
+        .v_rdy_s(v_dataram_rd_rdy_e         ),
+        .v_pld_s(v_dataram_rd_pld           ),
+        .vld_m  (dataram_rd_stg1_out_vld_e  ),
+        .rdy_m  (dataram_rd_stg1_out_rdy_e  ),
+        .pld_m  (dataram_rd_stg1_out_pld_e  ));
         
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
         .PLD_WIDTH ($bits(arb_out_req_t))
     ) u_s_dataram_rd_arb (
-        .v_vld_s(v_s_dataram_rd_vld ),
-        .v_rdy_s(v_s_dataram_rd_rdy ),
-        .v_pld_s(v_dataram_rd_pld   ),
-        .vld_m  (s_dataram_rd_vld   ),
-        .rdy_m  (s_dataram_rd_rdy   ),
-        .pld_m  (s_dataram_rd_pld   ));
+        .v_vld_s(v_dataram_rd_vld_s         ),
+        .v_rdy_s(v_dataram_rd_rdy_s         ),
+        .v_pld_s(v_dataram_rd_pld           ),
+        .vld_m  (dataram_rd_stg1_out_vld_s  ),
+        .rdy_m  (dataram_rd_stg1_out_rdy_s  ),
+        .pld_m  (dataram_rd_stg1_out_pld_s  ));
         
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
         .PLD_WIDTH ($bits(arb_out_req_t))
     ) u_n_dataram_rd_arb (
-        .v_vld_s(v_n_dataram_rd_vld ),
-        .v_rdy_s(v_n_dataram_rd_rdy ),
-        .v_pld_s(v_dataram_rd_pld   ),
-        .vld_m  (n_dataram_rd_vld   ),
-        .rdy_m  (n_dataram_rd_rdy   ),
-        .pld_m  (n_dataram_rd_pld   ));
+        .v_vld_s(v_dataram_rd_vld_n         ),
+        .v_rdy_s(v_dataram_rd_rdy_n         ),
+        .v_pld_s(v_dataram_rd_pld           ),
+        .vld_m  (dataram_rd_stg1_out_vld_n  ),
+        .rdy_m  (dataram_rd_stg1_out_rdy_n  ),
+        .pld_m  (dataram_rd_stg1_out_pld_n  ));
 
 
 //写arb----------------------------------------------------------------
@@ -419,45 +424,45 @@ module vec_cache_mshr
         .WIDTH     (MSHR_ENTRY_NUM),
         .PLD_WIDTH ($bits(arb_out_req_t))
     ) u_w_dataram_wr_arb (
-        .v_vld_s(v_w_dataram_wr_vld   ),
-        .v_rdy_s(v_w_dataram_wr_rdy   ),
-        .v_pld_s(v_dataram_wr_pld     ),
-        .vld_m  (w_dataram_wr_vld     ),
-        .rdy_m  (w_dataram_wr_rdy     ),
-        .pld_m  (w_dataram_wr_pld    ));
+        .v_vld_s(v_dataram_wr_vld_w         ),
+        .v_rdy_s(v_dataram_wr_rdy_w         ),
+        .v_pld_s(v_dataram_wr_pld           ),
+        .vld_m  (dataram_wr_stg1_out_vld_w  ),
+        .rdy_m  (dataram_wr_stg1_out_rdy_w  ),
+        .pld_m  (dataram_wr_stg1_out_pld_w  ));
 
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
         .PLD_WIDTH ($bits(arb_out_req_t))
     ) u_e_dataram_wr_arb (
-        .v_vld_s(v_e_dataram_wr_vld   ),
-        .v_rdy_s(v_e_dataram_wr_rdy   ),
-        .v_pld_s(v_dataram_wr_pld     ),
-        .vld_m  (e_dataram_wr_vld     ),
-        .rdy_m  (e_dataram_wr_rdy     ),
-        .pld_m  (e_dataram_wr_pld    ));
+        .v_vld_s(v_dataram_wr_vld_e         ),
+        .v_rdy_s(v_dataram_wr_rdy_e         ),
+        .v_pld_s(v_dataram_wr_pld           ),
+        .vld_m  (dataram_wr_stg1_out_vld_e  ),
+        .rdy_m  (dataram_wr_stg1_out_rdy_e  ),
+        .pld_m  (dataram_wr_stg1_out_pld_e  ));
 
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
         .PLD_WIDTH ($bits(arb_out_req_t))
     ) u_s_dataram_wr_arb (
-        .v_vld_s(v_s_dataram_wr_vld   ),
-        .v_rdy_s(v_s_dataram_wr_rdy   ),
-        .v_pld_s(v_dataram_wr_pld     ),
-        .vld_m  (s_dataram_wr_vld     ),
-        .rdy_m  (s_dataram_wr_rdy     ),
-        .pld_m  (s_dataram_wr_pld    ));
+        .v_vld_s(v_dataram_wr_vld_s         ),
+        .v_rdy_s(v_dataram_wr_rdy_s         ),
+        .v_pld_s(v_dataram_wr_pld           ),
+        .vld_m  (dataram_wr_stg1_out_vld_s  ),
+        .rdy_m  (dataram_wr_stg1_out_rdy_s  ),
+        .pld_m  (dataram_wr_stg1_out_pld_s  ));
 
     vrp_arb #(
         .WIDTH     (MSHR_ENTRY_NUM),
         .PLD_WIDTH ($bits(arb_out_req_t))
     ) u_n_dataram_wr_arb (
-        .v_vld_s(v_n_dataram_wr_vld   ),
-        .v_rdy_s(v_n_dataram_wr_rdy   ),
-        .v_pld_s(v_dataram_wr_pld     ),
-        .vld_m  (n_dataram_wr_vld     ),
-        .rdy_m  (n_dataram_wr_rdy     ),
-        .pld_m  (n_dataram_wr_pld    ));
+        .v_vld_s(v_dataram_wr_vld_n         ),
+        .v_rdy_s(v_dataram_wr_rdy_n         ),
+        .v_pld_s(v_dataram_wr_pld           ),
+        .vld_m  (dataram_wr_stg1_out_vld_n  ),
+        .rdy_m  (dataram_wr_stg1_out_rdy_n  ),
+        .pld_m  (dataram_wr_stg1_out_pld_n  ));
 
 
 //evict read req arb----------------------------------------------------------------
@@ -465,12 +470,12 @@ module vec_cache_mshr
         .WIDTH     (MSHR_ENTRY_NUM),
         .PLD_WIDTH ($bits(arb_out_req_t))
     ) u_dataram_evict_arb (
-        .v_vld_s(v_evict_rd_vld   ),
-        .v_rdy_s(v_evict_rd_rdy   ),
-        .v_pld_s(v_evict_rd_pld   ),
-        .vld_m  (evict_rd_vld     ),
-        .rdy_m  (evict_rd_rdy     ),
-        .pld_m  (evict_rd_pld     ));
+        .v_vld_s(v_dataram_rd_vld_ev        ),
+        .v_rdy_s(v_dataram_rd_rdy_ev        ),
+        .v_pld_s(v_dataram_rd_pld_ev        ),
+        .vld_m  (dataram_rd_stg1_out_vld_ev ),
+        .rdy_m  (dataram_rd_stg1_out_rdy_ev ),
+        .pld_m  (dataram_rd_stg1_out_pld_ev ));
 
 
 //linefill req(write sram) arb--------------------------------------------
@@ -478,12 +483,12 @@ module vec_cache_mshr
         .WIDTH     (MSHR_ENTRY_NUM),
         .PLD_WIDTH ($bits(arb_out_req_t))
     ) u_lfreq_arb (
-        .v_vld_s(v_linefill_req_vld   ),
-        .v_rdy_s(v_linefill_req_rdy   ),
-        .v_pld_s(v_linefill_req_pld   ),
-        .vld_m  (linefill_req_vld     ),
-        .rdy_m  (linefill_req_rdy     ),
-        .pld_m  (linefill_req_pld     ));
+        .v_vld_s(v_dataram_wr_vld_lf        ),
+        .v_rdy_s(v_dataram_wr_rdy_lf        ),
+        .v_pld_s(v_dataram_wr_pld_lf        ),
+        .vld_m  (dataram_wr_stg1_out_vld_lf ),
+        .rdy_m  (dataram_wr_stg1_out_rdy_lf ),
+        .pld_m  (dataram_wr_stg1_out_pld_lf ));
 
 //======================================================================
 // stage two arbiter
@@ -494,63 +499,62 @@ module vec_cache_mshr
         .CHANNEL_SHIFT_REG_WIDTH(20),
         .RAM_SHIFT_REG_WIDTH    (20))
     u_stage2_arbiter ( 
-        .clk                    (clk                ),
-        .rst_n                  (rst_n              ),
-        .w_dataram_rd_vld       (w_dataram_rd_vld   ),
-        .e_dataram_rd_vld       (e_dataram_rd_vld   ),
-        .s_dataram_rd_vld       (s_dataram_rd_vld   ),
-        .n_dataram_rd_vld       (n_dataram_rd_vld   ),
-        .evict_rd_vld           (evict_rd_vld       ),
-        .w_dataram_rd_pld       (w_dataram_rd_pld   ),
-        .e_dataram_rd_pld       (e_dataram_rd_pld   ),
-        .s_dataram_rd_pld       (s_dataram_rd_pld   ),
-        .n_dataram_rd_pld       (n_dataram_rd_pld   ),
-        .evict_rd_pld           (evict_rd_pld       ),
-        .w_dataram_rd_rdy       (w_dataram_rd_rdy   ),
-        .e_dataram_rd_rdy       (e_dataram_rd_rdy   ),
-        .s_dataram_rd_rdy       (s_dataram_rd_rdy   ),
-        .n_dataram_rd_rdy       (n_dataram_rd_rdy   ),
-        .evict_rd_rdy           (evict_rd_rdy       ),
-        .w_dataram_wr_vld       (w_dataram_wr_vld   ),
-        .e_dataram_wr_vld       (e_dataram_wr_vld   ),
-        .s_dataram_wr_vld       (s_dataram_wr_vld   ),
-        .n_dataram_wr_vld       (n_dataram_wr_vld   ),
-        .linefill_req_vld       (linefill_req_vld   ),
-        .w_dataram_wr_pld       (w_dataram_wr_pld   ),
-        .e_dataram_wr_pld       (e_dataram_wr_pld   ),
-        .s_dataram_wr_pld       (s_dataram_wr_pld   ),
-        .n_dataram_wr_pld       (n_dataram_wr_pld   ),
-        .linefill_req_pld       (linefill_req_pld   ),
-        .w_dataram_wr_rdy       (w_dataram_wr_rdy   ),
-        .e_dataram_wr_rdy       (e_dataram_wr_rdy   ),
-        .s_dataram_wr_rdy       (s_dataram_wr_rdy   ),
-        .n_dataram_wr_rdy       (n_dataram_wr_rdy   ),
-        .linefill_req_rdy       (linefill_req_rdy   ),
-        .arbout_w_dataram_rd_vld(west_read_cmd_vld  ),
-        .arbout_e_dataram_rd_vld(east_read_cmd_vld  ),
-        .arbout_s_dataram_rd_vld(south_read_cmd_vld ),
-        .arbout_n_dataram_rd_vld(north_read_cmd_vld ),
-        .arbout_evict_rd_vld    (evict_req_vld      ),
-        .arbout_w_dataram_rd_pld(west_read_cmd_pld  ),
-        .arbout_e_dataram_rd_pld(east_read_cmd_pld  ),
-        .arbout_s_dataram_rd_pld(south_read_cmd_pld ),
-        .arbout_n_dataram_rd_pld(north_read_cmd_pld ),
-        .arbout_evict_rd_pld    (evict_req_pld      ),
-        .arbout_w_dataram_wr_vld(west_write_cmd_vld ),
-        .arbout_e_dataram_wr_vld(east_write_cmd_vld ),
-        .arbout_s_dataram_wr_vld(south_write_cmd_vld),
-        .arbout_n_dataram_wr_vld(north_write_cmd_vld),
-        .arbout_linefill_req_vld(lf_wrreq_vld       ),
-        .arbout_w_dataram_wr_pld(west_write_cmd_pld ),
-        .arbout_e_dataram_wr_pld(east_write_cmd_pld ),
-        .arbout_s_dataram_wr_pld(south_write_cmd_pld),
-        .arbout_n_dataram_wr_pld(north_write_cmd_pld),
-        .arbout_linefill_req_pld(lf_wrreq_pld       ),
-        .read_cmd_pld_0         (read_cmd_pld_0     ),
-        .read_cmd_pld_1         (read_cmd_pld_1     ),
-        .read_cmd_vld_0         (read_cmd_vld_0     ),
-        .read_cmd_vld_1         (read_cmd_vld_1     ),
-        .arb_rdy                (1'b1               ));
+        .clk                    (clk                                ),
+        .rst_n                  (rst_n                              ),
+        .dataram_rd_in_vld_w    (dataram_rd_stg1_out_vld_w          ),
+        .dataram_rd_in_vld_e    (dataram_rd_stg1_out_vld_e          ),
+        .dataram_rd_in_vld_s    (dataram_rd_stg1_out_vld_s          ),
+        .dataram_rd_in_vld_n    (dataram_rd_stg1_out_vld_n          ),
+        .dataram_rd_in_vld_ev   (dataram_rd_stg1_out_vld_ev         ),
+        .dataram_rd_in_pld_w    (dataram_rd_stg1_out_pld_w          ),
+        .dataram_rd_in_pld_e    (dataram_rd_stg1_out_pld_e          ),
+        .dataram_rd_in_pld_s    (dataram_rd_stg1_out_pld_s          ),
+        .dataram_rd_in_pld_n    (dataram_rd_stg1_out_pld_n          ),
+        .dataram_rd_in_pld_ev   (dataram_rd_stg1_out_pld_ev         ),
+        .dataram_rd_in_rdy_w    (dataram_rd_stg1_out_rdy_w          ),
+        .dataram_rd_in_rdy_e    (dataram_rd_stg1_out_rdy_e          ),
+        .dataram_rd_in_rdy_s    (dataram_rd_stg1_out_rdy_s          ),
+        .dataram_rd_in_rdy_n    (dataram_rd_stg1_out_rdy_n          ),
+        .dataram_rd_in_rdy_ev   (dataram_rd_stg1_out_rdy_ev         ),
+        .dataram_wr_in_vld_w    (dataram_wr_stg1_out_vld_w          ),
+        .dataram_wr_in_vld_e    (dataram_wr_stg1_out_vld_e          ),
+        .dataram_wr_in_vld_s    (dataram_wr_stg1_out_vld_s          ),
+        .dataram_wr_in_vld_n    (dataram_wr_stg1_out_vld_n          ),
+        .dataram_wr_in_vld_lf   (dataram_wr_stg1_out_vld_lf         ),
+        .dataram_wr_in_pld_w    (dataram_wr_stg1_out_pld_w          ),
+        .dataram_wr_in_pld_e    (dataram_wr_stg1_out_pld_e          ),
+        .dataram_wr_in_pld_s    (dataram_wr_stg1_out_pld_s          ),
+        .dataram_wr_in_pld_n    (dataram_wr_stg1_out_pld_n          ),
+        .dataram_wr_in_pld_lf   (dataram_wr_stg1_out_pld_lf         ),
+        .dataram_wr_in_rdy_w    (dataram_wr_stg1_out_rdy_w          ),
+        .dataram_wr_in_rdy_e    (dataram_wr_stg1_out_rdy_e          ),
+        .dataram_wr_in_rdy_s    (dataram_wr_stg1_out_rdy_s          ),
+        .dataram_wr_in_rdy_n    (dataram_wr_stg1_out_rdy_n          ),
+        .dataram_wr_in_rdy_lf   (dataram_wr_stg1_out_rdy_lf         ),
+        .dataram_rd_out_vld_w   (read_cmd_vld_west                  ),
+        .dataram_rd_out_vld_e   (read_cmd_vld_east                  ),
+        .dataram_rd_out_vld_s   (read_cmd_vld_south                 ),
+        .dataram_rd_out_vld_n   (read_cmd_vld_north                 ),
+        .dataram_rd_out_vld_ev  (read_cmd_vld_evict                 ),
+        .dataram_rd_out_pld_w   (read_cmd_pld_west                  ),
+        .dataram_rd_out_pld_e   (read_cmd_pld_east                  ),
+        .dataram_rd_out_pld_s   (read_cmd_pld_south                 ),
+        .dataram_rd_out_pld_n   (read_cmd_pld_north                 ),
+        .dataram_rd_out_pld_ev  (read_cmd_pld_evict                 ),
+        .dataram_wr_out_vld_w   (write_cmd_vld_west                 ),
+        .dataram_wr_out_vld_e   (write_cmd_vld_east                 ),
+        .dataram_wr_out_vld_s   (write_cmd_vld_south                ),
+        .dataram_wr_out_vld_n   (write_cmd_vld_north                ),
+        .dataram_wr_out_vld_lf  (write_cmd_vld_linefill             ),
+        .dataram_wr_out_pld_w   (write_cmd_pld_west                 ),
+        .dataram_wr_out_pld_e   (write_cmd_pld_east                 ),
+        .dataram_wr_out_pld_s   (write_cmd_pld_south                ),
+        .dataram_wr_out_pld_n   (write_cmd_pld_north                ),
+        .dataram_wr_out_pld_lf  (write_cmd_pld_linefill             ),
+        .read_cmd_to_ram_pld_0  (read_cmd_to_ram_pld_0              ),
+        .read_cmd_to_ram_pld_1  (read_cmd_to_ram_pld_1              ),
+        .read_cmd_to_ram_vld_0  (read_cmd_to_ram_vld_0              ),
+        .read_cmd_to_ram_vld_1  (read_cmd_to_ram_vld_1              ));
     
 endmodule
 
