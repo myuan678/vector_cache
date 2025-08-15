@@ -1,4 +1,4 @@
-module eightto2_req_arbiter 
+module vec_cache_8to2_req_arbiter 
     import vector_cache_pkg::*;
     #(
     parameter integer unsigned REQ_NUM= 8,
