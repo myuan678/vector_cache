@@ -84,7 +84,7 @@ package vector_cache_pkg;
     localparam integer unsigned EVICT_CLEAN_DELAY    = 15    ; 
     localparam integer unsigned EVICT_DOWN_DELAY     = 20    ;
     //localparam integer unsigned ARB_TO_LFDB_DELAY    = 5     ;
-    localparam integer unsigned LF_DONE_DELAY        = 20    ;
+    localparam integer unsigned LF_DONE_DELAY        = 30    ;
     localparam integer unsigned RDB_DATA_RDY_DELAY   = 15    ; //是指sram中的数据已经被读到了RDB中，现在可以发起对RDB的读请求，将数据给US
     localparam integer unsigned TO_US_DONE_DELAY     =20     ;
 
@@ -92,9 +92,9 @@ package vector_cache_pkg;
     //localparam integer unsigned ARB_TO_WDB_DELAY     = 5     ;
     localparam integer unsigned WR_CMD_DELAY_WEST    = 2     ;//arb出到开始占用channel的延迟
     localparam integer unsigned WR_CMD_DELAY_EAST    = 3     ;//arb出到开始占用channel的延迟
-    localparam integer unsigned WR_CMD_DELAY_SOUTH   = 6     ;//arb出到开始占用channel的延迟
+    localparam integer unsigned WR_CMD_DELAY_SOUTH   = 5     ;//arb出到开始占用channel的延迟
     localparam integer unsigned WR_CMD_DELAY_NORTH   = 4     ;//arb出到开始占用channel的延迟
-    localparam integer unsigned WR_CMD_DELAY_LF      = 8     ;//arb出到开始占用channel的延迟
+    localparam integer unsigned WR_CMD_DELAY_LF      = 6     ;//arb出到开始占用channel的延迟
 
     //地址高2bit作为hash id
     typedef struct packed{
@@ -112,6 +112,12 @@ package vector_cache_pkg;
     } txnid_t;
 
     typedef struct packed {
+        logic [1                   :0] hash_id   ;
+        logic [1                   :0] block_id  ;
+        logic                          channel_id;
+    } dest_ram_id_t;
+
+    typedef struct packed {
         addr_t                           cmd_addr    ;
         txnid_t                          cmd_txnid   ;
         logic [SIDEBAND_WIDTH-1      :0] cmd_sideband;
@@ -124,6 +130,14 @@ package vector_cache_pkg;
         logic [127                   :0] strb        ;
         logic [1023                  :0] data        ;
     } input_write_cmd_pld_t;
+
+    typedef struct packed {
+        logic [TAG_WIDTH-1:0] tag;
+        logic                 valid;
+    } tag_t;
+    typedef struct packed {
+        tag_t [WAY_NUM-1:0]   tag_array;
+    } tag_ram_t;
 
 
     typedef struct packed {
@@ -163,12 +177,11 @@ package vector_cache_pkg;
         logic [OFFSET_WIDTH-1           :0] offset          ;
         logic [$clog2(WAY_NUM)-1        :0] way             ;
         logic [1                        :0] hash_id         ;//地址最高2bit
-        logic [4                        :0] dest_ram_id     ; //最高2bit为hash id，接下来的3bit为dest ram id，5bit确定是哪一个block的哪一个hash的哪一个ram
+        dest_ram_id_t                       dest_ram_id     ;//最高2bit为hash id，接下来的3bit为dest ram id，5bit确定是哪一个block的哪一个hash的哪一个ram
         logic [$clog2(MSHR_ENTRY_NUM)-1 :0] rob_entry_id    ;
         logic [$clog2(RW_DB_ENTRY_NUM)-1:0] db_entry_id     ;
         logic [SIDEBAND_WIDTH-1         :0] sideband        ; 
         logic                               last            ;
-        //logic [$clog2(DS_N)-1           :0] req_num         ; 
     } arb_out_req_t;
 
     typedef struct packed {
@@ -187,8 +200,8 @@ package vector_cache_pkg;
     typedef struct packed{
         logic                               valid         ;
         txnid_t                             txnid         ;
-        logic [1:0]                         hash_id       ;//地址最高2bit
-        logic [4:0]                         dest_ram_id   ;
+        logic [1:0]                         hash_id       ;
+        dest_ram_id_t                       dest_ram_id   ;
         logic [INDEX_WIDTH-1    :0]         index         ;
         logic [OFFSET_WIDTH-1   :0]         offset        ;
         logic [TAG_WIDTH-1      :0]         req_tag       ;
@@ -213,7 +226,8 @@ package vector_cache_pkg;
         logic [INDEX_WIDTH-1    :0]         index         ;
         logic [TAG_WIDTH-1      :0]         tag           ;
         logic [TAG_WIDTH-1:0]               evict_tag     ;
-        logic [MSHR_ENTRY_NUM-1:0]          release_bitmap;
+        logic                               release_bit;
+        //logic [MSHR_ENTRY_NUM-1:0]          release_bitmap;
     } hzd_mshr_pld_t;
 
     
@@ -237,7 +251,7 @@ package vector_cache_pkg;
         logic [OP_WIDTH-1       :0]      opcode      ;
         addr_t                           addr        ;
         logic [WAY_NUM-1        :0]      way         ;
-        logic [4:0]                      dest_ram_id ;
+        dest_ram_id_t                    dest_ram_id ;
         logic [MSHR_ENTRY_IDX_WIDTH-1:0] rob_entry_id;
         logic [LFDB_ENTRY_NUM-1 :0]      db_entry_id ;//linefill db 
         logic [SIDEBAND_WIDTH-1 :0]      sideband    ; 
@@ -291,14 +305,13 @@ package vector_cache_pkg;
 
 //sram_2inst opcode def
     typedef struct packed{
-        logic [8:0] addr       ;
-        txnid_t     txnid      ;
-        logic [4:0] dest_ram_id; //最高2bit为hash id，接下来的3bit为dest ram id，5bit确定是哪一个block的哪一个hash的哪一个ram
-        logic       mode       ;
-        logic [1:0] byte_sel   ;
-        //logic [1:0] req_num    ; //linefill/evict时的传输次数编号
-        logic       opcode     ; //read: 0read; 1 evict read
-    } sram_inst_cmd_t;          // write: 0 write; 1linefill
+        logic [8:0]     addr       ;
+        txnid_t         txnid      ;
+        dest_ram_id_t   dest_ram_id; //最高2bit为hash id，接下来的3bit为dest ram id，5bit确定是哪一个block的哪一个hash的哪一个ram
+        logic           mode       ;
+        logic [1:0]     byte_sel   ;
+        logic           opcode     ; //read: 0read; 1 evict read
+    } sram_inst_cmd_t;              // write: 0 write; 1linefill
 
     
     typedef struct packed {
