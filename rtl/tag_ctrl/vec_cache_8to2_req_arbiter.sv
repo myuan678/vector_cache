@@ -49,10 +49,29 @@ module vec_cache_8to2_req_arbiter
         .grant_rdy({out_grant_rdy,out_grant_rdy}),
         .grant_pld(grant_pld    ));
 
-    assign out_grant_pld_0    = grant_pld[0]                    ;
-    assign out_grant_pld_1    = grant_pld[1]                    ;
+
     assign out_grant_vld_0    = grant_vld[0] && mshr_alloc_vld_0;
     assign out_grant_vld_1    = grant_vld[1] && mshr_alloc_vld_1;
+
+    //assign out_grant_pld_0    = grant_pld[0]                    ;
+    //assign out_grant_pld_1    = grant_pld[1]                    ;
+
+    assign out_grant_pld_0.cmd_addr      = grant_pld[0].cmd_addr        ;
+    assign out_grant_pld_0.cmd_txnid     = grant_pld[0].cmd_txnid       ;
+    assign out_grant_pld_0.cmd_sideband  = grant_pld[0].cmd_sideband    ;
+    assign out_grant_pld_0.strb          = grant_pld[0].strb            ;
+    assign out_grant_pld_0.cmd_opcode    = grant_pld[0].cmd_opcode      ;
+    assign out_grant_pld_0.db_entry_id   = grant_pld[0].db_entry_id     ;
+    assign out_grant_pld_0.rob_entry_id  = mshr_alloc_idx_0             ;
+
+    assign out_grant_pld_1.cmd_addr      = grant_pld[1].cmd_addr        ;
+    assign out_grant_pld_1.cmd_txnid     = grant_pld[1].cmd_txnid       ;
+    assign out_grant_pld_1.cmd_sideband  = grant_pld[1].cmd_sideband    ;
+    assign out_grant_pld_1.strb          = grant_pld[1].strb            ;
+    assign out_grant_pld_1.cmd_opcode    = grant_pld[1].cmd_opcode      ;
+    assign out_grant_pld_1.db_entry_id   = grant_pld[1].db_entry_id     ;
+    assign out_grant_pld_1.rob_entry_id  = mshr_alloc_idx_1             ;
+
 
 
     generate
@@ -64,9 +83,5 @@ module vec_cache_8to2_req_arbiter
     assign mshr_alloc_rdy_0     = out_grant_vld_0  && out_grant_rdy  ;
     assign mshr_alloc_rdy_1     = out_grant_vld_1  && out_grant_rdy  ;
 
-    //assign out_grant_vld      = (|v_req_vld) && mshr_alloc_vld  ;
-    //assign out_grant_pld_1    = v_req_pld[free_id_1]            ;
-    //assign out_grant_pld_2    = v_req_pld[free_id_2]            ;
-    //assign v_req_rdy          = {REQ_NUM{out_grant_rdy}} && (free_vld_1 | free_vld_2) && mshr_alloc_vld;//TODO:
 
 endmodule
