@@ -266,7 +266,32 @@ module vec_cache_tag_ctrl
      u_bin2onehot_B (
         .bin_in    (wr_tag_buf_pld_B.way),
         .onehot_out(B_wr_tag_buf_way_oh ));
+    
+    generate 
+        for(genvar i=0;i<WAY_NUM;i=i+1)begin
+            assign A_tag_ram_hit_way_oh[i] = tag_ram_dout_0.tag_array[i].valid && (req_pld_A.cmd_addr.tag == tag_ram_dout_0.tag_array[i].tag);
+        end
+    endgenerate
+    assign A_hit_way_oh = A_wr_tag_buf_hit ? A_wr_tag_buf_way_oh : A_tag_ram_hit_way_oh;//hit ram or hit wr_tag_buf
 
+    generate 
+        for(genvar i=0;i<WAY_NUM;i=i+1)begin
+            assign B_tag_ram_hit_way_oh[i] = tag_ram_dout_1.tag_array[i].valid && (req_pld_B.cmd_addr.tag == tag_ram_dout_1.tag_array[i].tag);
+        end
+    endgenerate
+    assign B_hit_way_oh = B_wr_tag_buf_hit ? B_wr_tag_buf_way_oh : B_tag_ram_hit_way_oh;
+
+    cmn_onehot2bin #(
+        .ONEHOT_WIDTH(WAY_NUM   )) 
+    u_A_hit_way_oh2bin (
+        .onehot_in (A_hit_way_oh),
+        .bin_out   (A_hit_way   ));
+    cmn_onehot2bin #(
+        .ONEHOT_WIDTH(WAY_NUM)
+    ) u_B_hit_way_oh2bin (
+        .onehot_in (B_hit_way_oh),
+        .bin_out   (B_hit_way   )
+    );
     cmn_bin2onehot #(
         .BIN_WIDTH   ($clog2(WAY_NUM)),
         .ONEHOT_WIDTH(WAY_NUM        )) 
@@ -280,34 +305,6 @@ module vec_cache_tag_ctrl
     u_evict_way_oh_B (
         .bin_in    (B_evict_way     ),
         .onehot_out(B_evict_way_oh  ));
-    
-    generate 
-        for(genvar i=0;i<WAY_NUM;i=i+1)begin
-            assign A_tag_ram_hit_way_oh[i] = tag_ram_dout_0.tag_array[i].valid && (req_pld_A.cmd_addr.tag == tag_ram_dout_0.tag_array[i].tag);
-        end
-    endgenerate
-    assign A_hit_way_oh = A_wr_tag_buf_hit ? A_wr_tag_buf_way_oh : A_tag_ram_hit_way_oh;//hit ram or hit wr_tag_buf
-
-    cmn_onehot2bin #(
-        .ONEHOT_WIDTH(WAY_NUM   )) 
-    u_A_hit_way_oh2bin (
-        .onehot_in (A_hit_way_oh),
-        .bin_out   (A_hit_way   ));
-
-    
-    generate 
-        for(genvar i=0;i<WAY_NUM;i=i+1)begin
-            assign B_tag_ram_hit_way_oh[i] = tag_ram_dout_1.tag_array[i].valid && (req_pld_B.cmd_addr.tag == tag_ram_dout_1.tag_array[i].tag);
-        end
-    endgenerate
-    assign B_hit_way_oh = B_wr_tag_buf_hit ? B_wr_tag_buf_way_oh : B_tag_ram_hit_way_oh;
-
-    cmn_onehot2bin #(
-        .ONEHOT_WIDTH(WAY_NUM)
-    ) u_B_hit_way_oh2bin (
-        .onehot_in (B_hit_way_oh),
-        .bin_out   (B_hit_way   )
-    );
     
     assign A_wr_tag_buf_hit = req_vld_A && (((req_pld_A.cmd_addr.tag==wr_tag_buf_pld_A.tag)&&(req_pld_A.cmd_addr.index== wr_tag_buf_pld_A.index)) || ((req_pld_A.cmd_addr.tag==wr_tag_buf_pld_B.tag)&&(req_pld_A.cmd_addr.index== wr_tag_buf_pld_B.index)));
     assign B_wr_tag_buf_hit = req_vld_B && (((req_pld_B.cmd_addr.tag==wr_tag_buf_pld_A.tag)&&(req_pld_B.cmd_addr.index== wr_tag_buf_pld_A.index)) || ((req_pld_B.cmd_addr.tag==wr_tag_buf_pld_B.tag)&&(req_pld_B.cmd_addr.index== wr_tag_buf_pld_B.index)));
