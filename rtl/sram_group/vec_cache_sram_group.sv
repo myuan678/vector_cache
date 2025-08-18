@@ -53,7 +53,7 @@ module vec_cache_sram_group
     //output logic [7:0]          north_write_cmd_vld_out               ,
 );
     logic [7:0]             shift_sn_data_vld_wire_tmp [7:0];
-    group_data_pld_t        shift_sn_data_wire_tmp[7:0][7:0];
+    group_data_pld_t   [7:0]     shift_sn_data_wire_tmp[7:0];
 
     logic [7:0]             shift_sn_write_cmd_vld_wire_tmp[7:0];
     write_ram_cmd_t         shift_sn_write_cmd_wire_tmp[7:0][7:0];
@@ -141,14 +141,6 @@ module vec_cache_sram_group
             assign rl_data_vld_wire[1][4][i]       = east_data_in_vld[i];
             assign rl_data_vld_wire[2][4][i]       = east_data_in_vld[i];
             assign rl_data_vld_wire[3][4][i]       = east_data_in_vld[i];
-            //assign sn_data_wire[4][0][i].data     = south_data_in[i].data[255:0];
-            //assign sn_data_wire[4][0][i].cmd_pld  = south_data_in[i].cmd_pld;
-            //assign sn_data_wire[4][1][i].data     = south_data_in[i].data[511:256];
-            //assign sn_data_wire[4][1][i].cmd_pld  = south_data_in[i].cmd_pld;
-            //assign sn_data_wire[4][2][i].data     = south_data_in[i].data[767:512];
-            //assign sn_data_wire[4][2][i].cmd_pld  = south_data_in[i].cmd_pld;
-            //assign sn_data_wire[4][3][i].data     = south_data_in[i].data[1023:768];
-            //assign sn_data_wire[4][3][i].cmd_pld  = south_data_in[i].cmd_pld;
             assign sn_data_wire[4][0][i].data     = south_data_in[i].data[255:0];//south写需要平衡延迟
             assign sn_data_wire[4][0][i].cmd_pld  = south_data_in[i].cmd_pld;
             assign sn_data_wire[4][1][i].data     = shift_sn_data_wire_tmp[i][1].data[511:256];
@@ -157,10 +149,7 @@ module vec_cache_sram_group
             assign sn_data_wire[4][2][i].cmd_pld  = shift_sn_data_wire_tmp[i][3].cmd_pld;
             assign sn_data_wire[4][3][i].data     = shift_sn_data_wire_tmp[i][5].data[1023:768];
             assign sn_data_wire[4][3][i].cmd_pld  = shift_sn_data_wire_tmp[i][5].cmd_pld;
-            //assign sn_data_vld_wire[4][0][i]      = south_data_in_vld[i];
-            //assign sn_data_vld_wire[4][1][i]      = south_data_in_vld[i];
-            //assign sn_data_vld_wire[4][2][i]      = south_data_in_vld[i];
-            //assign sn_data_vld_wire[4][3][i]      = south_data_in_vld[i];
+
             assign sn_data_vld_wire[4][0][i]      = south_data_in_vld[i];
             assign sn_data_vld_wire[4][1][i]      = shift_sn_data_vld_wire_tmp[i][1];
             assign sn_data_vld_wire[4][2][i]      = shift_sn_data_vld_wire_tmp[i][3];

@@ -118,18 +118,18 @@ import vector_cache_pkg::*;
     generate
         for(genvar i=0;i<8;i=i+1)begin:BANK8_DATA_IN_GEN
             for(genvar j=0;j<8;j=j+1)begin
-                assign fanout_west_data_in_vld[i][j]      = west_data_in_vld[j]                 ;
-                assign fanout_west_data_in[i][j].data     = west_data_in[i].data[j*32 +: 32]    ;
-                assign fanout_west_data_in[i][j].cmd_pld  =west_data_in[i].cmd_pld              ;
-                assign fanout_east_data_in_vld[i][j]      = east_data_in_vld[j]                 ;
-                assign fanout_east_data_in[i][j].data     = east_data_in[i].data[j*32 +: 32]    ;
-                assign fanout_east_data_in[i][j].cmd_pld  = east_data_in[i].cmd_pld             ;
-                assign fanout_south_data_in_vld[i][j]     = south_data_in_vld[j]                ;
-                assign fanout_south_data_in[i][j].data    = south_data_in[i].data[j*32 +: 32]   ;
-                assign fanout_south_data_in[i][j].cmd_pld = south_data_in[i].cmd_pld            ;
-                assign fanout_north_data_in_vld[i][j]     = north_data_in_vld[j]                ;
-                assign fanout_north_data_in[i][j].data    = north_data_in[i].data[j*32 +: 32]   ;
-                assign fanout_north_data_in[i][j].cmd_pld = north_data_in[i].cmd_pld            ;
+                assign fanout_west_data_in_vld  [i][j]          = west_data_in_vld[j]                 ;
+                assign fanout_west_data_in      [i][j].data     = west_data_in[i].data[j*32 +: 32]    ;
+                assign fanout_west_data_in      [i][j].cmd_pld  =west_data_in[i].cmd_pld              ;
+                assign fanout_east_data_in_vld  [i][j]          = east_data_in_vld[j]                 ;
+                assign fanout_east_data_in      [i][j].data     = east_data_in[i].data[j*32 +: 32]    ;
+                assign fanout_east_data_in      [i][j].cmd_pld  = east_data_in[i].cmd_pld             ;
+                assign fanout_south_data_in_vld [i][j]          = south_data_in_vld[j]                ;
+                assign fanout_south_data_in     [i][j].data     = south_data_in[i].data[j*32 +: 32]   ;
+                assign fanout_south_data_in     [i][j].cmd_pld  = south_data_in[i].cmd_pld            ;
+                assign fanout_north_data_in_vld [i][j]          = north_data_in_vld[j]                ;
+                assign fanout_north_data_in     [i][j].data     = north_data_in[i].data[j*32 +: 32]   ;
+                assign fanout_north_data_in     [i][j].cmd_pld  = north_data_in[i].cmd_pld            ;
             end
         end
     endgenerate
