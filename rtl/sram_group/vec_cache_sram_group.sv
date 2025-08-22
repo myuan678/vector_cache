@@ -297,7 +297,7 @@ generate
         assign west_data_out[i].data[767:512] = rl_data_wire[2][0][i].data;
         assign west_data_out[i].data[1023:768]= rl_data_wire[3][0][i].data;
         assign west_data_out[i].cmd_pld       = rl_data_wire[0][0][i].cmd_pld;
-        assign west_data_out_vld[i]           = rl_data_vld_wire[0][0][i] ;
+        assign west_data_out_vld[i]           = rl_data_vld_wire[1][0][i];
 
         assign east_data_out[i].data[255:0]   = lr_data_wire[0][4][i].data;
         assign east_data_out[i].data[511:256] = lr_data_wire[1][4][i].data;
@@ -311,7 +311,7 @@ generate
         assign south_data_out[i].data[767:512] = ns_data_wire[4][2][i].data;
         assign south_data_out[i].data[1023:768]= ns_data_wire[4][3][i].data;
         assign south_data_out[i].cmd_pld       = ns_data_wire[4][0][i].cmd_pld;
-        assign south_data_out_vld[i]           = ns_data_vld_wire[4][0][i] ;
+        assign south_data_out_vld[i]           = ns_data_vld_wire[4][0][i];
 
         assign north_data_out[i].data[255:0]   = sn_data_wire[0][0][i].data;
         assign north_data_out[i].data[511:256] = sn_data_wire[0][1][i].data;

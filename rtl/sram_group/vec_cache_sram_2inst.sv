@@ -4,26 +4,33 @@ module vec_cache_sram_2inst
     input  logic                clk         ,
     input  logic                rst_n       ,
 
-    input  logic                read_vld_a  ,
-    input  sram_inst_cmd_t      read_cmd_a  ,
-    input  logic                write_vld_a ,
-    input  sram_inst_cmd_t      write_cmd_a ,
-    input  logic [31     :0]    wr_data_a   ,
+    input  logic                read_vld_0  ,
+    input  sram_inst_cmd_t      read_cmd_0  ,
+    input  logic                write_vld_0 ,
+    input  sram_inst_cmd_t      write_cmd_0 ,
+    input  logic [31     :0]    wr_data_0   ,
 
-    input  logic                read_vld_b  ,
-    input  sram_inst_cmd_t      read_cmd_b  ,
-    input  logic                write_vld_b ,
-    input  sram_inst_cmd_t      write_cmd_b ,
-    input  logic [31     :0]    wr_data_b   ,
+    input  logic                read_vld_1  ,
+    input  sram_inst_cmd_t      read_cmd_1  ,
+    input  logic                write_vld_1 ,
+    input  sram_inst_cmd_t      write_cmd_1 ,
+    input  logic [31     :0]    wr_data_1   ,
 
-    output logic [31     :0]    rd_data_a   ,
-    output logic [31     :0]    rd_data_b
+    output logic [31     :0]    rd_data_0   ,
+    output logic [31     :0]    rd_data_1
 
 );
 
     logic                 read_sel        ;  //cross sel
     logic                 read_sel_d      ;  //cross sel delay
     logic                 write_sel       ;
+    logic [31         :0] sram0_wr_data   ;
+    logic [31         :0] sram0_rd_data   ;
+    logic                 sram0_read_vld  ;
+    sram_inst_cmd_t       sram0_read_cmd  ;
+    logic                 sram0_write_vld ;
+    sram_inst_cmd_t       sram0_write_cmd ;
+
     logic [31         :0] sram1_wr_data   ;
     logic [31         :0] sram1_rd_data   ;
     logic                 sram1_read_vld  ;
@@ -31,15 +38,8 @@ module vec_cache_sram_2inst
     logic                 sram1_write_vld ;
     sram_inst_cmd_t       sram1_write_cmd ;
 
-    logic [31         :0] sram2_wr_data   ;
-    logic [31         :0] sram2_rd_data   ;
-    logic                 sram2_read_vld  ;
-    sram_inst_cmd_t       sram2_read_cmd  ;
-    logic                 sram2_write_vld ;
-    sram_inst_cmd_t       sram2_write_cmd ;
-
-    assign read_sel  = read_cmd_a.dest_ram_id.channel_id;
-    assign write_sel = write_cmd_a.dest_ram_id.channel_id;
+    assign read_sel  = read_cmd_0.dest_ram_id.channel_id;
+    assign write_sel = write_cmd_0.dest_ram_id.channel_id;
     
     //always_ff@(posedge clk)begin
     //    if(read_cmd_a.dest_ram_id[0] && read_cmd_b.dest_ram_id[0])begin
@@ -51,47 +51,57 @@ module vec_cache_sram_2inst
     //end
 
     always_comb begin
-        if (read_sel) begin
-            sram1_read_cmd = read_cmd_a  ;
-            sram1_read_vld = read_vld_a  ;
+        //if (read_sel==1'b0) begin
+            sram0_read_cmd = read_cmd_0  ;
+            sram0_read_vld = read_vld_0  ;
 
-            sram2_read_cmd = read_cmd_b  ;
-            sram2_read_vld = read_vld_b  ;
-        end 
-        else begin
-            sram1_read_cmd = read_cmd_b  ;
-            sram1_read_vld = read_vld_b  ;
-
-            sram2_read_cmd = read_cmd_a  ;
-            sram2_read_vld = read_vld_a  ;
-        end
+            sram1_read_cmd = read_cmd_1  ;
+            sram1_read_vld = read_vld_1  ;
+        //end 
+        //else begin
+        //    sram0_read_cmd = read_cmd_1  ;
+        //    sram0_read_vld = read_vld_1  ;
+//
+        //    sram1_read_cmd = read_cmd_0  ;
+        //    sram1_read_vld = read_vld_0  ;
+        //end
     end
 
     always_comb begin
-        if (write_sel) begin
-            sram1_write_cmd = write_cmd_a ;
-            sram1_wr_data   = wr_data_a   ;
-            sram1_write_vld = write_vld_a ;
+        //if (write_sel==1'b0) begin
+            sram0_write_cmd = write_cmd_0 ;
+            sram0_wr_data   = wr_data_0   ;
+            sram0_write_vld = write_vld_0 ;
 
-            sram2_write_cmd = write_cmd_b ;
-            sram2_wr_data   = wr_data_b   ;
-            sram2_write_vld = write_vld_b ;
-        end 
-        else begin
-            sram1_write_cmd = write_cmd_b ;
-            sram1_wr_data   = wr_data_b   ;
-            sram1_write_vld = write_vld_b ;
-
-            sram2_write_cmd = write_cmd_a ;
-            sram2_wr_data   = wr_data_a   ;
-            sram2_write_vld = write_vld_a ;
-        end
+            sram1_write_cmd = write_cmd_1 ;
+            sram1_wr_data   = wr_data_1   ;
+            sram1_write_vld = write_vld_1 ;
+        //end 
+        //else begin
+        //    sram0_write_cmd = write_cmd_1 ;
+        //    sram0_wr_data   = wr_data_1   ;
+        //    sram0_write_vld = write_vld_1 ;
+//
+        //    sram1_write_cmd = write_cmd_0 ;
+        //    sram1_wr_data   = wr_data_0   ;
+        //    sram1_write_vld = write_vld_0 ;
+        //end
     end
     
    
     
     
-    vec_cache_sram_inst u_sram_inst_a (
+    vec_cache_sram_inst u_sram_inst_0 (
+        .clk      (clk              ),
+        .rst_n    (rst_n            ),
+        .read_vld (sram0_read_vld   ),
+        .read_cmd (sram0_read_cmd   ),
+        .write_vld(sram0_write_vld  ),
+        .write_cmd(sram0_write_cmd  ),
+        .wr_data  (sram0_wr_data    ),
+        .rd_data  (sram0_rd_data    )
+    );
+    vec_cache_sram_inst u_sram_inst_1 (
         .clk      (clk              ),
         .rst_n    (rst_n            ),
         .read_vld (sram1_read_vld   ),
@@ -101,16 +111,6 @@ module vec_cache_sram_2inst
         .wr_data  (sram1_wr_data    ),
         .rd_data  (sram1_rd_data    )
     );
-    vec_cache_sram_inst u_sram_inst_b (
-        .clk      (clk              ),
-        .rst_n    (rst_n            ),
-        .read_vld (sram2_read_vld   ),
-        .read_cmd (sram2_read_cmd   ),
-        .write_vld(sram2_write_vld  ),
-        .write_cmd(sram2_write_cmd  ),
-        .wr_data  (sram2_wr_data    ),
-        .rd_data  (sram2_rd_data    )
-    );
 
 
     always_ff@(posedge clk or negedge rst_n)begin
@@ -119,13 +119,13 @@ module vec_cache_sram_2inst
     end
 
     always_comb begin
-        if (read_sel_d) begin
-            rd_data_a = sram1_rd_data;
-            rd_data_b = sram2_rd_data;
-        end else begin
-            rd_data_a = sram2_rd_data;
-            rd_data_b = sram1_rd_data;
-        end
+        //if (read_sel_d==1'b0) begin
+            rd_data_0 = sram0_rd_data;
+            rd_data_1 = sram1_rd_data;
+        //end else begin
+        //    rd_data_0 = sram1_rd_data;
+        //    rd_data_1 = sram0_rd_data;
+        //end
     end
 
 

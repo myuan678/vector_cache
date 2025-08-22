@@ -89,7 +89,7 @@ import vector_cache_pkg::*;
     //read cmd 延迟1拍用来选择read_data
     generate
         for(genvar i=0;i<8;i=i+1)begin
-            assign read_ram_cmd_vld[i] = west_read_cmd_vld_in[i];
+            assign read_ram_cmd_vld[i] = west_read_cmd_vld_in[i] && (west_read_cmd_pld_in[i].dest_ram_id.block_id==BLOCK_ID);
         end
     endgenerate
     generate
@@ -100,8 +100,8 @@ import vector_cache_pkg::*;
                     read_ram_cmd_vld_d1[i]<= 'b0;
                 end
                 else begin
-                    read_ram_cmd_d1[i]    <= read_ram_cmd[i]        ;
-                    read_ram_cmd_vld_d1[i]<= west_read_cmd_vld_in[i];
+                    read_ram_cmd_d1[i]    <= read_ram_cmd[i]    ;
+                    read_ram_cmd_vld_d1[i]<= read_ram_cmd_vld[i];
                 end
             end
         end
@@ -110,12 +110,18 @@ import vector_cache_pkg::*;
     //read 3to1 arbiter
     generate
         for(genvar i=0;i<4;i=i+1)begin  //read  //cmd[1:0]0/1对于hash0，2/3对于hash1，
-            assign east_data_out[i*2].data     = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in[i*2].data    : rd_data[i*2] ;//5bit dest_ram_id, 00 00 0 表示hash0，block0 的第一块sram。地址的最高bit决定sram hash 二选一
-            assign east_data_out[i*2].cmd_pld  = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in[i*2].cmd_pld : read_ram_cmd_d1[i*2];
-            assign east_data_out_vld[i*2]      = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in_vld[i*2]     : read_ram_cmd_vld_d1[i*2] ;
-            assign east_data_out[i*2+1].data   = (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in[i*2+1].data    : rd_data[i*2+1] ;////5bit dest_ram_id, 00 00 1 表示hash0，block0 的第二块sram
-            assign east_data_out[i*2+1].cmd_pld= (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in[i*2+1].cmd_pld : read_ram_cmd_d1[i*2+1];
-            assign east_data_out_vld[i*2+1]    = (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in_vld[i*2+1]     : read_ram_cmd_vld_d1[i*2+1] ;
+            assign east_data_out[i*2].data     = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in[i*2].data    :
+                                                (read_ram_cmd_vld_d1[i*2] && read_ram_cmd_d1[2*i].dest_ram_id.channel_id==1'b0) ? rd_data[i*2] : rd_data[i*2+1] ;//5bit dest_ram_id, 00 00 0 表示hash0，block0 的第一块sram。地址的最高bit决定sram hash 二选一
+            assign east_data_out[i*2].cmd_pld  = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in[i*2].cmd_pld :
+                                                (read_ram_cmd_vld_d1[i*2] && read_ram_cmd_d1[2*i].dest_ram_id.channel_id==1'b0) ? read_ram_cmd_d1[i*2] : read_ram_cmd_d1[i*2+1];
+            assign east_data_out_vld[i*2]      = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in_vld[i*2] :    
+                                                (read_ram_cmd_vld_d1[i*2] && read_ram_cmd_d1[2*i].dest_ram_id.channel_id==1'b0) ?  read_ram_cmd_vld_d1[i*2] : read_ram_cmd_vld_d1[i*2+1];
+            assign east_data_out[i*2+1].data   = (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in[i*2+1].data    : 
+                                                (read_ram_cmd_vld_d1[i*2+1] && read_ram_cmd_d1[i*2+1].dest_ram_id.channel_id==1'b1) ? rd_data[i*2+1] : rd_data[i*2];////5bit dest_ram_id, 00 00 1 表示hash0，block0 的第二块sram
+            assign east_data_out[i*2+1].cmd_pld= (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in[i*2+1].cmd_pld : 
+                                                (read_ram_cmd_vld_d1[i*2+1] && read_ram_cmd_d1[i*2+1].dest_ram_id.channel_id==1'b1) ? read_ram_cmd_d1[i*2+1] : read_ram_cmd_d1[i*2];
+            assign east_data_out_vld[i*2+1]    = (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in_vld[i*2+1]:
+                                                (read_ram_cmd_vld_d1[i*2+1] && read_ram_cmd_d1[i*2+1].dest_ram_id.channel_id==1'b1) ? read_ram_cmd_vld_d1[i*2+1] : read_ram_cmd_vld_d1[i*2];
         end
     endgenerate
 
@@ -128,8 +134,8 @@ import vector_cache_pkg::*;
                     write_ram_cmd_vld_d1[i]<= 'b0;
                 end
                 else begin
-                    write_ram_cmd_d1[i]    <= write_ram_cmd[i]       ;
-                    write_ram_cmd_vld_d1[i]<= east_write_cmd_vld_in[i];
+                    write_ram_cmd_d1[i]    <= write_ram_cmd[i];
+                    write_ram_cmd_vld_d1[i]<= (east_write_cmd_pld_in[i].req_cmd_pld.dest_ram_id.block_id==BLOCK_ID) && east_write_cmd_vld_in[i] ;
                 end
             end
         end
@@ -138,35 +144,119 @@ import vector_cache_pkg::*;
     // write 1to3 
     generate
         for(genvar i=0;i<4;i=i+1)begin
-            assign wr_data[i*2]                = east_data_in[i*2].data     ;
-            assign wr_data[i*2+1]              = east_data_in[i*2+1].data   ;
+            assign wr_data[i*2]                = (east_data_in_vld[i*2] && (east_data_in[i*2].cmd_pld.dest_ram_id.channel_id==1'b0)) ? east_data_in[i*2].data : east_data_in[i*2+1].data  ;
+            assign wr_data[i*2+1]              = (east_data_in_vld[i*2] && (east_data_in[i*2].cmd_pld.dest_ram_id.channel_id==1'b1)) ? east_data_in[i*2].data : east_data_in[i*2+1].data  ;
             assign west_data_out[i*2].data     = east_data_in[i*2].data     ;
             assign west_data_out[i*2].cmd_pld  = east_data_in[i*2].cmd_pld  ;
             assign west_data_out[i*2+1].data   = east_data_in[i*2+1].data   ;
             assign west_data_out[i*2+1].cmd_pld= east_data_in[i*2+1].cmd_pld;
-            assign west_data_out_vld[i*2]      = east_data_in_vld[i*2]      ;
-            assign west_data_out_vld[i*2+1]    = east_data_in_vld[i*2+1]    ;
+            assign west_data_out_vld[i*2]      = (east_data_in[i*2].cmd_pld.dest_ram_id.block_id==BLOCK_ID && (east_data_in[i*2].cmd_pld.opcode==`VEC_CACHE_WRITE ||east_data_in[i*2].cmd_pld.opcode==`VEC_CACHE_LINEFILL )) 
+                                                ? 'b0 : east_data_in_vld[i*2];//写当前block
+            assign west_data_out_vld[i*2+1]    = (east_data_in[i*2+1].cmd_pld.dest_ram_id.block_id==BLOCK_ID && (east_data_in[i*2].cmd_pld.opcode==`VEC_CACHE_WRITE ||east_data_in[i*2].cmd_pld.opcode==`VEC_CACHE_LINEFILL )) 
+                                                ? 'b0 : east_data_in_vld[i*2+1]    ;
         end
     endgenerate
 
 
+    sram_inst_cmd_t     read_cmd_0 [3:0];
+    logic [3:0]         read_vld_0      ;
+    sram_inst_cmd_t     read_cmd_1[3:0] ;
+    logic [3:0]         read_vld_1      ;
+    generate
+        for(genvar i=0;i<4;i=i+1)begin
+            always_comb begin
+                read_vld_0[i] = 'b0;
+                read_cmd_0[i] = 'b0;
+                read_vld_1[i] = 'b0;
+                read_cmd_1[i] = 'b0;
+                if(read_ram_cmd_vld[2*i] && read_ram_cmd[2*i].dest_ram_id.channel_id==1'b0) begin
+                    read_vld_0[i]=read_ram_cmd_vld[2*i]; 
+                    read_cmd_0[i]=read_ram_cmd[2*i];
+                end
+                else if(read_ram_cmd_vld[2*i] && read_ram_cmd[2*i].dest_ram_id.channel_id==1'b1)begin
+                    read_vld_1[i] = read_ram_cmd_vld[2*i]; 
+                    read_cmd_1[i]=read_ram_cmd[2*i];
+                end
+                else if(read_ram_cmd_vld[2*i+1] && read_ram_cmd[2*i+1].dest_ram_id.channel_id==1'b0)begin
+                    read_vld_0[i]=read_ram_cmd_vld[2*i+1]; 
+                    read_cmd_0[i]=read_ram_cmd[2*i+1];
+                end
+                else if(read_ram_cmd_vld[2*i+1] && read_ram_cmd[2*i+1].dest_ram_id.channel_id==1'b1) begin
+                    read_vld_1[i] = read_ram_cmd_vld[2*i+1]; 
+                    read_cmd_1[i] = read_ram_cmd[2*i+1];
+                end
+            end
+        end
+    endgenerate
+    
+    sram_inst_cmd_t     write_cmd_0 [3:0];
+    logic [3:0]         write_vld_0      ;
+    sram_inst_cmd_t     write_cmd_1[3:0] ;
+    logic [3:0]         write_vld_1      ;
+    generate
+        for(genvar i=0;i<4;i=i+1)begin
+            always_comb begin
+                write_cmd_0[i] = 'b0;
+                write_vld_0[i] = 'b0;
+                write_cmd_1[i] = 'b0;
+                write_vld_1[i] = 'b0;
+                if(write_ram_cmd_vld_d1[2*i] && write_ram_cmd_d1[2*i].dest_ram_id.channel_id==1'b0) begin
+                    write_vld_0[i] = write_ram_cmd_vld_d1[2*i]; 
+                    write_cmd_0[i] = write_ram_cmd_d1[2*i];
+                end
+                else if(write_ram_cmd_vld_d1[2*i] && write_ram_cmd_d1[2*i].dest_ram_id.channel_id==1'b1)begin
+                    write_vld_1[i] = write_ram_cmd_vld_d1[2*i]; 
+                    write_cmd_1[i] = write_ram_cmd_d1[2*i];
+                end
+                else if(write_ram_cmd_vld_d1[2*i+1] && write_ram_cmd_d1[2*i+1].dest_ram_id.channel_id==1'b0)begin
+                    write_vld_0[i] = write_ram_cmd_vld_d1[2*i+1]; 
+                    write_cmd_0[i] = write_ram_cmd_d1[2*i+1];
+                end
+                else if(write_ram_cmd_vld_d1[2*i+1] && write_ram_cmd_d1[2*i+1].dest_ram_id.channel_id==1'b1) begin
+                    write_vld_1[i] = write_ram_cmd_vld_d1[2*i+1]; 
+                    write_cmd_1[i] = write_ram_cmd_d1[2*i+1];
+                end
+            end
+        end
+    endgenerate
+    
+    //generate
+    //    for(genvar i=0;i<4;i=i+1)begin:block_four_hashram
+    //        vec_cache_sram_2inst u_hash ( 
+    //            .clk        (clk                            ),
+    //            .rst_n      (rst_n                          ),
+    //            .read_vld_a (read_ram_cmd_vld[2*i]          ),//change
+    //            .read_cmd_a (read_ram_cmd[2*i]              ),
+    //            .write_vld_a(write_ram_cmd_vld_d1[2*i]      ),
+    //            .write_cmd_a(write_ram_cmd_d1[2*i]          ),//change
+    //            .read_vld_b (read_ram_cmd_vld[2*i+1]        ),//change
+    //            .read_cmd_b (read_ram_cmd[2*i+1]            ),
+    //            .write_vld_b(write_ram_cmd_vld_d1[2*i+1]    ),
+    //            .write_cmd_b(write_ram_cmd_d1[2*i+1]        ),//change
+    //            .wr_data_a  (wr_data[2*i]                   ),
+    //            .wr_data_b  (wr_data[2*i+1]                 ),
+    //            .rd_data_a  (rd_data[2*i]                   ),
+    //            .rd_data_b  (rd_data[2*i+1]                 ));
+    //    end
+    //endgenerate
+
     generate
         for(genvar i=0;i<4;i=i+1)begin:block_four_hashram
             vec_cache_sram_2inst u_hash ( 
-                .clk        (clk                            ),
-                .rst_n      (rst_n                          ),
-                .read_vld_a (read_ram_cmd_vld[2*i]          ),//change
-                .read_cmd_a (read_ram_cmd[2*i]              ),
-                .write_vld_a(write_ram_cmd_vld_d1[2*i]      ),
-                .write_cmd_a(write_ram_cmd_d1[2*i]          ),//change
-                .read_vld_b (read_ram_cmd_vld[2*i+1]        ),//change
-                .read_cmd_b (read_ram_cmd[2*i+1]            ),
-                .write_vld_b(write_ram_cmd_vld_d1[2*i+1]    ),
-                .write_cmd_b(write_ram_cmd_d1[2*i+1]        ),//change
-                .wr_data_a  (wr_data[2*i]                   ),
-                .wr_data_b  (wr_data[2*i+1]                 ),
-                .rd_data_a  (rd_data[2*i]                   ),
-                .rd_data_b  (rd_data[2*i+1]                 ));
+                .clk        (clk                   ),
+                .rst_n      (rst_n                 ),
+                .read_vld_0 (read_vld_0[i]         ),//change
+                .read_cmd_0 (read_cmd_0[i]         ),
+                .write_vld_0(write_vld_0[i]        ),
+                .write_cmd_0(write_cmd_0[i]        ),//change
+                .read_vld_1 (read_vld_1[i]         ),//change
+                .read_cmd_1 (read_ram_cmd[i]       ),
+                .write_vld_1(write_vld_1[i]        ),
+                .write_cmd_1(write_cmd_1[i]        ),//change
+                .wr_data_0  (wr_data[2*i]          ),
+                .wr_data_1  (wr_data[2*i+1]        ),
+                .rd_data_0  (rd_data[2*i]          ),
+                .rd_data_1  (rd_data[2*i+1]        ));
         end
     endgenerate
 

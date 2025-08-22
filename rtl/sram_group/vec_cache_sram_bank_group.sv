@@ -53,83 +53,89 @@ import vector_cache_pkg::*;
 );
 
 
-    arb_out_req_t        fanout_west_read_cmd_pld_in    [7:0]     [7:0]  ;
-    logic [7:0]          fanout_west_read_cmd_vld_in    [7:0]            ;
-    arb_out_req_t        fanout_east_read_cmd_pld_in    [7:0]     [7:0]  ;
-    logic [7:0]          fanout_east_read_cmd_vld_in    [7:0]            ;
-    write_ram_cmd_t      fanout_west_write_cmd_pld_in   [7:0]     [7:0]  ;
-    logic [7:0]          fanout_west_write_cmd_vld_in   [7:0]            ;
-    write_ram_cmd_t      fanout_east_write_cmd_pld_in   [7:0]     [7:0]  ;
-    logic [7:0]          fanout_east_write_cmd_vld_in   [7:0]            ;
-    write_ram_cmd_t      fanout_south_write_cmd_pld_in  [7:0]      [7:0] ;
-    logic [7:0]          fanout_south_write_cmd_vld_in  [7:0]            ;
-    write_ram_cmd_t      fanout_north_write_cmd_pld_in  [7:0]     [7:0]  ;
-    logic [7:0]          fanout_north_write_cmd_vld_in  [7:0]            ;
+    arb_out_req_t        fanout_west_read_cmd_pld_in    [7:0][7:0]       ;
+    logic [7:0]          fanout_west_read_cmd_vld_in         [7:0]       ;
+    arb_out_req_t        fanout_east_read_cmd_pld_in    [7:0][7:0]       ;
+    logic [7:0]          fanout_east_read_cmd_vld_in         [7:0]       ;
+    write_ram_cmd_t      fanout_west_write_cmd_pld_in   [7:0][7:0]       ;
+    logic [7:0]          fanout_west_write_cmd_vld_in        [7:0]       ;
+    write_ram_cmd_t      fanout_east_write_cmd_pld_in   [7:0][7:0]       ;
+    logic [7:0]          fanout_east_write_cmd_vld_in        [7:0]       ;
+    write_ram_cmd_t      fanout_south_write_cmd_pld_in  [7:0][7:0]       ;
+    logic [7:0]          fanout_south_write_cmd_vld_in       [7:0]       ;
+    write_ram_cmd_t      fanout_north_write_cmd_pld_in  [7:0][7:0]       ;
+    logic [7:0]          fanout_north_write_cmd_vld_in       [7:0]       ;
 
-    arb_out_req_t        fanout_west_read_cmd_pld_out   [7:0]     [7:0]  ;
-    logic [7:0]          fanout_west_read_cmd_vld_out   [7:0]            ;
-    arb_out_req_t        fanout_east_read_cmd_pld_out   [7:0]     [7:0]  ;
-    logic [7:0]          fanout_east_read_cmd_vld_out   [7:0]            ;
-    write_ram_cmd_t      fanout_west_write_cmd_pld_out  [7:0]     [7:0]  ;
-    logic [7:0]          fanout_west_write_cmd_vld_out  [7:0]            ;
-    write_ram_cmd_t      fanout_east_write_cmd_pld_out  [7:0]     [7:0]  ;
-    logic [7:0]          fanout_east_write_cmd_vld_out  [7:0]            ;
-    write_ram_cmd_t      fanout_south_write_cmd_pld_out [7:0]     [7:0]  ;
-    logic [7:0]          fanout_south_write_cmd_vld_out [7:0]            ;
-    write_ram_cmd_t      fanout_north_write_cmd_pld_out [7:0]     [7:0]  ;
-    logic [7:0]          fanout_north_write_cmd_vld_out [7:0]            ;
+    arb_out_req_t        fanout_west_read_cmd_pld_out   [7:0][7:0]       ;
+    logic [7:0]          fanout_west_read_cmd_vld_out        [7:0]       ;
+    arb_out_req_t        fanout_east_read_cmd_pld_out   [7:0][7:0]       ;
+    logic [7:0]          fanout_east_read_cmd_vld_out        [7:0]       ;
+    write_ram_cmd_t      fanout_west_write_cmd_pld_out  [7:0][7:0]       ;
+    logic [7:0]          fanout_west_write_cmd_vld_out       [7:0]       ;
+    write_ram_cmd_t      fanout_east_write_cmd_pld_out  [7:0][7:0]       ;
+    logic [7:0]          fanout_east_write_cmd_vld_out       [7:0]       ;
+    write_ram_cmd_t      fanout_south_write_cmd_pld_out [7:0][7:0]       ;
+    logic [7:0]          fanout_south_write_cmd_vld_out      [7:0]       ;
+    write_ram_cmd_t      fanout_north_write_cmd_pld_out [7:0][7:0]       ;
+    logic [7:0]          fanout_north_write_cmd_vld_out      [7:0]       ;
 
-    logic [7 :0]         fanout_west_data_in_vld        [7:0]            ;
+    logic [7 :0]         fanout_west_data_in_vld             [7:0]       ;
     data_pld_t           fanout_west_data_in            [7:0][7:0]       ;
-    logic [7 :0]         fanout_east_data_in_vld        [7:0]            ;
+    logic [7 :0]         fanout_east_data_in_vld             [7:0]       ;
     data_pld_t           fanout_east_data_in            [7:0][7:0]       ;
-    logic [7 :0]         fanout_south_data_in_vld       [7:0]            ;
+    logic [7 :0]         fanout_south_data_in_vld            [7:0]       ;
     data_pld_t           fanout_south_data_in           [7:0][7:0]       ;
-    logic [7 :0]         fanout_north_data_in_vld       [7:0]            ;
+    logic [7 :0]         fanout_north_data_in_vld            [7:0]       ;
     data_pld_t           fanout_north_data_in           [7:0][7:0]       ;
 
-    logic [7 :0]         fanout_west_data_out_vld       [7:0]            ;
+    logic [7 :0]         fanout_west_data_out_vld            [7:0]       ;
     data_pld_t           fanout_west_data_out           [7:0][7:0]       ;
-    logic [7 :0]         fanout_east_data_out_vld       [7:0]            ;
+    logic [7 :0]         fanout_east_data_out_vld            [7:0]       ;
     data_pld_t           fanout_east_data_out           [7:0][7:0]       ;
-    logic [7 :0]         fanout_south_data_out_vld      [7:0]            ;
+    logic [7 :0]         fanout_south_data_out_vld           [7:0]       ;
     data_pld_t           fanout_south_data_out          [7:0][7:0]       ;
-    logic [7 :0]         fanout_north_data_out_vld      [7:0]            ;
+    logic [7 :0]         fanout_north_data_out_vld           [7:0]       ;
     data_pld_t           fanout_north_data_out          [7:0][7:0]       ;
 
 
     generate
         for(genvar i=0;i<8;i=i+1)begin:BANK8_CMD_IN_GEN
-            assign fanout_west_read_cmd_pld_in  [i] = west_read_cmd_pld_in  ;
-            assign fanout_west_read_cmd_vld_in  [i] = west_read_cmd_vld_in  ;
-            assign fanout_east_read_cmd_pld_in  [i] = east_read_cmd_pld_in  ;
-            assign fanout_east_read_cmd_vld_in  [i] = east_read_cmd_vld_in  ; 
-            assign fanout_west_write_cmd_pld_in [i] = west_write_cmd_pld_in ;
-            assign fanout_west_write_cmd_vld_in [i] = west_write_cmd_vld_in ;
-            assign fanout_east_write_cmd_pld_in [i] = east_write_cmd_pld_in ;
-            assign fanout_east_write_cmd_vld_in [i] = east_write_cmd_vld_in ;
-            assign fanout_south_write_cmd_pld_in[i] = south_write_cmd_pld_in;
-            assign fanout_south_write_cmd_vld_in[i] = south_write_cmd_vld_in;
-            assign fanout_north_write_cmd_pld_in[i] = north_write_cmd_pld_in;
-            assign fanout_north_write_cmd_vld_in[i] = north_write_cmd_vld_in;
+            for(genvar j=0;j<8;j=j+1)begin
+                assign fanout_west_read_cmd_pld_in  [j][i] = west_read_cmd_pld_in  [i];
+                assign fanout_west_read_cmd_vld_in  [j][i] = west_read_cmd_vld_in  [i];
+                assign fanout_east_read_cmd_pld_in  [j][i] = east_read_cmd_pld_in  [i];
+                assign fanout_east_read_cmd_vld_in  [j][i] = east_read_cmd_vld_in  [i]; 
+                assign fanout_west_write_cmd_pld_in [j][i] = west_write_cmd_pld_in [i];
+                assign fanout_west_write_cmd_vld_in [j][i] = west_write_cmd_vld_in [i];
+                assign fanout_east_write_cmd_pld_in [j][i] = east_write_cmd_pld_in [i];
+                assign fanout_east_write_cmd_vld_in [j][i] = east_write_cmd_vld_in [i];
+                assign fanout_south_write_cmd_pld_in[j][i] = south_write_cmd_pld_in[i];
+                assign fanout_south_write_cmd_vld_in[j][i] = south_write_cmd_vld_in[i];
+                assign fanout_north_write_cmd_pld_in[j][i] = north_write_cmd_pld_in[i];
+                assign fanout_north_write_cmd_vld_in[j][i] = north_write_cmd_vld_in[i];
+            end
         end
     endgenerate
 
     generate
         for(genvar i=0;i<8;i=i+1)begin:BANK8_DATA_IN_GEN
             for(genvar j=0;j<8;j=j+1)begin
-                assign fanout_west_data_in_vld  [i][j]          = west_data_in_vld[j]                 ;
-                assign fanout_west_data_in      [i][j].data     = west_data_in[i].data[j*32 +: 32]    ;
-                assign fanout_west_data_in      [i][j].cmd_pld  =west_data_in[i].cmd_pld              ;
-                assign fanout_east_data_in_vld  [i][j]          = east_data_in_vld[j]                 ;
-                assign fanout_east_data_in      [i][j].data     = east_data_in[i].data[j*32 +: 32]    ;
-                assign fanout_east_data_in      [i][j].cmd_pld  = east_data_in[i].cmd_pld             ;
-                assign fanout_south_data_in_vld [i][j]          = south_data_in_vld[j]                ;
-                assign fanout_south_data_in     [i][j].data     = south_data_in[i].data[j*32 +: 32]   ;
-                assign fanout_south_data_in     [i][j].cmd_pld  = south_data_in[i].cmd_pld            ;
-                assign fanout_north_data_in_vld [i][j]          = north_data_in_vld[j]                ;
-                assign fanout_north_data_in     [i][j].data     = north_data_in[i].data[j*32 +: 32]   ;
-                assign fanout_north_data_in     [i][j].cmd_pld  = north_data_in[i].cmd_pld            ;
+                assign fanout_west_data_in_vld  [j][i]          = west_data_in_vld [i]                ;
+                assign fanout_east_data_in_vld  [j][i]          = east_data_in_vld [i]                ;
+                assign fanout_south_data_in_vld [j][i]          = south_data_in_vld[i]                ;
+                assign fanout_north_data_in_vld [j][i]          = north_data_in_vld[i]                ;
+                
+                assign fanout_west_data_in      [j][i].data     = west_data_in[i].data[j*32 +: 32]    ;
+                assign fanout_west_data_in      [j][i].cmd_pld  = west_data_in[i].cmd_pld             ;
+                
+                assign fanout_east_data_in      [j][i].data     = east_data_in[i].data[j*32 +: 32]    ;
+                assign fanout_east_data_in      [j][i].cmd_pld  = east_data_in[i].cmd_pld             ;
+                
+                assign fanout_south_data_in     [j][i].data     = south_data_in[i].data[j*32 +: 32]   ;
+                assign fanout_south_data_in     [j][i].cmd_pld  = south_data_in[i].cmd_pld            ;
+                
+                assign fanout_north_data_in     [j][i].data     = north_data_in[i].data[j*32 +: 32]   ;
+                assign fanout_north_data_in     [j][i].cmd_pld  = north_data_in[i].cmd_pld            ;
             end
         end
     endgenerate
@@ -190,62 +196,62 @@ import vector_cache_pkg::*;
     endgenerate
 
     generate
-        for(genvar i=0;i<8;i=i+1)begin:BANK_GROUP_DATA_OUT_GEN
+        for(genvar i=0;i<8;i=i+1)begin:BANK_GROUP_DATA_OUT_GEN//i=channel
             assign west_data_out_vld[i] =  fanout_west_data_out_vld[0][i];
-            assign west_data_out[i].cmd_pld = fanout_west_data_out[i][0].cmd_pld;
-            assign west_data_out[i].data ={fanout_west_data_out[i][7].data,
-                                           fanout_west_data_out[i][6].data,
-                                           fanout_west_data_out[i][5].data,
-                                           fanout_west_data_out[i][4].data,
-                                           fanout_west_data_out[i][3].data,
-                                           fanout_west_data_out[i][2].data,
-                                           fanout_west_data_out[i][1].data,
-                                           fanout_west_data_out[i][0].data};
+            assign west_data_out[i].cmd_pld = fanout_west_data_out[0][i].cmd_pld;
+            assign west_data_out[i].data ={fanout_west_data_out[7][i].data,
+                                           fanout_west_data_out[6][i].data,
+                                           fanout_west_data_out[5][i].data,
+                                           fanout_west_data_out[4][i].data,
+                                           fanout_west_data_out[3][i].data,
+                                           fanout_west_data_out[2][i].data,
+                                           fanout_west_data_out[1][i].data,
+                                           fanout_west_data_out[0][i].data};
             assign east_data_out_vld[i] =  fanout_east_data_out_vld[0][i];
-            assign east_data_out[i].cmd_pld =fanout_east_data_out[i][0].cmd_pld;
-            assign east_data_out[i].data ={fanout_east_data_out[i][7].data,
-                                           fanout_east_data_out[i][6].data,
-                                           fanout_east_data_out[i][5].data,
-                                           fanout_east_data_out[i][4].data,
-                                           fanout_east_data_out[i][3].data,
-                                           fanout_east_data_out[i][2].data,
-                                           fanout_east_data_out[i][1].data,
-                                           fanout_east_data_out[i][0].data};
+            assign east_data_out[i].cmd_pld =fanout_east_data_out[0][i].cmd_pld;
+            assign east_data_out[i].data ={fanout_east_data_out[7][i].data,
+                                           fanout_east_data_out[6][i].data,
+                                           fanout_east_data_out[5][i].data,
+                                           fanout_east_data_out[4][i].data,
+                                           fanout_east_data_out[3][i].data,
+                                           fanout_east_data_out[2][i].data,
+                                           fanout_east_data_out[1][i].data,
+                                           fanout_east_data_out[0][i].data};
             assign south_data_out_vld[i] = fanout_south_data_out_vld[0][i];
-            assign south_data_out[i].cmd_pld = fanout_south_data_out[i][0].cmd_pld;
-            assign south_data_out[i].data={fanout_south_data_out[i][7].data,
-                                           fanout_south_data_out[i][6].data,
-                                           fanout_south_data_out[i][5].data,
-                                           fanout_south_data_out[i][4].data,
-                                           fanout_south_data_out[i][3].data,
-                                           fanout_south_data_out[i][2].data,
-                                           fanout_south_data_out[i][1].data,
-                                           fanout_south_data_out[i][0].data};
+            assign south_data_out[i].cmd_pld = fanout_south_data_out[0][i].cmd_pld;
+            assign south_data_out[i].data={fanout_south_data_out[7][i].data,
+                                           fanout_south_data_out[6][i].data,
+                                           fanout_south_data_out[5][i].data,
+                                           fanout_south_data_out[4][i].data,
+                                           fanout_south_data_out[3][i].data,
+                                           fanout_south_data_out[2][i].data,
+                                           fanout_south_data_out[1][i].data,
+                                           fanout_south_data_out[0][i].data};
             assign north_data_out_vld[i] =fanout_north_data_out_vld[0][i];
-            assign north_data_out[i].cmd_pld =fanout_north_data_out[i][0].cmd_pld;
-            assign north_data_out[i].data={fanout_north_data_out[i][7].data,
-                                           fanout_north_data_out[i][6].data,
-                                           fanout_north_data_out[i][5].data,
-                                           fanout_north_data_out[i][4].data,
-                                           fanout_north_data_out[i][3].data,
-                                           fanout_north_data_out[i][2].data,
-                                           fanout_north_data_out[i][1].data,
-                                           fanout_north_data_out[i][0].data};
+            assign north_data_out[i].cmd_pld =fanout_north_data_out[0][i].cmd_pld;
+            assign north_data_out[i].data={fanout_north_data_out[7][i].data,
+                                           fanout_north_data_out[6][i].data,
+                                           fanout_north_data_out[5][i].data,
+                                           fanout_north_data_out[4][i].data,
+                                           fanout_north_data_out[3][i].data,
+                                           fanout_north_data_out[2][i].data,
+                                           fanout_north_data_out[1][i].data,
+                                           fanout_north_data_out[0][i].data};
         end
     endgenerate
 
 
     //dont need output
     generate
-        for(genvar i=0;i<8;i=i+1)begin:BAN_GROUP_CMD_OUT_GEN
-            assign west_read_cmd_pld_out  [i] = fanout_west_read_cmd_pld_out[0][i]  ;
-            assign west_read_cmd_vld_out  [i] = fanout_west_read_cmd_vld_out[0][i]  ;
-            assign east_read_cmd_pld_out  [i] = fanout_east_read_cmd_pld_out[0][i]  ;
-            assign east_read_cmd_vld_out  [i] = fanout_east_read_cmd_vld_out[0][i]  ;
-            assign west_write_cmd_pld_out [i] = fanout_west_write_cmd_pld_out[0][i] ;
-            assign west_write_cmd_vld_out [i] = fanout_west_write_cmd_vld_out[0][i] ;
-            assign east_write_cmd_pld_out [i] = fanout_east_write_cmd_pld_out[0][i] ;
-            assign east_write_cmd_vld_out [i] = fanout_east_write_cmd_vld_out[0][i] ;
+        for(genvar i=0;i<8;i=i+1)begin:BAN_GROUP_CMD_OUT_GEN//i=channel [0]bank
+            assign west_read_cmd_pld_out  [i] = fanout_west_read_cmd_pld_out  [0][i];
+            assign west_read_cmd_vld_out  [i] = fanout_west_read_cmd_vld_out  [0][i];
+            assign east_read_cmd_pld_out  [i] = fanout_east_read_cmd_pld_out  [0][i];
+            assign east_read_cmd_vld_out  [i] = fanout_east_read_cmd_vld_out  [0][i];
+            assign west_write_cmd_pld_out [i] = fanout_west_write_cmd_pld_out [0][i];
+            assign west_write_cmd_vld_out [i] = fanout_west_write_cmd_vld_out [0][i];
+            assign east_write_cmd_pld_out [i] = fanout_east_write_cmd_pld_out [0][i];
+            assign east_write_cmd_vld_out [i] = fanout_east_write_cmd_vld_out [0][i];
             assign south_write_cmd_pld_out[i] = fanout_south_write_cmd_pld_out[0][i];
             assign south_write_cmd_vld_out[i] = fanout_south_write_cmd_vld_out[0][i];
             assign north_write_cmd_pld_out[i] = fanout_north_write_cmd_pld_out[0][i];

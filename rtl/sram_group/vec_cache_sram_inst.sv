@@ -14,16 +14,18 @@ module vec_cache_sram_inst
 );
 
     parameter integer unsigned ID = 0       ;
-    logic                   en              ;
-    logic                   wr_en           ;
-    logic   [15     :0]     byte_wr_en      ; // 16 bytes,16bit byte_en
-    logic   [127    :0]     ram_rd_data     ;
-    logic   [127    :0]     ram_wr_data     ;
+    logic           en              ;
+    logic           wr_en           ;
+    logic [15   :0] byte_wr_en      ; // 16 bytes,16bit byte_en
+    logic [127  :0] ram_rd_data     ;
+    logic [127  :0] ram_wr_data     ;
 
-    logic                   read_vld_d      ;
-    logic   [1      :0]     rd_byte_sel_d   ;
-    logic                   rd_mode_d       ;
-    logic   [8      :0]     addr            ;
+    logic           read_vld_d      ;
+    logic [1    :0] rd_byte_sel_d   ;
+    logic           rd_mode_d       ;
+    logic [8    :0] addr            ;
+    logic [1    :0] wr_byte_sel;
+    logic [1    :0] rd_byte_sel;
     
     // enable  
     assign en          = (write_vld | read_vld) ? 1'b1: 1'b0 ;
@@ -52,14 +54,14 @@ module vec_cache_sram_inst
         .ADDR_WIDTH  (9  ),
         .DATA_WIDTH  (128))
     u_sram_inst ( 
-        .clk     (clk),
-        .rst_n   (rst_n),
-        .en      (en),
-        .wr      (wr_en),
-        .be      (byte_wr_en),
-        .addr    (addr),
-        .data_in (ram_wr_data),
-        .data_out(ram_rd_data));
+        .clk     (clk           ),
+        .rst_n   (rst_n         ),
+        .en      (en            ),
+        .wr      (wr_en         ),
+        .be      (byte_wr_en    ),
+        .addr    (addr          ),
+        .data_in (ram_wr_data   ),
+        .data_out(ram_rd_data   ));
 
     // 写
     always_comb begin
