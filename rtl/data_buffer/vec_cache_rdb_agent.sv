@@ -46,7 +46,8 @@ module vec_cache_rdb_agent
     logic                                   alloc_rdy_1         ;
 
     logic                                   rdb_sel             ;
-    logic                                   rdb_sel_d           ;
+    logic                                   rdb_sel_1d          ;
+    logic                                   rdb_sel_2d          ;
     logic                                   rdb0_mem_en         ;
     logic                                   rdb0_wr_en          ;       
     logic [$clog2(RW_DB_ENTRY_NUM/2)-1:0]   rdb0_addr           ;
@@ -134,12 +135,12 @@ module vec_cache_rdb_agent
 //----------------------------------------------------------------------------------------
     //读写RDB的arbiter  写优先(ram_to_rdb_vld ：read_rdb_vld);
 
-    assign rdb0_mem_en       = (~rdb_sel  && ram_write_rdb_vld) || (~rdb_sel_d && read_rdb_vld);
+    assign rdb0_mem_en       = (~rdb_sel  && ram_write_rdb_vld) || (~rdb_sel_1d && read_rdb_vld);
     assign rdb0_wr_en        = ~rdb_sel && ram_write_rdb_vld && ram_to_rdb_data_vld;
     assign rdb0_addr         = rdb0_wr_en ? ram_write_rdb_pld.db_entry_id : read_rdb_pld.db_entry_id;
     assign rdb0_data_in      = ram_to_rdb_data_in.data ;
     
-    assign rdb1_mem_en       = (rdb_sel  && ram_write_rdb_vld) || (rdb_sel_d && read_rdb_vld);
+    assign rdb1_mem_en       = (rdb_sel  && ram_write_rdb_vld) || (rdb_sel_1d && read_rdb_vld);
     assign rdb1_wr_en        = rdb_sel && ram_write_rdb_vld && ram_to_rdb_data_vld;
     assign rdb1_addr         = rdb1_wr_en ? ram_write_rdb_pld.db_entry_id : read_rdb_pld.db_entry_id;
     assign rdb1_data_in      = ram_to_rdb_data_in.data ;
@@ -155,7 +156,8 @@ module vec_cache_rdb_agent
         //else if(read_rdb_vld && read_rdb_rdy) rdb_sel <= ~rdb_sel;
     end
     always_ff@(posedge clk )begin
-        rdb_sel_d <= rdb_sel;
+        rdb_sel_1d <= rdb_sel;
+        rdb_sel_2d <= rdb_sel_1d;
     end
 
     assign alloc_rdy_0 = rdb_sel  && ram_write_rdb_vld && ram_write_rdb_rdy;
@@ -174,7 +176,7 @@ module vec_cache_rdb_agent
                 end
             end    
             //if(read_rdb_vld && read_rdb_rdy && v_rdb_entry_active_0[read_rdb_pld.db_entry_id] )begin
-            if(~rdb_sel_d && read_rdb_vld && read_rdb_rdy && v_rdb_entry_active_0[read_rdb_pld.db_entry_id] )begin
+            if(~rdb_sel_1d && read_rdb_vld && read_rdb_rdy && v_rdb_entry_active_0[read_rdb_pld.db_entry_id] )begin
                 v_rdb_entry_idle_0[read_rdb_pld.db_entry_id]<= 1'b1;
             end
         end
@@ -191,7 +193,7 @@ module vec_cache_rdb_agent
                     v_rdb_entry_idle_1[i] <= 1'b0;
                 end
             end    
-            if(rdb_sel_d && read_rdb_vld && read_rdb_rdy && v_rdb_entry_active_1[read_rdb_pld.db_entry_id] )begin
+            if(rdb_sel_1d && read_rdb_vld && read_rdb_rdy && v_rdb_entry_active_1[read_rdb_pld.db_entry_id] )begin
                 v_rdb_entry_idle_1[read_rdb_pld.db_entry_id]<= 1'b1;
             end
         end
@@ -206,7 +208,7 @@ module vec_cache_rdb_agent
             if(~rdb_sel && ram_write_rdb_vld)begin
                 v_rdb_entry_active_0[ram_write_rdb_pld.db_entry_id] <= 'b1;
             end
-            else if(~rdb_sel_d && read_rdb_vld && read_rdb_rdy)begin
+            else if(~rdb_sel_1d && read_rdb_vld && read_rdb_rdy)begin
                 v_rdb_entry_active_0[read_rdb_pld.db_entry_id] <= 'b0;
             end               
         end                              
@@ -221,7 +223,7 @@ module vec_cache_rdb_agent
             if(rdb_sel && ram_write_rdb_vld)begin
                 v_rdb_entry_active_1[ram_write_rdb_pld.db_entry_id] <= 'b1;
             end
-            else if(rdb_sel_d && read_rdb_vld && read_rdb_rdy)begin
+            else if(rdb_sel_1d && read_rdb_vld && read_rdb_rdy)begin
                 v_rdb_entry_active_1[read_rdb_pld.db_entry_id] <= 'b0;
             end               
         end                              
@@ -289,7 +291,7 @@ module vec_cache_rdb_agent
         else if(read_rdb_vld && read_rdb_rdy)   rdb_to_us_data_vld <= 1'b1;
         else                                    rdb_to_us_data_vld <= 1'b0;                                            
     end
-    assign rdb_to_us_data_pld.data         = rdb_sel ? rdb1_data_out  : rdb0_data_out;
+    assign rdb_to_us_data_pld.data         = rdb_sel_2d ? rdb1_data_out : rdb0_data_out;
     assign rdb_to_us_data_pld.txnid        = read_rdb_pld_d.txnid       ;
     assign rdb_to_us_data_pld.rob_entry_id = read_rdb_pld_d.rob_entry_id;
     assign rdb_to_us_data_pld.sideband     = read_rdb_pld_d.sideband    ;
