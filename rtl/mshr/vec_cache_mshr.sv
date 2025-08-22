@@ -176,13 +176,11 @@ module vec_cache_mshr
     logic                                               dataram_rd_stg1_out_rdy_n ;
     logic                                               dataram_rd_stg1_out_rdy_ev;
 
-    
-
-
 
     pre_alloc_two #(
-        .ENTRY_NUM(MSHR_ENTRY_NUM    ),
-        .ENTRY_ID_WIDTH($clog2(MSHR_ENTRY_NUM))
+        .ENTRY_NUM      (MSHR_ENTRY_NUM          ),
+        .ENTRY_ID_WIDTH ($clog2(MSHR_ENTRY_NUM)  ),
+        .PRE_ALLO_NUM   (2)
     ) u_pre_allocator (
         .clk        (clk          ),
         .rst_n      (rst_n        ),
@@ -199,15 +197,15 @@ module vec_cache_mshr
     v_en_decode #(
         .WIDTH          (MSHR_ENTRY_NUM )
     )   u_update_entry_dec0 (
-        .enable         (mshr_update_en_0    ),
+        .enable         (mshr_update_en_0           ),
         .enable_index   (mshr_update_pld_0.alloc_idx),
-        .v_out_en       (v_mshr_update_en_0));
+        .v_out_en       (v_mshr_update_en_0         ));
     v_en_decode #(
         .WIDTH          (MSHR_ENTRY_NUM )
     )   u_update_entry_dec1 (
-        .enable         (mshr_update_en_1    ),
+        .enable         (mshr_update_en_1           ),
         .enable_index   (mshr_update_pld_1.alloc_idx),
-        .v_out_en       (v_mshr_update_en_1));
+        .v_out_en       (v_mshr_update_en_1         ));
 
     v_en_decode #(
         .WIDTH          (MSHR_ENTRY_NUM )
@@ -278,9 +276,9 @@ module vec_cache_mshr
     v_en_decode #(
         .WIDTH          (MSHR_ENTRY_NUM )
     )   u_evict_done_dec (
-        .enable         (bresp_vld      ),//evict_done
+        .enable         (bresp_vld              ),//evict_done
         .enable_index   (bresp_pld.rob_entry_id ),
-        .v_out_en       (v_evict_done   ));
+        .v_out_en       (v_evict_done           ));
 
     v_en_decode #(
         .WIDTH          (MSHR_ENTRY_NUM )
@@ -311,7 +309,7 @@ module vec_cache_mshr
             .e_dataram_rd_vld       (v_dataram_rd_vld_e[i]      ),
             .s_dataram_rd_vld       (v_dataram_rd_vld_s[i]      ),
             .n_dataram_rd_vld       (v_dataram_rd_vld_n[i]      ),
-            .dataram_rd_pld         (v_dataram_rd_pld  [i]        ),
+            .dataram_rd_pld         (v_dataram_rd_pld  [i]      ),
             .w_dataram_wr_rdy       (v_dataram_wr_rdy_w[i]      ),
             .e_dataram_wr_rdy       (v_dataram_wr_rdy_e[i]      ),
             .s_dataram_wr_rdy       (v_dataram_wr_rdy_s[i]      ),
@@ -345,8 +343,8 @@ module vec_cache_mshr
             .evict_done             (v_evict_done[i]            ),
             .evict_clean            (v_evict_clean[i]           ),
 
-            .linefill_alloc_vld     (linefill_alloc_vld         ),
-            .linefill_alloc_idx     (linefill_alloc_idx         ),
+            //.linefill_alloc_vld     (linefill_alloc_vld         ),
+            //.linefill_alloc_idx     (linefill_alloc_idx         ),
             .w_rdb_alloc_nfull      (w_rdb_alloc_nfull          ),
             .e_rdb_alloc_nfull      (e_rdb_alloc_nfull          ),
             .s_rdb_alloc_nfull      (s_rdb_alloc_nfull          ),
@@ -358,16 +356,31 @@ module vec_cache_mshr
     endgenerate
 
     //miss req to DS arb
+    logic                    pre_downstream_txreq_vld;
+    downstream_txreq_pld_t   pre_downstream_txreq_pld;
     vrp_arb #(
-        .WIDTH     (MSHR_ENTRY_NUM ),
+        .WIDTH     (MSHR_ENTRY_NUM              ),
         .PLD_WIDTH ($bits(downstream_txreq_pld_t))
     ) u_downstream_req_arb (
-        .v_vld_s(v_downstream_txreq_vld ),
-        .v_rdy_s(v_downstream_txreq_rdy ),
-        .v_pld_s(v_downstream_txreq_pld ),
-        .vld_m  (downstream_txreq_vld   ),
-        .rdy_m  (downstream_txreq_rdy   ),
-        .pld_m  (downstream_txreq_pld   ));
+        .v_vld_s(v_downstream_txreq_vld     ),
+        .v_rdy_s(v_downstream_txreq_rdy     ),
+        .v_pld_s(v_downstream_txreq_pld     ),
+        .vld_m  (pre_downstream_txreq_vld   ),
+        .rdy_m  (downstream_txreq_rdy       ),
+        .pld_m  (pre_downstream_txreq_pld   ));
+        assign downstream_txreq_pld.txnid        = pre_downstream_txreq_pld.txnid        ;
+        assign downstream_txreq_pld.opcode       = pre_downstream_txreq_pld.opcode       ;
+        assign downstream_txreq_pld.addr.tag     = pre_downstream_txreq_pld.addr.tag     ;
+        assign downstream_txreq_pld.addr.index   = pre_downstream_txreq_pld.addr.index   ;
+        assign downstream_txreq_pld.addr.offset  = pre_downstream_txreq_pld.addr.offset  ;
+        assign downstream_txreq_pld.way          = pre_downstream_txreq_pld.way          ;
+        assign downstream_txreq_pld.dest_ram_id  = pre_downstream_txreq_pld.dest_ram_id  ;
+        assign downstream_txreq_pld.db_entry_id  = linefill_alloc_idx                    ;
+        assign downstream_txreq_pld.rob_entry_id = pre_downstream_txreq_pld.rob_entry_id ;
+        assign downstream_txreq_pld.sideband     = pre_downstream_txreq_pld.sideband     ;
+
+        assign downstream_txreq_vld              = linefill_alloc_vld && pre_downstream_txreq_vld;
+        assign linefill_alloc_rdy                = downstream_txreq_vld && downstream_txreq_rdy;
 
 
 //======================================================================
@@ -493,7 +506,10 @@ module vec_cache_mshr
 //======================================================================
 // stage two arbiter
 //====================================================================== 
-
+        arb_out_req_t   read_cmd_to_ram_out_pld_0;
+        arb_out_req_t   read_cmd_to_ram_out_pld_1;
+        logic           read_cmd_to_ram_out_vld_0;
+        logic           read_cmd_to_ram_out_vld_1;
     //assign grant_ram_rdy = dataram_rdy && lf_wrreq_rdy;
     stage2_arbiter # ( 
         .CHANNEL_SHIFT_REG_WIDTH(20),
@@ -555,6 +571,26 @@ module vec_cache_mshr
         .read_cmd_to_ram_pld_1  (read_cmd_to_ram_pld_1              ),
         .read_cmd_to_ram_vld_0  (read_cmd_to_ram_vld_0              ),
         .read_cmd_to_ram_vld_1  (read_cmd_to_ram_vld_1              ));
+
+
+        //always_comb begin
+        //    read_cmd_to_ram_pld_0 = 'b0;
+        //    read_cmd_to_ram_pld_1 = 'b0;
+        //    read_cmd_to_ram_vld_0 = 'b0;
+        //    read_cmd_to_ram_vld_1 = 'b0;
+        //    if(read_cmd_to_ram_out_pld_0.dest_ram_id.channel_id==1'b0)begin
+        //        read_cmd_to_ram_vld_0 = read_cmd_to_ram_out_vld_0;
+        //        read_cmd_to_ram_pld_0 = read_cmd_to_ram_out_pld_0;
+        //        read_cmd_to_ram_vld_1 = read_cmd_to_ram_out_vld_1;
+        //        read_cmd_to_ram_pld_1 = read_cmd_to_ram_out_pld_1;
+        //    end
+        //    else begin 
+        //        read_cmd_to_ram_vld_0 = read_cmd_to_ram_out_vld_1;
+        //        read_cmd_to_ram_pld_0 = read_cmd_to_ram_out_pld_1;
+        //        read_cmd_to_ram_vld_1 = read_cmd_to_ram_out_vld_0;
+        //        read_cmd_to_ram_pld_1 = read_cmd_to_ram_out_pld_0;
+        //    end
+        //end
     
 endmodule
 

@@ -63,8 +63,8 @@ module vec_cache_mshr_entry
     input  logic                               s_rdb_alloc_nfull          ,
     input  logic                               n_rdb_alloc_nfull          ,
 
-    input  logic                                linefill_alloc_vld        ,
-    input  logic [$clog2(LFDB_ENTRY_NUM/4)-1:0] linefill_alloc_idx        ,
+    //input  logic                                linefill_alloc_vld        ,
+    //input  logic [$clog2(LFDB_ENTRY_NUM/4)-1:0] linefill_alloc_idx        ,
 
     input  logic [MSHR_ENTRY_NUM-1 :0]         v_release_en               ,
     output logic                               release_en                 
@@ -148,8 +148,13 @@ module vec_cache_mshr_entry
                            mshr_update_en_1 ? mshr_update_pld_1.hzd_bitmap : 'b0;
     assign hzd_checkpass = mshr_update_en_0 ? mshr_update_pld_0.hzd_pass  :
                            mshr_update_en_1 ? mshr_update_pld_1.hzd_pass : 'b0;
-    assign direc_id      = mshr_update_en_0 ? mshr_update_pld_0.txnid.direction_id : 
-                           mshr_update_en_1 ? mshr_update_pld_1.txnid.direction_id : 'b0; 
+    //assign direc_id      = mshr_update_en_0 ? mshr_update_pld_0.txnid.direction_id : 
+    //                       mshr_update_en_1 ? mshr_update_pld_1.txnid.direction_id : 'b0; 
+
+    always_ff@(posedge clk )begin
+        if(mshr_update_en_0 )       direc_id <= mshr_update_pld_0.txnid.direction_id;
+        else if(mshr_update_en_1)   direc_id <= mshr_update_pld_1.txnid.direction_id; 
+    end
  
     //assign mshr_out_pld.valid               = mshr_entry_pld_reg_file;//TODO:
     assign mshr_out_pld.valid               = active;
@@ -220,7 +225,7 @@ module vec_cache_mshr_entry
     end
     
     //assign evict_rd_vld_0                   = evict_alloc_vld && hazard_free && ~state_evict_sent;//evict is read, readout data, write into Evict data buffer
-    assign evict_rd_vld_0                   = hazard_free && ~state_evict_sent;
+    assign evict_rd_vld_0                   = hazard_free && ~state_evict_sent                      ;
     assign evict_rd_pld_0.txnid.direction_id= mshr_entry_pld_reg_file.txnid.direction_id            ;
     assign evict_rd_pld_0.txnid.master_id   = mshr_entry_pld_reg_file.txnid.master_id               ;
     assign evict_rd_pld_0.txnid.mode        = mshr_entry_pld_reg_file.txnid.mode                    ;
@@ -234,7 +239,7 @@ module vec_cache_mshr_entry
     assign evict_rd_pld_0.dest_ram_id       = mshr_entry_pld_reg_file.dest_ram_id                   ;
     assign evict_rd_pld_0.rob_entry_id      = mshr_entry_pld_reg_file.alloc_idx                     ;
     //assign evict_rd_pld_0.db_entry_id       = {evict_alloc_idx,2'b00}                               ;
-    assign evict_rd_pld_0.db_entry_id       = {mshr_entry_pld_reg_file.alloc_idx,2'b00};
+    assign evict_rd_pld_0.db_entry_id       = {mshr_entry_pld_reg_file.alloc_idx,2'b00}             ;
     assign evict_rd_pld_0.last              = 1'b0;
     assign evict_rd_pld_0.sideband          = mshr_entry_pld_reg_file.sideband                      ;
     //assign evict_rd_pld_0.req_num           = 2'd0;
@@ -258,8 +263,7 @@ module vec_cache_mshr_entry
     assign evict_rd_pld_1.last              = 1'b0;
     assign evict_rd_pld_1.sideband          = mshr_entry_pld_reg_file.sideband                      ;
     //assign evict_rd_pld_1.req_num       = 2'd1;
-    //
-    assign evict_rd_vld_2                   = hazard_free && ~state_evict_sent   ;
+    assign evict_rd_vld_2                   = hazard_free && ~state_evict_sent                      ;
     assign evict_rd_pld_2.txnid.direction_id= mshr_entry_pld_reg_file.txnid.direction_id            ;
     assign evict_rd_pld_2.txnid.master_id   = mshr_entry_pld_reg_file.txnid.master_id               ;
     assign evict_rd_pld_2.txnid.mode        = mshr_entry_pld_reg_file.txnid.mode                    ;
@@ -352,16 +356,19 @@ module vec_cache_mshr_entry
         else if(linefill_done )                                     state_linefill_done <= 1'b1  ;
     end   
 
-    //assign linefill_alloc_rdy                = downstream_txreq_vld && downstream_txreq_rdy;
-    assign downstream_txreq_vld              = linefill_alloc_vld && (hazard_free && (~state_linefill_sent) && state_evict_dram_clean) ;
+    
+    //assign downstream_txreq_vld              = linefill_alloc_vld && (hazard_free && (~state_linefill_sent) && state_evict_dram_clean) ;
+    assign downstream_txreq_vld              = (hazard_free && (~state_linefill_sent) && state_evict_dram_clean) ;
     assign downstream_txreq_pld.txnid        = mshr_entry_pld_reg_file.txnid        ;
+    assign downstream_txreq_pld.opcode       = mshr_entry_pld_reg_file.opcode       ;
     assign downstream_txreq_pld.addr.tag     = mshr_entry_pld_reg_file.req_tag      ;
     assign downstream_txreq_pld.addr.index   = mshr_entry_pld_reg_file.index        ;
     assign downstream_txreq_pld.addr.offset  = mshr_entry_pld_reg_file.offset       ;
     assign downstream_txreq_pld.way          = mshr_entry_pld_reg_file.way          ;
-    //assign downstream_txreq_pld.hash_id      = mshr_entry_pld_reg_file.hash_id  ;
+    //assign downstream_txreq_pld.hash_id      = mshr_entry_pld_reg_file.hash_id      ;
     assign downstream_txreq_pld.dest_ram_id  = mshr_entry_pld_reg_file.dest_ram_id  ;
-    assign downstream_txreq_pld.db_entry_id  = linefill_alloc_idx                   ;
+    //assign downstream_txreq_pld.db_entry_id  = linefill_alloc_idx                   ;
+    assign downstream_txreq_pld.db_entry_id  = 'b0                   ;
     assign downstream_txreq_pld.rob_entry_id = mshr_entry_pld_reg_file.alloc_idx    ;
     assign downstream_txreq_pld.sideband     = mshr_entry_pld_reg_file.sideband     ;
    
