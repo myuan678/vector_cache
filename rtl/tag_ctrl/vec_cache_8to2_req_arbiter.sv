@@ -50,27 +50,24 @@ module vec_cache_8to2_req_arbiter
         .grant_pld(grant_pld    ));
 
 
-    assign out_grant_vld_0    = grant_vld[0] && mshr_alloc_vld_0;
-    assign out_grant_vld_1    = grant_vld[1] && mshr_alloc_vld_1;
+    assign out_grant_vld_0              = grant_vld[0] && mshr_alloc_vld_0;
+    assign out_grant_vld_1              = grant_vld[1] && mshr_alloc_vld_1;
 
-    //assign out_grant_pld_0    = grant_pld[0]                    ;
-    //assign out_grant_pld_1    = grant_pld[1]                    ;
+    assign out_grant_pld_0.addr         = grant_pld[0].addr        ;
+    assign out_grant_pld_0.txn_id       = grant_pld[0].txn_id      ;
+    assign out_grant_pld_0.sideband     = grant_pld[0].sideband    ;
+    assign out_grant_pld_0.strb         = grant_pld[0].strb        ;
+    assign out_grant_pld_0.opcode       = grant_pld[0].opcode      ;
+    assign out_grant_pld_0.db_entry_id  = grant_pld[0].db_entry_id ;
+    assign out_grant_pld_0.rob_entry_id = mshr_alloc_idx_0         ;
 
-    assign out_grant_pld_0.cmd_addr      = grant_pld[0].cmd_addr        ;
-    assign out_grant_pld_0.cmd_txnid     = grant_pld[0].cmd_txnid       ;
-    assign out_grant_pld_0.cmd_sideband  = grant_pld[0].cmd_sideband    ;
-    assign out_grant_pld_0.strb          = grant_pld[0].strb            ;
-    assign out_grant_pld_0.cmd_opcode    = grant_pld[0].cmd_opcode      ;
-    assign out_grant_pld_0.db_entry_id   = grant_pld[0].db_entry_id     ;
-    assign out_grant_pld_0.rob_entry_id  = mshr_alloc_idx_0             ;
-
-    assign out_grant_pld_1.cmd_addr      = grant_pld[1].cmd_addr        ;
-    assign out_grant_pld_1.cmd_txnid     = grant_pld[1].cmd_txnid       ;
-    assign out_grant_pld_1.cmd_sideband  = grant_pld[1].cmd_sideband    ;
-    assign out_grant_pld_1.strb          = grant_pld[1].strb            ;
-    assign out_grant_pld_1.cmd_opcode    = grant_pld[1].cmd_opcode      ;
-    assign out_grant_pld_1.db_entry_id   = grant_pld[1].db_entry_id     ;
-    assign out_grant_pld_1.rob_entry_id  = mshr_alloc_idx_1             ;
+    assign out_grant_pld_1.addr         = grant_pld[1].addr        ;
+    assign out_grant_pld_1.txn_id       = grant_pld[1].txn_id      ;
+    assign out_grant_pld_1.sideband     = grant_pld[1].sideband    ;
+    assign out_grant_pld_1.strb         = grant_pld[1].strb        ;
+    assign out_grant_pld_1.opcode       = grant_pld[1].opcode      ;
+    assign out_grant_pld_1.db_entry_id  = grant_pld[1].db_entry_id ;
+    assign out_grant_pld_1.rob_entry_id = mshr_alloc_idx_1         ;
 
 
 
@@ -79,7 +76,7 @@ module vec_cache_8to2_req_arbiter
             assign v_req_rdy[i] = v_rdy[i] && (mshr_alloc_vld_0 || mshr_alloc_vld_1);
         end
     endgenerate
-    //assign v_req_rdy          = v_rdy && {REQ_NUM{mshr_alloc_vld}};
+
     assign mshr_alloc_rdy_0     = out_grant_vld_0  && out_grant_rdy  ;
     assign mshr_alloc_rdy_1     = out_grant_vld_1  && out_grant_rdy  ;
 
