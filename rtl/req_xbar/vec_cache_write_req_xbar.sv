@@ -37,13 +37,13 @@ import vector_cache_pkg::*;
 
     generate
         for(genvar i=0;i<W_REQ_NUM;i=i+1)begin:WEST_WR
-            assign in_wr_pld[i].cmd_pld.cmd_addr      = wr_cmd_pld[i].cmd_addr      ;
-            assign in_wr_pld[i].cmd_pld.cmd_txnid     = wr_cmd_pld[i].cmd_txnid     ;
-            assign in_wr_pld[i].cmd_pld.cmd_sideband  = wr_cmd_pld[i].cmd_sideband  ;
-            assign in_wr_pld[i].data                  = wr_cmd_pld[i].data          ;
-            assign in_wr_pld[i].cmd_pld.strb          = wr_cmd_pld[i].strb          ;
-            //assign in_wr_pld[i].cmd_pld.cmd_opcode    = `VEC_CACHE_CMD_WRITE        ; //1 is write
-            assign in_wr_pld[i].cmd_pld.cmd_opcode    = 2'd1        ; 
+            assign in_wr_pld[i].cmd_pld.addr      = wr_cmd_pld[i].cmd_addr      ;
+            assign in_wr_pld[i].cmd_pld.txn_id    = wr_cmd_pld[i].cmd_txn_id    ;
+            assign in_wr_pld[i].cmd_pld.sideband  = wr_cmd_pld[i].cmd_sideband  ;
+            assign in_wr_pld[i].data              = wr_cmd_pld[i].data          ;
+            assign in_wr_pld[i].cmd_pld.strb      = wr_cmd_pld[i].strb          ;
+            assign in_wr_pld[i].cmd_pld.opcode    = `VEC_CACHE_CMD_WRITE        ; //1 is write
+            //assign in_wr_pld[i].cmd_pld.cmd_opcode    = 2'd1        ; 
         end
     endgenerate
 
@@ -85,12 +85,11 @@ import vector_cache_pkg::*;
 
     generate
         for(genvar i=0;i<4;i=i+1)begin: Mto4_XBAR_out_gen
-            //assign sel_wr_pld[i].cmd_vld      = sel_full_wr_pld[i].cmd_pld.cmd_vld;
-            assign sel_wr_pld[i].cmd_addr     = sel_full_wr_pld[i].cmd_pld.cmd_addr;
-            assign sel_wr_pld[i].cmd_txnid    = sel_full_wr_pld[i].cmd_pld.cmd_txnid;
-            assign sel_wr_pld[i].cmd_sideband = sel_full_wr_pld[i].cmd_pld.cmd_sideband;
+            assign sel_wr_pld[i].addr         = sel_full_wr_pld[i].cmd_pld.addr;
+            assign sel_wr_pld[i].txn_id       = sel_full_wr_pld[i].cmd_pld.txn_id;
+            assign sel_wr_pld[i].sideband     = sel_full_wr_pld[i].cmd_pld.sideband;
             assign sel_wr_pld[i].strb         = sel_full_wr_pld[i].cmd_pld.strb;
-            assign sel_wr_pld[i].cmd_opcode   = sel_full_wr_pld[i].cmd_pld.cmd_opcode;
+            assign sel_wr_pld[i].opcode       = sel_full_wr_pld[i].cmd_pld.opcode;
             assign sel_wr_pld[i].db_entry_id  = alloc_idx[i];
             assign sel_wr_pld[i].rob_entry_id = 'b0;//tmp,在8to2arb赋值
 
