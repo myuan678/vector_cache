@@ -44,7 +44,7 @@ package vector_cache_pkg;
     localparam integer unsigned TAG_RAM_WIDTH   = WAY_NUM*(TAG_WIDTH+2);
     
 
-    localparam integer unsigned MSHR_ENTRY_NUM  = 64;
+    localparam integer unsigned MSHR_ENTRY_NUM  = 16;
     localparam integer unsigned MSHR_ENTRY_IDX_WIDTH = $clog2(MSHR_ENTRY_NUM);
     localparam integer unsigned TXNID_WIDTH     = 5 ;
     localparam integer unsigned SIDEBAND_WIDTH  = 10;
@@ -80,7 +80,7 @@ package vector_cache_pkg;
     localparam integer unsigned SRD_REQ_NUM = 8; //south rdata num
 
     localparam integer unsigned DATA_WIDTH           = 1024  ;
-    localparam integer unsigned READ_SRAM_DELAY      = 10    ; 
+    localparam integer unsigned READ_SRAM_DELAY      = 11    ; 
     localparam integer unsigned EVICT_CLEAN_DELAY    = 15    ; 
     localparam integer unsigned EVICT_DOWN_DELAY     = 20    ;
     //localparam integer unsigned ARB_TO_LFDB_DELAY    = 5     ;
@@ -119,13 +119,13 @@ package vector_cache_pkg;
 
     typedef struct packed {
         addr_t                           cmd_addr    ;
-        txnid_t                          cmd_txnid   ;
+        txnid_t                          cmd_txn_id  ;
         logic [SIDEBAND_WIDTH-1      :0] cmd_sideband;
     } input_read_cmd_pld_t;
 
     typedef struct packed {
         addr_t                           cmd_addr    ;
-        txnid_t                          cmd_txnid   ;
+        txnid_t                          cmd_txn_id   ;
         logic [SIDEBAND_WIDTH-1      :0] cmd_sideband;
         logic [127                   :0] strb        ;
         logic [1023                  :0] data        ;
@@ -141,20 +141,20 @@ package vector_cache_pkg;
 
 
     typedef struct packed {
-        addr_t                           cmd_addr    ;
-        txnid_t                          cmd_txnid   ;
-        logic [SIDEBAND_WIDTH-1      :0] cmd_sideband;
+        addr_t                           addr        ;
+        txnid_t                          txn_id      ;
+        logic [SIDEBAND_WIDTH-1      :0] sideband    ;
         logic [127                   :0] strb        ;
-        logic [OP_WIDTH-1            :0] cmd_opcode  ;  //1是write，2是read      // //0write; 1read//0write; 1read; 2linefill; 3evict
+        logic [OP_WIDTH-1            :0] opcode      ;  //1是write，2是read      // //0write; 1read//0write; 1read; 2linefill; 3evict
         logic [DB_ENTRY_IDX_WIDTH-1  :0] db_entry_id ;
         logic [MSHR_ENTRY_IDX_WIDTH-1:0] rob_entry_id; 
     } input_req_pld_t;
 
     typedef struct packed {
         logic [INDEX_WIDTH-1       :0] index       ;
-        logic [OFFSET_WIDTH-1      :0] offset      ;
         logic [TAG_WIDTH-1         :0] tag         ;
-        logic [$clog2(WAY_NUM)-1   :0] way         ; //way id 
+        logic [WAY_NUM-1           :0] way_oh      ;
+        //logic [$clog2(WAY_NUM)-1   :0] way         ; //way id 
     } wr_buf_pld_t;
 
     typedef struct packed {
@@ -170,7 +170,7 @@ package vector_cache_pkg;
     
 
     typedef struct packed {
-        txnid_t                             txnid           ;//txnid的低两位作为方向id,高位作为master id
+        txnid_t                             txn_id          ;//txnid的低两位作为方向id,高位作为master id
         logic [OP_WIDTH-1               :0] opcode          ;//write(0) or read(1) or evict(2) or linefill(3) 
         logic [TAG_WIDTH-1              :0] tag             ;
         logic [INDEX_WIDTH-1            :0] index           ;
@@ -199,41 +199,33 @@ package vector_cache_pkg;
 
     typedef struct packed{
         logic                               valid         ;
-        txnid_t                             txnid         ;
-        logic [1:0]                         hash_id       ;
-        dest_ram_id_t                       dest_ram_id   ;
+        txnid_t                             txn_id        ;
+        logic [OP_WIDTH-1       :0]         opcode        ;
+        logic [SIDEBAND_WIDTH-1 :0]         sideband      ; 
         logic [INDEX_WIDTH-1    :0]         index         ;
         logic [OFFSET_WIDTH-1   :0]         offset        ;
-        logic [TAG_WIDTH-1      :0]         req_tag       ;
-        logic [$clog2(WAY_NUM)-1:0]         way           ;
-        logic                               is_read       ;
-        logic                               is_write      ;
+        logic [TAG_WIDTH-1      :0]         tag           ;
+        logic [$clog2(WAY_NUM)-1:0]         way           ;     
         logic                               hit           ;
-        logic                               need_linefill ;
         logic                               need_evict    ;
         logic [TAG_WIDTH-1:0]               evict_tag     ;
         logic [MSHR_ENTRY_NUM-1:0]          hzd_bitmap    ;
-        logic [MSHR_ENTRY_NUM-1:0]          release_bitmap;
         logic                               hzd_pass      ; 
-        logic [MSHR_ENTRY_IDX_WIDTH-1:0]    alloc_idx     ;
-        logic [SIDEBAND_WIDTH-1 :0]         sideband      ; 
+        logic [MSHR_ENTRY_IDX_WIDTH-1:0]    rob_entry_id  ; 
         logic [DB_ENTRY_IDX_WIDTH-1:0]      wdb_entry_id  ;
     } mshr_entry_t;
 
     typedef struct packed{
         logic                               valid         ;
-        txnid_t                             txnid         ;
+        txnid_t                             txn_id         ;
         logic [INDEX_WIDTH-1    :0]         index         ;
         logic [TAG_WIDTH-1      :0]         tag           ;
         logic [TAG_WIDTH-1:0]               evict_tag     ;
-        logic                               release_bit;
-        //logic [MSHR_ENTRY_NUM-1:0]          release_bitmap;
     } hzd_mshr_pld_t;
 
     
-
     typedef struct packed {
-        txnid_t                     txnid;
+        txnid_t                     txn_id;
         logic [SIDEBAND_WIDTH-1 :0] sideband;
     }wr_resp_pld_t;
 
@@ -241,13 +233,13 @@ package vector_cache_pkg;
     typedef struct packed{
         logic [MSHR_ENTRY_IDX_WIDTH-1:0] rob_entry_id;
         logic [DB_ENTRY_IDX_WIDTH-1  :0] db_entry_id ;
-        txnid_t                          txnid       ;
+        txnid_t                          txn_id      ;
         logic [SIDEBAND_WIDTH-1      :0] sideband    ;
         logic [1                     :0] hash_id     ;
     } bresp_pld_t;
 
     typedef struct packed{
-        txnid_t                          txnid       ;
+        txnid_t                          txn_id      ;
         logic [OP_WIDTH-1       :0]      opcode      ;
         addr_t                           addr        ;
         logic [WAY_NUM-1        :0]      way         ;
@@ -273,20 +265,20 @@ package vector_cache_pkg;
     typedef struct packed{
         logic  [1023                    :0] data        ;
         logic  [MSHR_ENTRY_IDX_WIDTH-1  :0] rob_entry_id;
-        txnid_t                             txnid       ;
+        txnid_t                             txn_id      ;
         logic  [SIDEBAND_WIDTH-1        :0] sideband    ;
     }us_data_pld_t;
 
     typedef struct packed{
         logic  [MSHR_ENTRY_IDX_WIDTH-1  :0] rob_entry_id;
         logic  [DB_ENTRY_IDX_WIDTH-1    :0] db_entry_id ;
-        txnid_t                             txnid       ;
+        txnid_t                             txn_id       ;
         logic  [SIDEBAND_WIDTH-1        :0] sideband    ;
     }read_rdb_addr_t;
     typedef struct packed{
         logic  [MSHR_ENTRY_IDX_WIDTH-1  :0] rob_entry_id;
         logic  [DB_ENTRY_IDX_WIDTH-1    :0] db_entry_id ;
-        txnid_t                             txnid       ;
+        txnid_t                             txn_id      ;
         logic  [SIDEBAND_WIDTH-1        :0] sideband    ;
     }rw_rdb_pld_t;
 
@@ -297,7 +289,7 @@ package vector_cache_pkg;
         logic                               last        ;
         logic  [MSHR_ENTRY_IDX_WIDTH-1  :0] rob_entry_id;
         logic  [DB_ENTRY_IDX_WIDTH-1    :0] db_entry_id ;
-        txnid_t                             txnid       ;
+        txnid_t                             txn_id      ;
         logic  [SIDEBAND_WIDTH-1        :0] sideband    ;
     }evict_to_ds_pld_t;
     
@@ -306,12 +298,12 @@ package vector_cache_pkg;
 //sram_2inst opcode def
     typedef struct packed{
         logic [8:0]     addr       ;
-        txnid_t         txnid      ;
+        txnid_t         txn_id     ;
         dest_ram_id_t   dest_ram_id; //最高2bit为hash id，接下来的3bit为dest ram id，5bit确定是哪一个block的哪一个hash的哪一个ram
         logic           mode       ;
         logic [1:0]     byte_sel   ;
-        logic           opcode     ; //read: 0read; 1 evict read
-    } sram_inst_cmd_t;              // write: 0 write; 1linefill
+        logic [1:0]     opcode     ; //read: 0read; 1 evict read;// write: 0 write; 1linefill
+    } sram_inst_cmd_t;               //
 
     
     typedef struct packed {

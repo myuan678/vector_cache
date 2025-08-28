@@ -1,8 +1,8 @@
 module vec_cache_ctrl 
     import vector_cache_pkg::*;    
     (
-    input  logic                                        clk     ,
-    input  logic                                        rst_n   ,
+    input  logic                                        clk                                    ,
+    input  logic                                        rst_n                                  ,
 
     input  logic  [7:0]                                 hash_req_vld                           , 
     input  input_req_pld_t                              hash_req_pld [7:0]                     ,
@@ -50,46 +50,46 @@ module vec_cache_ctrl
     input  logic [$clog2(RW_DB_ENTRY_NUM/4)-1:0]        linefill_alloc_idx                      ,
     output logic                                        linefill_alloc_rdy                      ,
 
-    input  logic                                        w_rdb_alloc_nfull                       ,
-    input  logic                                        e_rdb_alloc_nfull                       ,
-    input  logic                                        s_rdb_alloc_nfull                       ,
-    input  logic                                        n_rdb_alloc_nfull                       ,
+    input  logic                                        rdb_alloc_nfull_west                    ,
+    input  logic                                        rdb_alloc_nfull_east                    ,
+    input  logic                                        rdb_alloc_nfull_south                   ,
+    input  logic                                        rdb_alloc_nfull_north                   ,
 
     input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             evict_clean_idx                         ,
     input  logic                                        evict_clean                             ,
     input  logic                                        ds_txreq_done                           ,
     input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             ds_txreq_done_idx                       ,
-    input  logic [$clog2(LFDB_ENTRY_NUM/4)-1:0]         ds_txreq_done_db_id                     ,
+    input  logic [$clog2(LFDB_ENTRY_NUM/4)-1:0]         ds_txreq_done_db_entry_id               ,
     input  logic                                        linefill_done                           ,
     input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             linefill_done_idx                       ,
 
-    input  logic                                        west_rd_done                            ,
-    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             west_rd_done_idx                        ,
-    input  logic                                        east_rd_done                            ,
-    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             east_rd_done_idx                        ,
-    input  logic                                        south_rd_done                           ,
-    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             south_rd_done_idx                       ,
-    input  logic                                        north_rd_done                           ,
-    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             north_rd_done_idx                       ,
+    input  logic                                        rd_done_west                            ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             rd_done_idx_west                        ,
+    input  logic                                        rd_done_east                            ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             rd_done_idx_east                        ,
+    input  logic                                        rd_done_south                           ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             rd_done_idx_south                       ,
+    input  logic                                        rd_done_north                           ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             rd_done_idx_north                       ,
 
-    input  logic                                        west_wr_done                            ,
-    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             west_wr_done_idx                        ,
-    input  logic                                        east_wr_done                            ,
-    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             east_wr_done_idx                        ,
-    input  logic                                        south_wr_done                           ,
-    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             south_wr_done_idx                       ,
-    input  logic                                        north_wr_done                           ,
-    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             north_wr_done_idx                       ,
+    input  logic                                        wr_done_west                            ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             wr_done_idx_west                        ,
+    input  logic                                        wr_done_east                            ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             wr_done_idx_east                        ,
+    input  logic                                        wr_done_south                           ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             wr_done_idx_south                       ,
+    input  logic                                        wr_done_north                           ,
+    input  logic [MSHR_ENTRY_IDX_WIDTH-1:0]             wr_done_idx_north                       ,
     //Bresp
-    input  logic                                        bresp_vld                               ,//Bresp evict done
-    input  bresp_pld_t                                  bresp_pld                               ,//Bresp //txnid+sideband
-    output logic                                        bresp_rdy                               //Bresp 
+    input  logic                                        evict_done_resp_vld                     ,//Bresp evict done
+    input  bresp_pld_t                                  evict_done_resp_pld                     ,//Bresp //txnid+sideband
+    output logic                                        evict_done_resp_rdy                               //Bresp 
 );
 
-    logic                                               tag_req_vld_A                       ;
-    logic                                               tag_req_vld_B                       ;
-    input_req_pld_t                                     tag_req_pld_A                       ;
-    input_req_pld_t                                     tag_req_pld_B                       ;
+    logic                                               tag_req_vld_0                       ;
+    logic                                               tag_req_vld_1                       ;
+    input_req_pld_t                                     tag_req_pld_0                       ;
+    input_req_pld_t                                     tag_req_pld_1                       ;
     logic                                               tag_req_rdy                         ;
     hzd_mshr_pld_t                                      v_mshr_entry_pld[MSHR_ENTRY_NUM-1:0];
     logic                                               mshr_alloc_vld_0                    ;
@@ -118,10 +118,10 @@ module vec_cache_ctrl
         .mshr_alloc_vld_1               (mshr_alloc_vld_1           ),
         .mshr_alloc_idx_1               (mshr_alloc_idx_1           ),
         .mshr_alloc_rdy_1               (mshr_alloc_rdy_1           ),
-        .out_grant_vld_0                (tag_req_vld_A              ),
-        .out_grant_vld_1                (tag_req_vld_B              ),
-        .out_grant_pld_0                (tag_req_pld_A              ),
-        .out_grant_pld_1                (tag_req_pld_B              ),
+        .out_grant_vld_0                (tag_req_vld_0              ),
+        .out_grant_vld_1                (tag_req_vld_1              ),
+        .out_grant_pld_0                (tag_req_pld_0              ),
+        .out_grant_pld_1                (tag_req_pld_1              ),
         .out_grant_rdy                  (tag_req_rdy                ));
 
     vec_cache_tag_ctrl u_tag_pipe(
@@ -131,16 +131,12 @@ module vec_cache_ctrl
         .v_wr_resp_pld_0                (v_wr_resp_pld_0            ),
         .v_wr_resp_vld_1                (v_wr_resp_vld_1            ),
         .v_wr_resp_pld_1                (v_wr_resp_pld_1            ),
-        .tag_req_vld_A                  (tag_req_vld_A              ),
-        .tag_req_vld_B                  (tag_req_vld_B              ),
-        .tag_req_pld_A                  (tag_req_pld_A              ),
-        .tag_req_pld_B                  (tag_req_pld_B              ),
+        .tag_req_vld_0                  (tag_req_vld_0              ),
+        .tag_req_vld_1                  (tag_req_vld_1              ),
+        .tag_req_pld_0                  (tag_req_pld_0              ),
+        .tag_req_pld_1                  (tag_req_pld_1              ),
         .tag_req_rdy                    (tag_req_rdy                ),
         .v_mshr_entry_pld               (v_mshr_entry_pld           ),
-        //.mshr_alloc_idx_0               (mshr_alloc_idx_0           ),
-        //.mshr_alloc_idx_1               (mshr_alloc_idx_1           ),
-        //.mshr_alloc_vld_0               (mshr_alloc_vld_0           ),
-        //.mshr_alloc_vld_1               (mshr_alloc_vld_1           ),
         .mshr_update_en_0               (mshr_update_en_0           ),
         .mshr_update_pld_0              (mshr_update_pld_0          ),
         .mshr_update_en_1               (mshr_update_en_1           ),
@@ -191,39 +187,39 @@ module vec_cache_ctrl
         
         .ds_txreq_done                  (ds_txreq_done              ),
         .ds_txreq_done_idx              (ds_txreq_done_idx          ),
-        .ds_txreq_done_db_id            (ds_txreq_done_db_id        ),
+        .ds_txreq_done_db_entry_id      (ds_txreq_done_db_entry_id  ),
         .linefill_done                  (linefill_done              ),
         .linefill_done_idx              (linefill_done_idx          ),
 
-        .west_rd_done                   (west_rd_done               ),
-        .west_rd_done_idx               (west_rd_done_idx           ),
-        .east_rd_done                   (east_rd_done               ),
-        .east_rd_done_idx               (east_rd_done_idx           ),
-        .south_rd_done                  (south_rd_done              ),
-        .south_rd_done_idx              (south_rd_done_idx          ),
-        .north_rd_done                  (north_rd_done              ),
-        .north_rd_done_idx              (north_rd_done_idx          ),
+        .rd_done_west                   (rd_done_west               ),
+        .rd_done_idx_west               (rd_done_idx_west           ),
+        .rd_done_east                   (rd_done_east               ),
+        .rd_done_idx_east               (rd_done_idx_east           ),
+        .rd_done_south                  (rd_done_south              ),
+        .rd_done_idx_south              (rd_done_idx_south          ),
+        .rd_done_north                  (rd_done_north              ),
+        .rd_done_idx_north              (rd_done_idx_north          ),
 
-        .west_wr_done                   (west_wr_done               ),
-        .west_wr_done_idx               (west_wr_done_idx           ),
-        .east_wr_done                   (east_wr_done               ),
-        .east_wr_done_idx               (east_wr_done_idx           ),
-        .south_wr_done                  (south_wr_done              ),
-        .south_wr_done_idx              (south_wr_done_idx          ),
-        .north_wr_done                  (north_wr_done              ),
-        .north_wr_done_idx              (north_wr_done_idx          ),
+        .wr_done_west                   (wr_done_west               ),
+        .wr_done_idx_west               (wr_done_idx_west           ),
+        .wr_done_east                   (wr_done_east               ),
+        .wr_done_idx_east               (wr_done_idx_east           ),
+        .wr_done_south                  (wr_done_south              ),
+        .wr_done_idx_south              (wr_done_idx_south          ),
+        .wr_done_north                  (wr_done_north              ),
+        .wr_done_idx_north              (wr_done_idx_north          ),
         
         .evict_clean                    (evict_clean                ),
         .evict_clean_idx                (evict_clean_idx            ),
-        .bresp_vld                      (bresp_vld                  ),
-        .bresp_pld                      (bresp_pld                  ),
-        .bresp_rdy                      (bresp_rdy                  ), 
+        .evict_done_resp_vld            (evict_done_resp_vld        ),
+        .evict_done_resp_pld            (evict_done_resp_pld        ),
+        .evict_done_resp_rdy            (evict_done_resp_rdy        ), 
         .v_mshr_entry_pld_out           (v_mshr_entry_pld           ),
 
-        .w_rdb_alloc_nfull              (w_rdb_alloc_nfull          ),
-        .e_rdb_alloc_nfull              (e_rdb_alloc_nfull          ),
-        .s_rdb_alloc_nfull              (s_rdb_alloc_nfull          ),
-        .n_rdb_alloc_nfull              (n_rdb_alloc_nfull          ),
+        .rdb_alloc_nfull_west           (rdb_alloc_nfull_west       ),
+        .rdb_alloc_nfull_east           (rdb_alloc_nfull_east       ),
+        .rdb_alloc_nfull_south          (rdb_alloc_nfull_south      ),
+        .rdb_alloc_nfull_north          (rdb_alloc_nfull_north      ),
 
         .linefill_alloc_vld             (linefill_alloc_vld         ),
         .linefill_alloc_idx             (linefill_alloc_idx         ),
