@@ -14,7 +14,7 @@ module vec_cache_rd_data_master_decode
     logic [$clog2(N)-1:0]             select [M-1:0];
     generate
         for(genvar i=0;i<M;i=i+1)begin
-            assign select[i] = in_pld[i].txnid.master_id;
+            assign select[i] = in_pld[i].txn_id.master_id;
         end
     endgenerate
 

@@ -46,7 +46,7 @@ module vec_cache_mshr_entry
     output arb_out_req_t                       linefill_req_pld           ,
 
     input  logic                               ds_txreq_done              ,
-    input  logic [$clog2(LFDB_ENTRY_NUM/4)-1:0]ds_txreq_done_db_id        ,
+    input  logic [$clog2(LFDB_ENTRY_NUM/4)-1:0]ds_txreq_done_db_entry_id  ,
     input  logic                               linefill_done              ,
     input  logic                               evict_clean                ,
     input  logic                               evict_done                 ,
@@ -115,7 +115,7 @@ module vec_cache_mshr_entry
             mshr_entry_pld_reg_file <= mshr_update_pld;
         end
         else if(ds_txreq_done)   begin
-            mshr_entry_pld_reg_file.wdb_entry_id <= ds_txreq_done_db_id;
+            mshr_entry_pld_reg_file.wdb_entry_id <= ds_txreq_done_db_entry_id;
         end
     end
 

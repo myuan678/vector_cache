@@ -71,17 +71,17 @@ import vector_cache_pkg::*;
     generate
         for(genvar i=0;i<8;i=i+1)begin
             assign read_ram_cmd[i].addr        = {west_read_cmd_pld_in[i].index[INDEX_WIDTH-4:0],west_read_cmd_pld_in[i].way};
-            assign read_ram_cmd[i].mode        = west_read_cmd_pld_in[i].txnid.mode     ;
-            assign read_ram_cmd[i].byte_sel    = west_read_cmd_pld_in[i].txnid.byte_sel ;
+            assign read_ram_cmd[i].mode        = west_read_cmd_pld_in[i].txn_id.mode     ;
+            assign read_ram_cmd[i].byte_sel    = west_read_cmd_pld_in[i].txn_id.byte_sel ;
             assign read_ram_cmd[i].dest_ram_id = {west_read_cmd_pld_in[i].hash_id,west_read_cmd_pld_in[i].index[INDEX_WIDTH-1:INDEX_WIDTH-3]};
-            assign read_ram_cmd[i].txnid       = west_read_cmd_pld_in[i].txnid          ;
+            assign read_ram_cmd[i].txn_id       = west_read_cmd_pld_in[i].txn_id          ;
             assign read_ram_cmd[i].opcode      = west_read_cmd_pld_in[i].opcode;
 
             assign write_ram_cmd[i].addr        = {east_write_cmd_pld_in[i].req_cmd_pld.index[INDEX_WIDTH-4:0],east_write_cmd_pld_in[i].req_cmd_pld.way};
-            assign write_ram_cmd[i].mode        = east_write_cmd_pld_in[i].req_cmd_pld.txnid.mode    ;
+            assign write_ram_cmd[i].mode        = east_write_cmd_pld_in[i].req_cmd_pld.txn_id.mode    ;
             assign write_ram_cmd[i].byte_sel    = east_write_cmd_pld_in[i].req_num                   ;
             assign write_ram_cmd[i].dest_ram_id = {east_write_cmd_pld_in[i].req_cmd_pld.hash_id,east_write_cmd_pld_in[i].req_cmd_pld.index[INDEX_WIDTH-1:INDEX_WIDTH-3]};
-            assign write_ram_cmd[i].txnid       = east_write_cmd_pld_in[i].req_cmd_pld.txnid         ;
+            assign write_ram_cmd[i].txn_id       = east_write_cmd_pld_in[i].req_cmd_pld.txn_id         ;
             assign write_ram_cmd[i].opcode      = east_write_cmd_pld_in[i].req_cmd_pld.opcode;
         end
     endgenerate
@@ -170,16 +170,16 @@ import vector_cache_pkg::*;
                 read_vld_1[i] = 'b0;
                 read_cmd_1[i] = 'b0;
                 if(read_ram_cmd_vld[2*i] && read_ram_cmd[2*i].dest_ram_id.channel_id==1'b0) begin
-                    read_vld_0[i]=read_ram_cmd_vld[2*i]; 
-                    read_cmd_0[i]=read_ram_cmd[2*i];
+                    read_vld_0[i] = read_ram_cmd_vld[2*i]; 
+                    read_cmd_0[i] = read_ram_cmd[2*i];
                 end
                 else if(read_ram_cmd_vld[2*i] && read_ram_cmd[2*i].dest_ram_id.channel_id==1'b1)begin
                     read_vld_1[i] = read_ram_cmd_vld[2*i]; 
-                    read_cmd_1[i]=read_ram_cmd[2*i];
+                    read_cmd_1[i] = read_ram_cmd[2*i];
                 end
                 else if(read_ram_cmd_vld[2*i+1] && read_ram_cmd[2*i+1].dest_ram_id.channel_id==1'b0)begin
-                    read_vld_0[i]=read_ram_cmd_vld[2*i+1]; 
-                    read_cmd_0[i]=read_ram_cmd[2*i+1];
+                    read_vld_0[i] = read_ram_cmd_vld[2*i+1]; 
+                    read_cmd_0[i] = read_ram_cmd[2*i+1];
                 end
                 else if(read_ram_cmd_vld[2*i+1] && read_ram_cmd[2*i+1].dest_ram_id.channel_id==1'b1) begin
                     read_vld_1[i] = read_ram_cmd_vld[2*i+1]; 

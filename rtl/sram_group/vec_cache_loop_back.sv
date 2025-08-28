@@ -35,7 +35,7 @@ module vec_cache_loop_back
     //rd east decode
     generate
         for(genvar i=0;i<8;i=i+1)begin
-            assign west_read_cmd_vld_out[i] = (west_read_cmd_pld_in[i].txnid.direction_id == 2'd1) ? 1'b0 : west_read_cmd_vld_in[i];
+            assign west_read_cmd_vld_out[i] = (west_read_cmd_pld_in[i].txn_id.direction_id == 2'd1) ? 1'b0 : west_read_cmd_vld_in[i];
             assign west_read_cmd_pld_out[i] = west_read_cmd_pld_in[i];
         end
     endgenerate
@@ -58,7 +58,7 @@ module vec_cache_loop_back
     generate
         for(genvar i=0;i<8;i=i+1)begin
             assign east_data_out[i]     = west_data_in[i] ;
-            assign east_data_out_vld[i] = (west_read_cmd_pld_in[i].txnid.direction_id == 2'd1) ? 1'b1: 1'b0;//TODO:
+            assign east_data_out_vld[i] = (west_read_cmd_pld_in[i].txn_id.direction_id == 2'd1) ? 1'b1: 1'b0;//TODO:
         end
     endgenerate
 
