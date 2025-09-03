@@ -258,7 +258,6 @@ module vec_cache_tag_ctrl
 //==========================================================================
 //        hit/miss check
 //==========================================================================
-    //----------------------------------------------------------
     //         weight update 
     always_ff@(posedge clk or negedge rst_n)begin
         if(!rst_n)    weight <= 'b0;
@@ -289,25 +288,25 @@ module vec_cache_tag_ctrl
     assign req1_hit_wr_tag_buf_0 = (req_pld_1.addr.tag==wr_tag_buf_pld_0.tag)&&(req_pld_1.addr.index== wr_tag_buf_pld_0.index);
     assign req1_hit_wr_tag_buf_1 = (req_pld_1.addr.tag==wr_tag_buf_pld_1.tag)&&(req_pld_1.addr.index== wr_tag_buf_pld_1.index);
     
-    assign wr_tag_buf_way_oh_0 = wr_tag_buf_pld_0.way_oh;
-    assign wr_tag_buf_way_oh_1 = wr_tag_buf_pld_1.way_oh;
+    assign wr_tag_buf_way_oh_0   = wr_tag_buf_pld_0.way_oh;
+    assign wr_tag_buf_way_oh_1   = wr_tag_buf_pld_1.way_oh;
 
-    assign hit_way_oh_0  = req0_hit_wr_tag_buf_0 ? wr_tag_buf_way_oh_0 :
-                           req0_hit_wr_tag_buf_1 ? wr_tag_buf_way_oh_1 : tag_ram_hit_way_oh_0;//hit ram or hit wr_tag_buf
-    assign hit_way_oh_1  = req1_hit_wr_tag_buf_0 ? wr_tag_buf_way_oh_0 : 
-                           req1_hit_wr_tag_buf_1 ? wr_tag_buf_way_oh_1 : tag_ram_hit_way_oh_1;
+    assign hit_way_oh_0          = req0_hit_wr_tag_buf_0 ? wr_tag_buf_way_oh_0 :
+                                   req0_hit_wr_tag_buf_1 ? wr_tag_buf_way_oh_1 : tag_ram_hit_way_oh_0;//hit ram or hit wr_tag_buf
+    assign hit_way_oh_1          = req1_hit_wr_tag_buf_0 ? wr_tag_buf_way_oh_0 : 
+                                   req1_hit_wr_tag_buf_1 ? wr_tag_buf_way_oh_1 : tag_ram_hit_way_oh_1;
 
-    assign tag_ram_hit_0  = |tag_ram_hit_way_oh_0;
-    assign tag_ram_hit_1  = |tag_ram_hit_way_oh_1;
+    assign tag_ram_hit_0        = |tag_ram_hit_way_oh_0;
+    assign tag_ram_hit_1        = |tag_ram_hit_way_oh_1;
 
-    assign hit_0          = tag_ram_hit_0 | req0_hit_wr_tag_buf_0 | req0_hit_wr_tag_buf_1;
-    assign hit_1          = tag_ram_hit_1 | req1_hit_wr_tag_buf_0 | req1_hit_wr_tag_buf_1;
-    assign miss_0         = ~hit_0;
-    assign miss_1         = ~hit_1;
-    assign evict_way_oh_0 = weight_oh; 
-    assign evict_way_oh_1 = weight_oh; 
-    assign dest_way_oh_0  = hit_0 ? hit_way_oh_0 : evict_way_oh_0;
-    assign dest_way_oh_1  = hit_1 ? hit_way_oh_1 : evict_way_oh_1;
+    assign hit_0                = tag_ram_hit_0 | req0_hit_wr_tag_buf_0 | req0_hit_wr_tag_buf_1;
+    assign hit_1                = tag_ram_hit_1 | req1_hit_wr_tag_buf_0 | req1_hit_wr_tag_buf_1;
+    assign miss_0               = ~hit_0;
+    assign miss_1               = ~hit_1;
+    assign evict_way_oh_0       = weight_oh; 
+    assign evict_way_oh_1       = weight_oh; 
+    assign dest_way_oh_0        = hit_0 ? hit_way_oh_0 : evict_way_oh_0;
+    assign dest_way_oh_1        = hit_1 ? hit_way_oh_1 : evict_way_oh_1;
     
     always_comb begin
         for(int i=0;i<WAY_NUM;i=i+1)begin
