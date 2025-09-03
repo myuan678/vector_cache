@@ -58,11 +58,6 @@ module vec_cache_sram_bank
     //parameter integer unsigned BLOCK_ID = 0 ;
     logic [1:0] group_id_col[7:0];
     logic [1:0] group_id_row[7:0];
-    generate
-        for(genvar i=0;i<8;i=i+1)begin:gen_block_id//group_id_col,访问第几列的block
-            assign group_id_col[i] = west_read_cmd_pld_in[i].dest_ram_id.block_id;
-        end
-    endgenerate
     
     
     logic [7    :0] switch_west_read_cmd_out_vld            ;
@@ -77,6 +72,12 @@ module vec_cache_sram_bank
     data_pld_t      switch_west_data_out            [7:0]   ;   
     logic [7    :0] mem_east_data_out_vld                   ; 
     data_pld_t      mem_east_data_out               [7:0]   ;     
+
+    generate
+        for(genvar i=0;i<8;i=i+1)begin:gen_block_id//group_id_col,访问第几列的block
+            assign group_id_col[i] = west_read_cmd_pld_in[i].dest_ram_id.block_id;
+        end
+    endgenerate
 
 
     vec_cache_mem_block #( 

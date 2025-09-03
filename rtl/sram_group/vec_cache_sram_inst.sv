@@ -28,13 +28,13 @@ module vec_cache_sram_inst
     logic [1    :0] rd_byte_sel;
     
     // enable  
-    assign en          = (write_vld | read_vld) ? 1'b1: 1'b0 ;
-    assign wr_en       = write_vld ? 1'b1:1'b0      ;
-    assign wr_byte_sel = write_cmd.byte_sel         ;
-    assign wr_mode     = write_cmd.mode             ;//mode=0,读写连续的32bit; mode=1 每32bit中读写一个byte
-    assign rd_byte_sel = read_cmd.byte_sel          ;
-    assign rd_mode     = read_cmd.mode              ;//mode=0,读写连续的32bit; mode=1 每32bit中读写一个byte
-    assign addr        = write_vld ? write_cmd.addr : read_cmd.addr;
+    assign en          = (write_vld | read_vld) ? 1'b1: 1'b0        ;
+    assign wr_en       = write_vld ? 1'b1:1'b0                      ;
+    assign wr_byte_sel = write_cmd.byte_sel                         ;
+    assign wr_mode     = write_cmd.mode                             ;//mode=0,读写连续的32bit; mode=1 每32bit中读写一个byte
+    assign rd_byte_sel = read_cmd.byte_sel                          ;
+    assign rd_mode     = read_cmd.mode                              ;//mode=0,读写连续的32bit; mode=1 每32bit中读写一个byte
+    assign addr        = write_vld ? write_cmd.addr : read_cmd.addr ;
 
     //mem_model #(
     //    //.ARGPARSE_KEY("HEX"),

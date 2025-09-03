@@ -41,55 +41,28 @@ module vec_cache_sram_2inst
     assign read_sel  = read_cmd_0.dest_ram_id.channel_id;
     assign write_sel = write_cmd_0.dest_ram_id.channel_id;
     
-    //always_ff@(posedge clk)begin
-    //    if(read_cmd_a.dest_ram_id[0] && read_cmd_b.dest_ram_id[0])begin
-    //        $error("ERROR: 2 requset in one hash group conflict error");
-    //    end
-    //    else if(read_cmd_a.dest_ram_id[0]==1'b0 && read_cmd_b.dest_ram_id[0]==1'b0)begin
-    //        $error("ERROR: 2 requset in one hash group conflict error");
-    //    end
-    //end
 
     always_comb begin
-        //if (read_sel==1'b0) begin
-            sram0_read_cmd = read_cmd_0  ;
-            sram0_read_vld = read_vld_0  ;
-
-            sram1_read_cmd = read_cmd_1  ;
-            sram1_read_vld = read_vld_1  ;
-        //end 
-        //else begin
-        //    sram0_read_cmd = read_cmd_1  ;
-        //    sram0_read_vld = read_vld_1  ;
-//
-        //    sram1_read_cmd = read_cmd_0  ;
-        //    sram1_read_vld = read_vld_0  ;
-        //end
+        sram0_read_cmd = read_cmd_0  ;
+        sram0_read_vld = read_vld_0  ;
+        sram1_read_cmd = read_cmd_1  ;
+        sram1_read_vld = read_vld_1  ;
     end
 
     always_comb begin
-        //if (write_sel==1'b0) begin
-            sram0_write_cmd = write_cmd_0 ;
-            sram0_wr_data   = wr_data_0   ;
-            sram0_write_vld = write_vld_0 ;
+        sram0_write_cmd = write_cmd_0 ;
+        sram0_wr_data   = wr_data_0   ;
+        sram0_write_vld = write_vld_0 ;
 
-            sram1_write_cmd = write_cmd_1 ;
-            sram1_wr_data   = wr_data_1   ;
-            sram1_write_vld = write_vld_1 ;
-        //end 
-        //else begin
-        //    sram0_write_cmd = write_cmd_1 ;
-        //    sram0_wr_data   = wr_data_1   ;
-        //    sram0_write_vld = write_vld_1 ;
-//
-        //    sram1_write_cmd = write_cmd_0 ;
-        //    sram1_wr_data   = wr_data_0   ;
-        //    sram1_write_vld = write_vld_0 ;
-        //end
+        sram1_write_cmd = write_cmd_1 ;
+        sram1_wr_data   = wr_data_1   ;
+        sram1_write_vld = write_vld_1 ;
     end
-    
-   
-    
+
+    always_comb begin
+        rd_data_0 = sram0_rd_data;
+        rd_data_1 = sram1_rd_data;
+    end
     
     vec_cache_sram_inst u_sram_inst_0 (
         .clk      (clk              ),
@@ -113,20 +86,7 @@ module vec_cache_sram_2inst
     );
 
 
-    always_ff@(posedge clk or negedge rst_n)begin
-        if(!rst_n)  read_sel_d <= 'b0;
-        else        read_sel_d <= read_sel;
-    end
-
-    always_comb begin
-        //if (read_sel_d==1'b0) begin
-            rd_data_0 = sram0_rd_data;
-            rd_data_1 = sram1_rd_data;
-        //end else begin
-        //    rd_data_0 = sram1_rd_data;
-        //    rd_data_1 = sram0_rd_data;
-        //end
-    end
+    
 
 
    
