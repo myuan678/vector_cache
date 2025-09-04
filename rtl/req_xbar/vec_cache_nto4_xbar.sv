@@ -29,11 +29,11 @@ module vec_cache_nto4_xbar #(
             always_comb begin
                 for (int i = 0; i < N; i++) begin
                     if (in_vld[i] && in_select[i] == out_idx[1:0]) begin
-                        sel_vld[i] = 1'b1;
-                        sel_pld[i] = in_pld[i];
+                        sel_vld[i] = 1'b1       ;
+                        sel_pld[i] = in_pld[i]  ;
                     end else begin
-                        sel_vld[i] = 1'b0;
-                        sel_pld[i] = '0;
+                        sel_vld[i] = 1'b0       ;
+                        sel_pld[i] = '0         ;
                     end
                 end
             end

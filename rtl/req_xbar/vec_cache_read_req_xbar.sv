@@ -28,13 +28,13 @@ module vec_cache_read_req_xbar
 
     generate
         for(genvar i=0;i<R_REQ_NUM;i=i+1)begin:WEST
-            assign in_rd_pld[i].addr      = rd_cmd_pld[i].cmd_addr      ;
-            assign in_rd_pld[i].txn_id    = rd_cmd_pld[i].cmd_txn_id    ;
-            assign in_rd_pld[i].sideband  = rd_cmd_pld[i].cmd_sideband  ;
-            assign in_rd_pld[i].strb      = 'b0                         ;
-            assign in_rd_pld[i].opcode    = `VEC_CACHE_CMD_READ         ;//2 is read opcode
-            assign in_rd_pld[i].db_entry_id   = 'b0;
-            assign in_rd_pld[i].rob_entry_id  = 'b0;
+            assign in_rd_pld[i].addr          = rd_cmd_pld[i].cmd_addr      ;
+            assign in_rd_pld[i].txn_id        = rd_cmd_pld[i].cmd_txn_id    ;
+            assign in_rd_pld[i].sideband      = rd_cmd_pld[i].cmd_sideband  ;
+            assign in_rd_pld[i].strb          = 'b0                         ;
+            assign in_rd_pld[i].opcode        = `VEC_CACHE_CMD_READ         ;//2 is read opcode
+            assign in_rd_pld[i].db_entry_id   = 'b0                         ;
+            assign in_rd_pld[i].rob_entry_id  = 'b0                         ;
         end
     endgenerate
 

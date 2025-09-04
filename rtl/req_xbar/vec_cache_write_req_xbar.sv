@@ -85,13 +85,13 @@ import vector_cache_pkg::*;
 
     generate
         for(genvar i=0;i<4;i=i+1)begin: Mto4_XBAR_out_gen
-            assign sel_wr_pld[i].addr         = sel_full_wr_pld[i].cmd_pld.addr;
-            assign sel_wr_pld[i].txn_id       = sel_full_wr_pld[i].cmd_pld.txn_id;
-            assign sel_wr_pld[i].sideband     = sel_full_wr_pld[i].cmd_pld.sideband;
-            assign sel_wr_pld[i].strb         = sel_full_wr_pld[i].cmd_pld.strb;
-            assign sel_wr_pld[i].opcode       = sel_full_wr_pld[i].cmd_pld.opcode;
-            assign sel_wr_pld[i].db_entry_id  = alloc_idx[i];
-            assign sel_wr_pld[i].rob_entry_id = 'b0;//tmp,在8to2arb赋值
+            assign sel_wr_pld[i].addr             = sel_full_wr_pld[i].cmd_pld.addr;
+            assign sel_wr_pld[i].txn_id           = sel_full_wr_pld[i].cmd_pld.txn_id;
+            assign sel_wr_pld[i].sideband         = sel_full_wr_pld[i].cmd_pld.sideband;
+            assign sel_wr_pld[i].strb             = sel_full_wr_pld[i].cmd_pld.strb;
+            assign sel_wr_pld[i].opcode           = sel_full_wr_pld[i].cmd_pld.opcode;
+            assign sel_wr_pld[i].db_entry_id      = alloc_idx[i];
+            assign sel_wr_pld[i].rob_entry_id     = 'b0;//在8to2arb赋值
 
             assign sel_wr_data_pld[i].data        = sel_full_wr_pld[i].data;
             assign sel_wr_data_pld[i].db_entry_id = alloc_idx[i]; 

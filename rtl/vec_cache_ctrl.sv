@@ -15,7 +15,6 @@ module vec_cache_ctrl
     output wr_resp_pld_t                                v_wr_resp_pld_1[3:0]                   , //txnid+sideband
 
     //arb out
-
     output logic                                        read_cmd_vld_west                   ,
     output logic                                        read_cmd_vld_east                   ,
     output logic                                        read_cmd_vld_south                  ,

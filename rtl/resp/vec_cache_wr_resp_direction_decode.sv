@@ -16,13 +16,13 @@ import vector_cache_pkg::*;
         for(genvar i=0;i<WIDTH;i=i+1)begin:direction_vld_gen
             always_comb begin
                 v_wresp_vld[i] = 'b0;
-                if(req_pld.opcode == `VEC_CACHE_CMD_WRITE)begin//写请求才需要回wresp,write 的opcode是1，
-                    if(req_vld && req_pld.txn_id.direction_id==i)begin //txnid的低两位作为方向id,高位作为master id
+                if(req_pld.opcode == `VEC_CACHE_CMD_WRITE)begin//写请求才需要回wresp
+                    if(req_vld && req_pld.txn_id.direction_id==i)begin 
                         v_wresp_vld[i] = 1'b1;
                     end
                 end
             end
-            assign v_wresp_pld[i].txn_id    = req_pld.txn_id;
+            assign v_wresp_pld[i].txn_id   = req_pld.txn_id;
             assign v_wresp_pld[i].sideband = req_pld.sideband;
         end
     endgenerate
