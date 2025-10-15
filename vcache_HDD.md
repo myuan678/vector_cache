@@ -26,7 +26,7 @@
 
 ### Read Response Hash Xbar
 
-对于读响应（即读数据），与写请求相反，每个xbar的输入为4，输出为N。可能受到上游的反压。
+对于读响应（即读数据） ，与写请求相反，每个xbar的输入为4，输出为N。可能受到上游的反压。
 
 ### Write Response Hash Xbar
 
@@ -41,7 +41,19 @@ Tag pipeline本身为双发射，因此在Tag pipeline输入端，需要一个8x
 
 对应地，Tag pipeline给各个Master的写响应信号，也有对应的2 to 4 xbar。这个xbar可以反压。 
 
+## Tag Pipeline arbiter & Tag RAM
 
+Tag pipeline本身为双发射,设计中有两份tag ram以供双发射请求同时查询，均为单口，由于在发生miss时采用超前更新策略更新tag ram，需要一个arbiter决定tag ram的双发射读/单写，优先写更新tag ram，可以反压上游8x2 xbar。
+
+对于读tag ram，需pre allocate ROB entry，对应于双发射，pre allocate两个ROB entry ID，不满足则反压上游。
+
+## Tag Pipeline ROB
+
+ROB用于记录需要访问data sram的请求，深度为M。
+对于读请求，需要记录请求信息，address hazard，替换算法结果以及behavior信息，对于写请求还需记录请求对应的Write data buffer的entry ID。
+对于访问下游的downstream_txreq请求，需要一个M to 1的仲裁器，可以被下游反压。
+对于访问可以data sram的请求，需要一个Issue arbiter来决定可执行的读写请求。
+ROB会接收读写完成信号，用于更新ROB entry状态。
 
 
 ## Tag Pipeline Issue Arbiter
@@ -54,15 +66,19 @@ Tag pipeline本身为双发射，因此在Tag pipeline输入端，需要一个8x
 为了解决这个问题，我们把仲裁器设置为2级。
 
 Stage 1: 先从所有的ROB中分别选出候选的4个读+4个写（分别来自于4个方向）+1个evict+1个linefill。
-Stage 2: 根据延迟信息，判断每个方向的读/写当前能不能够被发射，在所有能发射的候选者中选出2个发射。
+Stage 2: 根据延迟信息和数据channel占用信息，判断每个方向的读/写当前能不能够被发射，在所有能发射的候选者中选出2个发射。
 
 ### Delay Recorder
 
 每个指令发射后，都要经过一段时间才能抵达SRAM，并且不同的地址会对应不同的SRAM，不同方向上的指令会对应不同的延迟。
 
-因此我们需要......个Delay Recorder来记录延迟信息。
+每个sram都需要记录未来某时会被读写，因此每个hash我们需要8个Delay Recorder来记录延迟信息。
 
+### Channel Recoder
 
+对于data sram的访问，每个hash有2个读请求通道，2个写请求通道以及2个数据通道。
+
+ROB选中的请求发射后，会出现数据通道占用的冲突，来自不同方向的写数据到达数据channel也会有不同延迟，对于仲裁选中的两个请求，需要Channel Recoder 分别记录请求发射后数据channel的占用情况
 
 ## Data Buffer
 
@@ -79,7 +95,7 @@ Vector Cache哈希为4个Group，针对每个Group，在每个方向（WSNE）�
 
 ### Write Data Buffer
 
-在每个方向上，Wrrite Data Buffer(WDB)跟随SRAM哈希分为4个Group。上游Master的写请求会经过一个N x 4 crossbar访问到Write Data Buffer。每个Group的WDB都由单口SRAM构成，因此每个周期只能响应一个读或一个写请求。WDB被设定为读优先，因此上游在写入时可能会产生反压。
+在每个方向上，Write Data Buffer(WDB)跟随SRAM哈希分为4个Group。上游Master的写请求会经过一个N x 4 crossbar访问到Write Data Buffer。每个Group的WDB都由单口SRAM构成，因此每个周期只能响应一个读或一个写请求。WDB被设定为读优先，因此上游在写入时可能会产生反压。
 
 对于上游而言，Vector Cache和上游的接口被定义为写命令和写数据同时传输，因此上游即可能被Write Data Buffer反压，也可能被Tag Pipeline反压。（命令直接发往Cache Pipeline）。
 
@@ -96,10 +112,47 @@ WDB的空满计数使用一个counter完成，再pre-alloc一个位置之后+1,�
 ### Read Data Buffer
 
 Read Data Buffer(RDB)和WDB类似，在每个方向上与每个Sram Group保持一一对应，采用单口Sram实现，与Sram Group的交互有最高优先级（即永远写优先）。
+为避免SRAM写RDB高优先级的设定下会出现RDB不能及时读出返回上游而被写满，将RDB分为0/1两个部分，采用乒乓方式读写两块RDB，
 
-对于Read Data Buffer来说，在收到数据写入时，也会同步收到一个指令。这个指令指明了如何将数据发往Master。
+对于Read Data Buffer来说，在收到数据写入时，也会同步收到一个指令。这个指令指明了如何将数据发往Master。在数据从SRAM写入RDB的下一拍读出返回上游。在发送完成后，向ROB发送完成信号，并release。
 
-RDB内部的实现其实是一个ROB，以及受ROB控制的单口SRAM。Sram发来的命令除了会写入单口SRAM，也会写入ROB的一个entry中。随后该entry会举手请求从SRAM中读取数据并往Master侧发送。在发送完成后，向ROB发送完成信号，并release。
+##RDB内部的实现其实是一个ROB，以及受ROB控制的单口SRAM。Sram发来的命令除了会写入单口SRAM，也会写入ROB的一个entry中。随后该entry会举手请求从SRAM中读取数据##并往Master侧发送。在发送完成后，向ROB发送完成信号，并release。
+
+
+### Evict Data Buffer
+
+Evict Data Buffer(EVDB)和也跟随SRAM哈希分为4个Group，但不分方向，采用单口SRAM实现，设定为与SRAM侧的交互为高优先级，EVDB深度与ROB对应，因此不需要pre allocate。
+
+EVDB内部存在一个延迟控制，在evict请求从仲裁器发射出去后，经过某一个确定的读SRAM的延迟后会将数据写入到EVDB，该延迟控制模块用于存储请求信息并发起对EVDB的读写，写入后会向ROB返回写入完成的信号。在读出数据写入下游后向ROB返回evict完成的信号。
+
+
+### Linefill Data Buffer
+
+Linefill Data Buffer(LFDB)也跟随SRAM哈希分为4个Group，不分方向，采用单口SRAM实现，同样设定为与SRAM侧的交互为高优先级，LFDB深度与ROB对应，因此不需要pre allocate。
+
+LFDB内部也存在一个延迟控制，用于实现在linefill write SRAM请求从仲裁器发射出去后，经过确定延时，发起对LFDB的读请求，写入SRAM完成后向ROB返回完成信号。
+
+LFDB与下游的接口位宽与cache line size不要求一致，因此LFDB中存在一个计数器，记录下游可能分多次返回的数据，收到完整的cache line后向ROB返回写入LFDB完成信号
+
+
+
+## Subordinate arbiter & decoder
+
+### downstream 4to1 arbiter
+用于实现4hash向下游请求的仲裁
+
+### evict 4to1 arbiter
+用于实现4hash向下游evict的仲裁
+
+### bresp 1to4 decoder
+用于实现下游返回的evict完成的响应信号向hash分组的decode
+
+### linefill 1to4 decoder
+用于实现下游返回的linefill数据向hash分组的decode
+
+
+## DATA SRAM ARRAY
+
 
 
 
