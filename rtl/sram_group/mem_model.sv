@@ -6,7 +6,7 @@ module mem_model#(
     input  logic                     rst_n      ,    
     input  logic                     en         ,       
     input  logic                     wr         ,       
-    input  logic [DATA_WIDTH/8-1:0]    be         ,
+    input  logic [DATA_WIDTH/8-1:0]  be         ,
     input  logic [ADDR_WIDTH-1:0]    addr       ,     
     input  logic [DATA_WIDTH-1:0]    data_in    ,
     output logic [DATA_WIDTH-1:0]    data_out  
@@ -17,10 +17,6 @@ module mem_model#(
     //write
     //genvar i ;
     integer j ;
-    //generate for(i=0;i<DATA_WIDTH;i++) begin
-    //    assign mem_data_in[i] = be[i] ? data_in[i] : mem[addr][i];
-    //end
-    //endgenerate
     generate
         for(genvar i=0;i<DATA_WIDTH/8;i=i+1)begin
             assign mem_data_in[8*i +:8] = be[i] ? data_in[8*i +: 8] : mem[addr][8*i +: 8];
@@ -35,6 +31,10 @@ module mem_model#(
         end
         else if(en && wr) mem[addr] <= mem_data_in;
     end
+    //generate for(i=0;i<DATA_WIDTH;i++) begin
+    //    assign mem_data_in[i] = be[i] ? data_in[i] : mem[addr][i];
+    //end
+    //endgenerate
 
     //read
     always_ff@(posedge clk) begin
