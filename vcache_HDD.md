@@ -43,21 +43,21 @@ Tag pipeline本身为双发射，因此在Tag pipeline输入端，需要一个8x
 
 ## Tag Pipeline arbiter & Tag RAM
 
-Tag pipeline本身为双发射,设计中有两份tag ram以供双发射请求同时查询，均为单口，由于在发生miss时采用超前更新策略更新tag ram，需要一个arbiter决定tag ram的双发射读/单写，优先写更新tag ram，可以反压上游8x2 xbar。
-
+Tag pipeline本身为双发射,设计中有两份tag ram以供双发射请求同时查询，均为单口，由于在发生miss时采用超前更新策略更新tag ram，write tag buffer用于缓存需要写入tag ram的请求信息，需要一个arbiter决定tag ram的双发射读/单写，优先写更新tag ram，可以反压上游8x2 xbar。
 对于读tag ram，需pre allocate ROB entry，对应于双发射，pre allocate两个ROB entry ID，不满足则反压上游。
+请求需要检查与ROB中已存请求的hazard，采用index-way hazard check
+替换算法采用SRRIP
 
 ## Tag Pipeline ROB
 
-ROB用于记录需要访问data sram的请求，深度为M。
-对于读请求，需要记录请求信息，address hazard，替换算法结果以及behavior信息，对于写请求还需记录请求对应的Write data buffer的entry ID。
-对于访问下游的downstream_txreq请求，需要一个M to 1的仲裁器，可以被下游反压。
+ROB用于记录需要访问data sram的请求，深度为64。
+对于读请求，需要记录请求信息，hazard bitmap，替换算法结果以及behavior信息，对于写请求还需记录请求对应的Write data buffer的entry ID。
+对于访问下游的downstream_txreq请求，需要一个M to 1的仲裁器，可以被下游反压，支持outstanding。
 对于访问可以data sram的请求，需要一个Issue arbiter来决定可执行的读写请求。
-ROB会接收读写完成信号，用于更新ROB entry状态。
+ROB会接收读写完成信号，用于更新ROB entry状态&&释放ROB entry。
 
 
 ## Tag Pipeline Issue Arbiter
-
 
 这个仲裁器是ROB中最核心的仲裁逻辑，它的目的是从ROB的所有entry中仲裁出当前能够执行的对SRAM的读/写。
 
@@ -65,14 +65,20 @@ ROB会接收读写完成信号，用于更新ROB entry状态。
 
 为了解决这个问题，我们把仲裁器设置为2级。
 
-Stage 1: 先从所有的ROB中分别选出候选的4个读+4个写（分别来自于4个方向）+1个evict+1个linefill。
-Stage 2: 根据延迟信息和数据channel占用信息，判断每个方向的读/写当前能不能够被发射，在所有能发射的候选者中选出2个发射。
+Stage 1: 先从所有的ROB中分别选出候选的4个读+4个写（分别来自于4个方向）+1个evict+1个linefill，共10个，五读五写。
+Stage 2: 根据延迟信息和channel占用信息，记录已发射请求在未来占用sram和channel的时刻，对每个channel有个历史请求占用shift reg；对于每个sram也有历史请求占用情况的shift reg；判断每个方向的读/写当前能不能够被发射，在所有能发射的候选者中选出2个发射。
+    目前由于不同方向的写请求占用SRAM和Channel的延迟各不相同（可调整），同周期的写请求之间不会存在冲突，但五个读请求之间需要检查sram冲突
+    目前由于写操作均在通道环路的返回区间执行，同周期发射的写请求总是晚于读请求占用channel和sram，因此历史记录表shift reg只需要更新记录写请求的占用
 
 ### Delay Recorder
 
 每个指令发射后，都要经过一段时间才能抵达SRAM，并且不同的地址会对应不同的SRAM，不同方向上的指令会对应不同的延迟。
 
 每个sram都需要记录未来某时会被读写，因此每个hash我们需要8个Delay Recorder来记录延迟信息。
+
+由于在当前设计中，sram 阵列行的通道回路上读操作在上侧读取sram，写操作在下侧写入sram，因此可以确定来自同一方向的读和写，写请求到达sram的延迟大于读请求，不会存在先发射的读请求阻塞写请求的情况，因此读请求发射时不需要更新recoder。
+每一个write请求（包括write和linefill）需要查验recoder来确认是否无冲突，发射后需要更新对应的recoder，记录自己到达sram所需的延迟，用于后续请求发射时查验
+每一个read请求（包括read和evict）需要查验recoder，确认是否无冲突。
 
 ### Channel Recoder
 
@@ -81,7 +87,6 @@ Stage 2: 根据延迟信息和数据channel占用信息，判断每个方向的�
 ROB选中的请求发射后，会出现数据通道占用的冲突，来自不同方向的写数据到达数据channel也会有不同延迟，对于仲裁选中的两个请求，需要Channel Recoder 分别记录请求发射后数据channel的占用情况
 
 ## Data Buffer
-
 
 Vector Cache哈希为4个Group，针对每个Group，在每个方向（WSNE）上，都放置了Write Data Buffer(WDB)和Read Data Buffer(RDB)。在去往下游的一个方向上，还对应每个Group放置了Evict Data Buffer(EVDB)和Linefill Data Buffer(LFDB)。
 
@@ -96,7 +101,7 @@ Vector Cache哈希为4个Group，针对每个Group，在每个方向（WSNE）�
 ### Write Data Buffer
 
 在每个方向上，Write Data Buffer(WDB)跟随SRAM哈希分为4个Group。上游Master的写请求会经过一个N x 4 crossbar访问到Write Data Buffer。每个Group的WDB都由单口SRAM构成，因此每个周期只能响应一个读或一个写请求。WDB被设定为读优先，因此上游在写入时可能会产生反压。
-
+Write Data buffer深度暂定为64，与ROB深度一致
 对于上游而言，Vector Cache和上游的接口被定义为写命令和写数据同时传输，因此上游即可能被Write Data Buffer反压，也可能被Tag Pipeline反压。（命令直接发往Cache Pipeline）。
 
 对于每个WDB，反压的原因有两个：
@@ -112,16 +117,16 @@ WDB的空满计数使用一个counter完成，再pre-alloc一个位置之后+1,�
 ### Read Data Buffer
 
 Read Data Buffer(RDB)和WDB类似，在每个方向上与每个Sram Group保持一一对应，采用单口Sram实现，与Sram Group的交互有最高优先级（即永远写优先）。
-为避免SRAM写RDB高优先级的设定下会出现RDB不能及时读出返回上游而被写满，将RDB分为0/1两个部分，采用乒乓方式读写两块RDB，
-
+为避免SRAM写RDB高优先级的设定下会出现RDB不能及时读出返回上游，将RDB分为0/1两个部分，采用乒乓方式读写两块RDB，
+目前每块RDB深度暂定为32，考虑SRAM面效比，可能调整为64。
 对于Read Data Buffer来说，在收到数据写入时，也会同步收到一个指令。这个指令指明了如何将数据发往Master。在数据从SRAM写入RDB的下一拍读出返回上游。在发送完成后，向ROB发送完成信号，并release。
 
-##RDB内部的实现其实是一个ROB，以及受ROB控制的单口SRAM。Sram发来的命令除了会写入单口SRAM，也会写入ROB的一个entry中。随后该entry会举手请求从SRAM中读取数据##并往Master侧发送。在发送完成后，向ROB发送完成信号，并release。
+##RDB内部的实现其实是一个ROB，以及受ROB控制的单口SRAM。SRAM发来的命令除了会写入单口SRAM，也会写入ROB的一个entry中。随后该entry会举手请求从SRAM中读取数据并往Master侧发送。在发送完成后，向ROB发送完成信号，并release。
 
 
 ### Evict Data Buffer
 
-Evict Data Buffer(EVDB)和也跟随SRAM哈希分为4个Group，但不分方向，采用单口SRAM实现，设定为与SRAM侧的交互为高优先级，EVDB深度与ROB对应，因此不需要pre allocate。
+Evict Data Buffer(EVDB)和也跟随SRAM哈希分为4个Group，不分方向，采用单口SRAM实现，设定为与SRAM侧的交互为高优先级，EVDB深度与ROB对应，因此不需要pre allocate。
 
 EVDB内部存在一个延迟控制，在evict请求从仲裁器发射出去后，经过某一个确定的读SRAM的延迟后会将数据写入到EVDB，该延迟控制模块用于存储请求信息并发起对EVDB的读写，写入后会向ROB返回写入完成的信号。在读出数据写入下游后向ROB返回evict完成的信号。
 
@@ -151,8 +156,52 @@ LFDB与下游的接口位宽与cache line size不要求一致，因此LFDB中存
 用于实现下游返回的linefill数据向hash分组的decode
 
 
-## DATA SRAM ARRAY
+# DATA SRAM ARRAY
+Vector cache memory总容量为8M，数据位宽为128Byte，8个读请求通道，8个写请求通道以及8个数据通道。最大带宽8*128Byte*2GHz
+每个hash有2个通道，为了提升访问性能每个sram_bank中包含了每个hash的2块sram，
+为支持tensor数据layout的特殊需求，sram的位宽选择为128bit；结合sram面积情况，深度选择为512bit。共1024块sram
 
+对于每一个hash，sram排列都是4*4个sram_bank_group，双通道。
+每个sram_bank_group由8个sram_bank组成，每次访问会覆盖纵列的4个sram_bank_group，一共是32个sram_bank，一共是128Byte数据.
+考虑sram访问的延迟，sram_bank有2块sram，2通道之间有corssbar。
+
+由于cache control的仲裁器完成了可发射请求的选择，sram array的访问不会出现冲突，无反压。
+
+## SRAM bank group（4×4阵列）
+
+为了访问延迟的对称均衡，对于每一个Hash组，SRAM排列为**4行×4列**的bank_group阵列：
+
+- **行（ROW）**：4行，编号0-3
+- **列（COL）**：4列，编号0-3
+- **总共16个bank_group**
+每次访问覆盖纵列的4个sram_bank_group，每个bank_group包含**8个bank（SRAM Bank）**。
+考虑物理实现时走线空间和距离，8M SRAM分为4组，对应crtl部分的4hash，分布在这16个bank group，也可以说是这16个bank group是有4层。
+考虑到物理实现时cache control部分至于左侧，所有command从左侧输入sram array，对角线上的bank_group可以实现数据和command方向的转换。
+
+## SRAM bank
+因为sram的访问频率和control部分时钟频率差异，每个hash都在sram——bank中有2块对应的sram，2块sram之间有crossbar，用于提升数据读写效率。
+4个hash都有2块相应的sram，因此每个sram_bank包含8块sram。
+每次访问的128Byte数据是来自32个sram_bank，分别存储或读出32bit数据
+
+### sram inst
+
+sram为单口sram，位宽为128bit，深度为512bit
+因为tensor数据layout有两种模式，且sram的位宽为128bit，每个请求会有两种可能的数据访问模式：
+    模式一：128bit数据中选择第1/2/3/4个“32bit”,，作为该thread的数据
+    模式二：128bit数据每个“32bit”中选择一个Byte，组成32bit数据，作为该thread的数据
+
+
+### mem_block
+对于每个hash的读请求：
+    sram读出的数据和channel上传递的数据存在3to1的选择仲裁，用于确定哪个数据是有效输出的，一共有8个
+对于每个hash的写请求：
+    channel上传递的数据存在1to3的分发，用于决定数据写入哪一个sram或者传递至下一个block，一共有8个
+
+
+
+### xy_switch
+由于读command都自左侧输入，读数据输入到各个方向的RDB，在读取到数据后需要分发至不同方向，数据转向点设定为统一在对角线上的block实现，
+写操作command先从2stage arbiter发射到各个方向的WDB，然后读取wdata一起进入sram阵列，写数据的转向也由对角线的block实现
 
 
 
