@@ -149,6 +149,7 @@ module vec_cache_mshr_entry
     assign mshr_out_pld.txn_id    = mshr_entry_pld_reg_file.txn_id    ;
     assign mshr_out_pld.tag       = mshr_entry_pld_reg_file.tag       ;
     assign mshr_out_pld.index     = mshr_entry_pld_reg_file.index     ;
+    assign mshr_out_pld.way       = mshr_entry_pld_reg_file.way       ;
     assign mshr_out_pld.evict_tag = mshr_entry_pld_reg_file.evict_tag ;
 
     always_ff@(posedge clk or negedge rst_n)begin
@@ -238,6 +239,7 @@ module vec_cache_mshr_entry
     assign evict_rd_vld_0                    = hazard_free && ~state_evict_sent                      ;
     assign evict_rd_pld_0.txn_id.direction_id= mshr_entry_pld_reg_file.txn_id.direction_id           ;
     assign evict_rd_pld_0.txn_id.master_id   = mshr_entry_pld_reg_file.txn_id.master_id              ;
+    assign evict_rd_pld_0.txn_id.req_id      = mshr_entry_pld_reg_file.txn_id.req_id;
     assign evict_rd_pld_0.txn_id.mode        = mshr_entry_pld_reg_file.txn_id.mode                   ;
     assign evict_rd_pld_0.txn_id.byte_sel    = 2'd0                                                  ;
     assign evict_rd_pld_0.opcode             = `VEC_CACHE_EVICT                                      ; // evict opcode
@@ -255,6 +257,7 @@ module vec_cache_mshr_entry
     assign evict_rd_vld_1                    = hazard_free && ~state_evict_sent                      ;
     assign evict_rd_pld_1.txn_id.direction_id= mshr_entry_pld_reg_file.txn_id.direction_id           ;
     assign evict_rd_pld_1.txn_id.master_id   = mshr_entry_pld_reg_file.txn_id.master_id              ;
+    assign evict_rd_pld_1.txn_id.req_id      = mshr_entry_pld_reg_file.txn_id.req_id;
     assign evict_rd_pld_1.txn_id.mode        = mshr_entry_pld_reg_file.txn_id.mode                   ;
     assign evict_rd_pld_1.txn_id.byte_sel    = 2'd1                                                  ;
     assign evict_rd_pld_1.opcode             = `VEC_CACHE_EVICT                                      ;
@@ -272,6 +275,7 @@ module vec_cache_mshr_entry
     assign evict_rd_vld_2                    = hazard_free && ~state_evict_sent                      ;
     assign evict_rd_pld_2.txn_id.direction_id= mshr_entry_pld_reg_file.txn_id.direction_id           ;
     assign evict_rd_pld_2.txn_id.master_id   = mshr_entry_pld_reg_file.txn_id.master_id              ;
+    assign evict_rd_pld_2.txn_id.req_id      = mshr_entry_pld_reg_file.txn_id.req_id;
     assign evict_rd_pld_2.txn_id.mode        = mshr_entry_pld_reg_file.txn_id.mode                   ;
     assign evict_rd_pld_2.txn_id.byte_sel    = 2'd2                                                  ;
     assign evict_rd_pld_2.opcode             = `VEC_CACHE_EVICT                                      ;
@@ -289,6 +293,7 @@ module vec_cache_mshr_entry
     assign evict_rd_vld_3                    = hazard_free && ~state_evict_sent   ;
     assign evict_rd_pld_3.txn_id.direction_id= mshr_entry_pld_reg_file.txn_id.direction_id           ;
     assign evict_rd_pld_3.txn_id.master_id   = mshr_entry_pld_reg_file.txn_id.master_id              ;
+    assign evict_rd_pld_3.txn_id.req_id      = mshr_entry_pld_reg_file.txn_id.req_id;
     assign evict_rd_pld_3.txn_id.mode        = mshr_entry_pld_reg_file.txn_id.mode                   ;
     assign evict_rd_pld_3.txn_id.byte_sel    = 2'd3                                                  ;
     assign evict_rd_pld_3.opcode             = `VEC_CACHE_EVICT                                      ;

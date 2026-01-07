@@ -64,12 +64,20 @@ module vec_cache_tag_ctrl
     logic [$clog2(WAY_NUM)-1:0]             hit_way_1                      ;
     logic [WAY_NUM-1        :0]             dest_way_oh_0                  ;
     logic [WAY_NUM-1        :0]             dest_way_oh_1                  ;
+    logic [$clog2(WAY_NUM)-1:0]             dest_way_0                     ;
+    logic [$clog2(WAY_NUM)-1:0]             dest_way_1                     ;
     logic [TAG_WIDTH-1      :0]             evict_tag_0                    ;
     logic [TAG_WIDTH-1      :0]             evict_tag_1                    ;
     logic [$clog2(WAY_NUM)-1:0]             evict_way_0                    ;
     logic [$clog2(WAY_NUM)-1:0]             evict_way_1                    ;
-    logic [WAY_NUM-1        :0]             weight_oh                      ;
-    logic [$clog2(WAY_NUM)-1:0]             weight                         ;
+    //logic [WAY_NUM-1        :0]             weight_oh                      ;
+    //logic [$clog2(WAY_NUM)-1:0]             weight                         ;
+    logic [$clog2(WAY_NUM)-1:0]             replace_way_0                  ;
+    logic [$clog2(WAY_NUM)-1:0]             replace_way_1                  ;
+    logic [WAY_NUM-1        :0]             replace_way_oh_0               ;
+    logic [WAY_NUM-1        :0]             replace_way_oh_1               ;
+    logic                                   replace_vld_0                  ;
+    logic                                   replace_vld_1                  ;
     logic                                   req0_hit_wr_tag_buf_0          ;
     logic                                   req0_hit_wr_tag_buf_1          ;
     logic                                   req1_hit_wr_tag_buf_0          ;
@@ -100,6 +108,10 @@ module vec_cache_tag_ctrl
     logic [WAY_NUM-1        :0]             tag_dirty_bit_wr_en_1          ;
     logic                                   tag_dirty_in_0                 ;
     logic                                   tag_dirty_in_1                 ;
+    logic [INDEX_WIDTH-1    :0]             wr_tag_buf_index_0             ;
+    logic [TAG_WIDTH-1      :0]             wr_tag_buf_tag_0               ; 
+    logic [INDEX_WIDTH-1    :0]             wr_tag_buf_index_1             ;
+    logic [TAG_WIDTH-1      :0]             wr_tag_buf_tag_1               ;    
 
 //================================================================
 //        tag_ram access arbiter(wr_buf & tag_req)
@@ -167,12 +179,17 @@ module vec_cache_tag_ctrl
 //================================================================
     assign wr_tag_buf_update_en_0 = miss_0 && req_vld_0  ;
     assign wr_tag_buf_update_en_1 = miss_1 && req_vld_1  ;
+    assign wr_tag_buf_index_0     = req_pld_0.addr.index ;
+    assign wr_tag_buf_tag_0       = req_pld_0.addr.tag   ;
+    assign wr_tag_buf_index_1     = req_pld_1.addr.index ;
+    assign wr_tag_buf_tag_1       = req_pld_1.addr.tag   ;
     
     vec_cache_wr_tag_buf u_wr_tag_buf_0 ( 
         .clk           (clk                     ),
         .rst_n         (rst_n                   ),
         .buf_update_en (wr_tag_buf_update_en_0  ),
-        .req_pld       (req_pld_0               ),
+        .tag           (wr_tag_buf_tag_0        ),
+        .index         (wr_tag_buf_index_0      ),
         .evict_way_oh  (evict_way_oh_0          ),
         .tag_buf_rdy   (wr_tag_buf_rdy_0        ),
         .tag_buf_vld   (wr_tag_buf_vld_0        ),
@@ -182,7 +199,8 @@ module vec_cache_tag_ctrl
         .clk           (clk                     ),
         .rst_n         (rst_n                   ),
         .buf_update_en (wr_tag_buf_update_en_1  ),
-        .req_pld       (req_pld_1               ),
+        .tag           (wr_tag_buf_tag_1        ),
+        .index         (wr_tag_buf_index_1      ),
         .evict_way_oh  (evict_way_oh_1          ),
         .tag_buf_rdy   (wr_tag_buf_rdy_1        ),
         .tag_buf_vld   (wr_tag_buf_vld_1        ),
@@ -259,18 +277,44 @@ module vec_cache_tag_ctrl
 //        hit/miss check
 //==========================================================================
     //         weight update 
-    always_ff@(posedge clk or negedge rst_n)begin
-        if(!rst_n)    weight <= 'b0;
-        else          weight <= weight+ 1'b1;
-    end
+    //always_ff@(posedge clk or negedge rst_n)begin
+    //    if(!rst_n)    weight <= 'b0;
+    //    else          weight <= weight+ 1'b1;
+    //end
+    srrip #( 
+        .INDEX_WIDTH(INDEX_WIDTH),
+        .RRPV_WIDTH (2          ),
+        .WAY_NUM    (WAY_NUM    ),
+        .SET_NUM    (SET_NUM    ))
+    u_srrip( 
+        .clk                (clk                    ),
+        .rst_n              (rst_n                  ),
+        .req_vld_0          (req_vld_0              ),
+        .req_vld_1          (req_vld_1              ),
+        .req_index_0        (req_pld_0.addr.index   ),
+        .req_index_1        (req_pld_1.addr.index   ),
+        .hit_0              (hit_0                  ),
+        .hit_1              (hit_1                  ),
+        .hit_way_oh_0       (hit_way_oh_0           ),
+        .hit_way_oh_1       (hit_way_oh_1           ),
+        .miss_0             (miss_0                 ),
+        .miss_1             (miss_1                 ),
+        .replace_way_0      (replace_way_0          ),
+        .replace_way_1      (replace_way_1          ),
+        .replace_vld_0      (replace_vld_0          ),
+        .replace_vld_1      (replace_vld_1          ));
     cmn_bin2onehot #(
-        .BIN_WIDTH   ($clog2(WAY_NUM)),
-        .ONEHOT_WIDTH(WAY_NUM        )) 
-    u_weight_oh (
-        .bin_in    (weight     ),
-        .onehot_out(weight_oh  ));
-    assign evict_way_0 = weight;
-    assign evict_way_1 = weight;
+        .BIN_WIDTH   ($clog2(WAY_NUM) ),
+        .ONEHOT_WIDTH(WAY_NUM         )) 
+    u_replace_way_oh_0 (
+        .bin_in    (replace_way_0     ),
+        .onehot_out(replace_way_oh_0  ));
+    cmn_bin2onehot #(
+        .BIN_WIDTH   ($clog2(WAY_NUM) ),
+        .ONEHOT_WIDTH(WAY_NUM         )) 
+    u_replace_way_oh_1 (
+        .bin_in    (replace_way_1     ),
+        .onehot_out(replace_way_oh_1  ));
     
     generate 
         for(genvar i=0;i<WAY_NUM;i=i+1)begin
@@ -290,23 +334,22 @@ module vec_cache_tag_ctrl
     
     assign wr_tag_buf_way_oh_0   = wr_tag_buf_pld_0.way_oh;
     assign wr_tag_buf_way_oh_1   = wr_tag_buf_pld_1.way_oh;
-
     assign hit_way_oh_0          = req0_hit_wr_tag_buf_0 ? wr_tag_buf_way_oh_0 :
                                    req0_hit_wr_tag_buf_1 ? wr_tag_buf_way_oh_1 : tag_ram_hit_way_oh_0;//hit ram or hit wr_tag_buf
     assign hit_way_oh_1          = req1_hit_wr_tag_buf_0 ? wr_tag_buf_way_oh_0 : 
-                                   req1_hit_wr_tag_buf_1 ? wr_tag_buf_way_oh_1 : tag_ram_hit_way_oh_1;
-
-    assign tag_ram_hit_0        = |tag_ram_hit_way_oh_0;
-    assign tag_ram_hit_1        = |tag_ram_hit_way_oh_1;
-
-    assign hit_0                = tag_ram_hit_0 | req0_hit_wr_tag_buf_0 | req0_hit_wr_tag_buf_1;
-    assign hit_1                = tag_ram_hit_1 | req1_hit_wr_tag_buf_0 | req1_hit_wr_tag_buf_1;
-    assign miss_0               = ~hit_0;
-    assign miss_1               = ~hit_1;
-    assign evict_way_oh_0       = weight_oh; 
-    assign evict_way_oh_1       = weight_oh; 
-    assign dest_way_oh_0        = hit_0 ? hit_way_oh_0 : evict_way_oh_0;
-    assign dest_way_oh_1        = hit_1 ? hit_way_oh_1 : evict_way_oh_1;
+                                   req1_hit_wr_tag_buf_1 ? wr_tag_buf_way_oh_1 : tag_ram_hit_way_oh_1   ;
+    assign tag_ram_hit_0        = |tag_ram_hit_way_oh_0                                                 ;
+    assign tag_ram_hit_1        = |tag_ram_hit_way_oh_1                                                 ;
+    assign hit_0                = tag_ram_hit_0 | req0_hit_wr_tag_buf_0 | req0_hit_wr_tag_buf_1         ;
+    assign hit_1                = tag_ram_hit_1 | req1_hit_wr_tag_buf_0 | req1_hit_wr_tag_buf_1         ;
+    assign miss_0               = ~hit_0                                                                ;
+    assign miss_1               = ~hit_1                                                                ;
+    assign evict_way_0          = replace_way_0                                                         ;
+    assign evict_way_1          = replace_way_1                                                         ;
+    assign evict_way_oh_0       = replace_way_oh_0                                                      ; 
+    assign evict_way_oh_1       = replace_way_oh_1                                                      ; 
+    assign dest_way_oh_0        = hit_0 ? hit_way_oh_0 : evict_way_oh_0                                 ;
+    assign dest_way_oh_1        = hit_1 ? hit_way_oh_1 : evict_way_oh_1                                 ;
     
     always_comb begin
         for(int i=0;i<WAY_NUM;i=i+1)begin
@@ -315,34 +358,58 @@ module vec_cache_tag_ctrl
         end
     end
     cmn_real_mux_onehot #( 
-        .WIDTH      (WAY_NUM    ),
-        .PLD_WIDTH  (TAG_WIDTH  ))
+        .WIDTH          (WAY_NUM        ),
+        .PLD_WIDTH      (TAG_WIDTH      ))
     u_evict_tag_0 (
         .select_onehot (evict_way_oh_0  ),
         .v_pld         (tag_array_0     ),
         .select_pld    (evict_tag_0     ));
     cmn_real_mux_onehot #( 
-        .WIDTH      (WAY_NUM    ),
-        .PLD_WIDTH  (TAG_WIDTH  ))
+        .WIDTH          (WAY_NUM        ),
+        .PLD_WIDTH      (TAG_WIDTH      ))
     u_evict_tag_1 (
         .select_onehot (evict_way_oh_1  ),
         .v_pld         (tag_array_1     ),
         .select_pld    (evict_tag_1     ));
    
     cmn_onehot2bin #(
-        .ONEHOT_WIDTH(WAY_NUM   )) 
+        .ONEHOT_WIDTH   (WAY_NUM        )) 
     u_hit_way_oh2bin_0 (
-        .onehot_in (hit_way_oh_0),
-        .bin_out   (hit_way_0   ));
+        .onehot_in      (hit_way_oh_0   ),
+        .bin_out        (hit_way_0      ));
     cmn_onehot2bin #(
-        .ONEHOT_WIDTH(WAY_NUM)
+        .ONEHOT_WIDTH   (WAY_NUM        )
     ) u_hit_way_oh2bin_1 (
-        .onehot_in (hit_way_oh_1),
-        .bin_out   (hit_way_1   )
-    );
+        .onehot_in      (hit_way_oh_1   ),
+        .bin_out        (hit_way_1      ));
+
+    cmn_onehot2bin #(
+        .ONEHOT_WIDTH   (WAY_NUM        )) 
+    u_dest_way_oh2bin_0 (
+        .onehot_in      (dest_way_oh_0   ),
+        .bin_out        (dest_way_0      ));
+    cmn_onehot2bin #(
+        .ONEHOT_WIDTH   (WAY_NUM        )) 
+    u_dest_way_oh2bin_1 (
+        .onehot_in      (dest_way_oh_1   ),
+        .bin_out        (dest_way_1      ));
 //================================================================================
 //         hazard check and behavior mapping (address hazard check)
 //================================================================================
+    //generate
+    //    for(genvar i=0;i<MSHR_ENTRY_NUM;i=i+1)begin
+    //        always_comb begin
+    //            v_hazard_bitmap_0[i] = 1'b0;
+    //            v_hazard_bitmap_1[i] = 1'b0;
+    //            if( v_mshr_entry_pld[i].valid)begin
+    //                v_hazard_bitmap_0[i] =  (req_pld_0.addr.index==v_mshr_entry_pld[i].index)
+    //                                    && ((req_pld_0.addr.tag ==v_mshr_entry_pld[i].tag) || (req_pld_0.addr.tag==v_mshr_entry_pld[i].evict_tag));
+    //                v_hazard_bitmap_1[i] =  (req_pld_1.addr.index==v_mshr_entry_pld[i].index)
+    //                                    && ((req_pld_1.addr.tag ==v_mshr_entry_pld[i].tag) || (req_pld_1.addr.tag==v_mshr_entry_pld[i].evict_tag));
+    //            end
+    //        end
+    //    end
+    //endgenerate
     generate
         for(genvar i=0;i<MSHR_ENTRY_NUM;i=i+1)begin
             always_comb begin
@@ -350,17 +417,16 @@ module vec_cache_tag_ctrl
                 v_hazard_bitmap_1[i] = 1'b0;
                 if( v_mshr_entry_pld[i].valid)begin
                     v_hazard_bitmap_0[i] =  (req_pld_0.addr.index==v_mshr_entry_pld[i].index)
-                                        && ((req_pld_0.addr.tag ==v_mshr_entry_pld[i].tag) || (req_pld_0.addr.tag==v_mshr_entry_pld[i].evict_tag));
+                                        && (dest_way_0 == v_mshr_entry_pld[i].way);
                     v_hazard_bitmap_1[i] =  (req_pld_1.addr.index==v_mshr_entry_pld[i].index)
-                                        && ((req_pld_1.addr.tag ==v_mshr_entry_pld[i].tag) || (req_pld_1.addr.tag==v_mshr_entry_pld[i].evict_tag));
+                                        && (dest_way_1 == v_mshr_entry_pld[i].way);
                 end
             end
         end
     endgenerate
 
-    assign mshr_update_en_0                = req_vld_0;
-    assign mshr_update_en_1                = req_vld_1;   
-
+    assign mshr_update_en_0                = req_vld_0                                                                                  ;
+    assign mshr_update_en_1                = req_vld_1                                                                                  ;   
     assign mshr_update_pld_0.rob_entry_id  = req_pld_0.rob_entry_id                                                                     ; 
     assign mshr_update_pld_0.wdb_entry_id  = req_pld_0.db_entry_id                                                                      ;//只有write在输入带
     assign mshr_update_pld_0.txn_id        = req_pld_0.txn_id                                                                           ;
@@ -396,13 +462,33 @@ module vec_cache_tag_ctrl
 //===============================================================
 //          wresp decode to direction
 //===============================================================
+    //vec_cache_wr_resp_direction_decode #(
+    //    .WIDTH(4)) 
+    //u_wresp_decode_0(
+    //    .clk        (clk                         ),
+    //    .rst_n      (rst_n                       ),
+    //    .req_vld    (tag_req_vld_0               ),
+    //    .req_pld    (tag_req_pld_0               ),
+    //    .v_wresp_vld(v_wr_resp_vld_0             ),
+    //    .v_wresp_pld(v_wr_resp_pld_0             ));
+//
+    //vec_cache_wr_resp_direction_decode #(
+    //    .WIDTH(4)) 
+    //u_wresp_decode_1(
+    //    .clk        (clk                         ),
+    //    .rst_n      (rst_n                       ),
+    //    .req_vld    (tag_req_vld_1               ),
+    //    .req_pld    (tag_req_pld_1               ),
+    //    .v_wresp_vld(v_wr_resp_vld_1             ),
+    //    .v_wresp_pld(v_wr_resp_pld_1             ));
+
     vec_cache_wr_resp_direction_decode #(
         .WIDTH(4)) 
     u_wresp_decode_0(
         .clk        (clk                         ),
         .rst_n      (rst_n                       ),
-        .req_vld    (tag_req_vld_0               ),
-        .req_pld    (tag_req_pld_0               ),
+        .req_vld    (req_vld_0                   ),
+        .req_pld    (req_pld_0                   ),
         .v_wresp_vld(v_wr_resp_vld_0             ),
         .v_wresp_pld(v_wr_resp_pld_0             ));
 
@@ -411,8 +497,8 @@ module vec_cache_tag_ctrl
     u_wresp_decode_1(
         .clk        (clk                         ),
         .rst_n      (rst_n                       ),
-        .req_vld    (tag_req_vld_1               ),
-        .req_pld    (tag_req_pld_1               ),
+        .req_vld    (req_vld_1                   ),
+        .req_pld    (req_pld_1                   ),
         .v_wresp_vld(v_wr_resp_vld_1             ),
         .v_wresp_pld(v_wr_resp_pld_1             ));
 

@@ -151,8 +151,8 @@ module vec_cache_sram_inst
             rd_byte_sel_d <= 'b0;
         end
         else begin
-            read_vld_d    <= read_vld;
-            rd_mode_d     <= rd_mode;
+            read_vld_d    <= read_vld   ;
+            rd_mode_d     <= rd_mode    ;
             rd_byte_sel_d <= rd_byte_sel;
         end
     end
@@ -165,7 +165,7 @@ module vec_cache_sram_inst
                 2'b01: rd_data   = ram_rd_data[63:32] ;
                 2'b10: rd_data   = ram_rd_data[95:64] ;
                 2'b11: rd_data   = ram_rd_data[127:96];
-                default: rd_data = 32'b0;
+                default: rd_data = 32'b0              ;
             endcase
         end 
         else if(rd_mode_d==1'b1)begin

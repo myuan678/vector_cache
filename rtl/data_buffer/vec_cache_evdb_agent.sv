@@ -3,42 +3,42 @@ module vec_cache_evdb_agent
     #(
         parameter integer unsigned READ_SRAM_DELAY = 10
     )(
-    input  logic                            clk                     ,
-    input  logic                            rst_n                   ,
-    input  arb_out_req_t                    evict_req_pld           ,
-    input  logic                            evict_req_vld           ,
-    output logic                            evict_req_rdy           ,
+    input  logic                            clk                                 ,
+    input  logic                            rst_n                               ,
+    input  arb_out_req_t                    evict_req_pld                       ,
+    input  logic                            evict_req_vld                       ,
+    output logic                            evict_req_rdy                       ,
 
-    input  group_data_pld_t                 ram_to_evdb_data_in     ,
-    input  logic                            ram_to_evdb_data_vld    ,
+    input  group_data_pld_t                 ram_to_evdb_data_in                 ,
+    input  logic                            ram_to_evdb_data_vld                ,
 
-    output logic                            evict_clean             ,//ram_to_evict_db done 
-    output logic[MSHR_ENTRY_IDX_WIDTH-1:0]  evict_clean_idx         ,
+    output logic                            evict_clean                         ,//ram_to_evict_db done 
+    output logic[MSHR_ENTRY_IDX_WIDTH-1:0]  evict_clean_idx                     ,
 
-    output logic                            evict_to_ds_vld         ,
-    output evict_to_ds_pld_t                evict_to_ds_pld         ,
+    output logic                            evict_to_ds_vld                     ,
+    output evict_to_ds_pld_t                evict_to_ds_pld                     ,
     input  logic                            evict_to_ds_rdy
 );
 
-    logic [1023                 :0]         data_in                 ;
-    logic                                   db_mem_en               ;
-    logic [1023                 :0]         data_out                ;
-    logic                                   db_wr_en                ;
-    logic [DB_ENTRY_IDX_WIDTH-1 :0]         db_addr                 ; //entry_id
-    logic [EVDB_ENTRY_NUM/4-1   :0]         v_evdb_entry_idle       ;
-    logic [EVDB_ENTRY_NUM/4-1   :0]         v_evdb_entry_active     ;
-    logic [EVDB_ENTRY_NUM/4-1   :0]         v_evdb_entry_rdy        ;
-    arb_out_req_t                           write_evdb_pld          ;
-    logic                                   write_evdb_vld          ;
-    logic                                   write_evdb_rdy          ;
-    logic                                   read_evdb_vld           ; //read evdb
-    arb_out_req_t                           read_evdb_pld           ;
-    logic                                   read_evdb_rdy           ;
-    arb_out_req_t                           read_evdb_pld_d         ;
-    logic                                   evdb_entry_release      ;    
-    logic [DB_ENTRY_IDX_WIDTH-3:0]          evdb_entry_release_idx  ;
-    logic [EVICT_DOWN_DELAY-1  :0]          shift_reg               ;
-    arb_out_req_t                           delay_pld_reg[EVICT_DOWN_DELAY-1:0];
+    logic [1023                 :0]         data_in                             ;
+    logic                                   db_mem_en                           ;
+    logic [1023                 :0]         data_out                            ;
+    logic                                   db_wr_en                            ;
+    logic [DB_ENTRY_IDX_WIDTH-1 :0]         db_addr                             ; //entry_id
+    logic [EVDB_ENTRY_NUM/4-1   :0]         v_evdb_entry_idle                   ;
+    logic [EVDB_ENTRY_NUM/4-1   :0]         v_evdb_entry_active                 ;
+    logic [EVDB_ENTRY_NUM/4-1   :0]         v_evdb_entry_rdy                    ;
+    arb_out_req_t                           write_evdb_pld                      ;
+    logic                                   write_evdb_vld                      ;
+    logic                                   write_evdb_rdy                      ;
+    logic                                   read_evdb_vld                       ; //read evdb
+    arb_out_req_t                           read_evdb_pld                       ;
+    logic                                   read_evdb_rdy                       ;
+    arb_out_req_t                           read_evdb_pld_d                     ;
+    logic                                   evdb_entry_release                  ;    
+    logic [DB_ENTRY_IDX_WIDTH-3:0]          evdb_entry_release_idx              ;
+    logic [EVICT_DOWN_DELAY-1  :0]          shift_reg                           ;
+    arb_out_req_t                           delay_pld_reg[EVICT_DOWN_DELAY-1:0] ;
 
     //==============================================================================
     //delay
@@ -70,45 +70,46 @@ module vec_cache_evdb_agent
     assign write_evdb_pld = delay_pld_reg[READ_SRAM_DELAY-1]                                        ;//addr
     assign read_evdb_vld  = shift_reg[EVICT_DOWN_DELAY-1]                                           ; //evict_to_ds
     assign read_evdb_pld  = delay_pld_reg[EVICT_DOWN_DELAY-1]                                       ;
+    assign write_evdb_rdy = write_evdb_vld                                                          ;
+    assign read_evdb_rdy  = ~write_evdb_vld                                                         ;
+    assign evict_req_rdy  = read_evdb_rdy                                                           ;
 
     assign db_mem_en      = write_evdb_vld | read_evdb_vld                                          ;
     assign db_addr        = write_evdb_vld ? write_evdb_pld.db_entry_id : read_evdb_pld.db_entry_id ;
     assign db_wr_en       = (write_evdb_vld && ram_to_evdb_data_vld)  ? 1'b1 : 1'b0                 ;
     assign data_in        = ram_to_evdb_data_in                                                     ;
-    assign write_evdb_rdy = write_evdb_vld                                                          ;
-    assign read_evdb_rdy  = ~write_evdb_vld                                                         ;
+
+    assign evict_clean    = write_evdb_vld && write_evdb_rdy && write_evdb_pld.last                 ;
+    assign evict_clean_idx= delay_pld_reg[EVICT_CLEAN_DELAY-1].rob_entry_id                         ;
+    
 
     always_ff@(posedge clk )begin
-        read_evdb_pld_d <= read_evdb_pld ;
+        read_evdb_pld_d <= read_evdb_pld;
     end
     always_ff@(posedge clk or negedge rst_n)begin
-        if(!rst_n)                              evict_to_ds_vld <= 1'b0;
-        else if(read_evdb_rdy && read_evdb_vld) evict_to_ds_vld <= 1'b1;
+        if(!rst_n)                              evict_to_ds_vld <= 1'b0                                     ;
+        else if(read_evdb_rdy && read_evdb_vld) evict_to_ds_vld <= 1'b1                                     ;
     end
-    
-    assign evict_to_ds_pld.data         = data_out                      ;
-    assign evict_to_ds_pld.db_entry_id  = read_evdb_pld_d.db_entry_id   ;
-    assign evict_to_ds_pld.rob_entry_id = read_evdb_pld_d.rob_entry_id  ;
-    assign evict_to_ds_pld.sideband     = read_evdb_pld_d.sideband      ;
-    assign evict_to_ds_pld.txn_id       = read_evdb_pld_d.txn_id        ;
+    assign evict_to_ds_pld.data         = data_out                                                          ;
     assign evict_to_ds_pld.addr         = {read_evdb_pld_d.tag,read_evdb_pld_d.index,read_evdb_pld_d.offset};
-    assign evict_req_rdy                = read_evdb_rdy                 ;
-
-    assign evict_clean    = write_evdb_vld && write_evdb_rdy && write_evdb_pld.last;
-    assign evict_clean_idx= delay_pld_reg[EVICT_CLEAN_DELAY-1].rob_entry_id;
-
+    assign evict_to_ds_pld.last         = read_evdb_pld_d.last                                              ;
+    assign evict_to_ds_pld.rob_entry_id = read_evdb_pld_d.rob_entry_id                                      ;
+    assign evict_to_ds_pld.db_entry_id  = read_evdb_pld_d.db_entry_id                                       ;
+    assign evict_to_ds_pld.txn_id       = read_evdb_pld_d.txn_id                                            ;
+    assign evict_to_ds_pld.sideband     = read_evdb_pld_d.sideband                                          ;  
 
     toy_mem_model_bit #(
-        .ADDR_WIDTH  ($clog2(RW_DB_ENTRY_NUM)),
-        .DATA_WIDTH  (DATA_WIDTH)
+        .ADDR_WIDTH     ($clog2(EVDB_ENTRY_NUM)),
+        .DATA_WIDTH     (DATA_WIDTH             )
     ) u_evict_data_buffer (
-        .clk    (clk        ),
-        .en     (db_mem_en  ),
-        .wr_en  (db_wr_en   ),
-        .addr   (db_addr    ),
-        .wr_data(data_in    ),
-        .rd_data(data_out   ));
+        .clk            (clk                    ),
+        .en             (db_mem_en              ),
+        .wr_en          (db_wr_en               ),
+        .addr           (db_addr                ),
+        .wr_data        (data_in                ),
+        .rd_data        (data_out               ));
 
+endmodule
 
 
     //logic [1:0] rd_evdb_counter;
@@ -171,4 +172,3 @@ module vec_cache_evdb_agent
 
 
 
-endmodule

@@ -4,7 +4,9 @@ module vec_cache_wr_tag_buf
         input  logic                        clk             ,
         input  logic                        rst_n           ,
         input  logic                        buf_update_en   ,
-        input  input_req_pld_t              req_pld         ,
+        //input  input_req_pld_t              req_pld         ,
+        input  logic [TAG_WIDTH-1:0]        tag             ,
+        input  logic [INDEX_WIDTH-1:0]      index           ,
         //input  logic [$clog2(WAY_NUM)-1:0]  evict_way       ,
         input  logic [WAY_NUM-1:0]          evict_way_oh    ,
 
@@ -29,9 +31,9 @@ module vec_cache_wr_tag_buf
             tag_buf_pld   <= '{default: 0};
         end
         else if(buf_update_en)begin
-            tag_buf_pld.index   <= req_pld.addr.index   ;
-            tag_buf_pld.tag     <= req_pld.addr.tag     ;
-            tag_buf_pld.way_oh  <= evict_way_oh         ;
+            tag_buf_pld.index   <= index        ;
+            tag_buf_pld.tag     <= tag          ;
+            tag_buf_pld.way_oh  <= evict_way_oh ;
         end
     end
 

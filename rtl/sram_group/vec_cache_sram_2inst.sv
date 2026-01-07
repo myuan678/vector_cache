@@ -84,10 +84,5 @@ module vec_cache_sram_2inst
         .wr_data  (sram1_wr_data    ),
         .rd_data  (sram1_rd_data    )
     );
-
-
-    
-
-
    
 endmodule

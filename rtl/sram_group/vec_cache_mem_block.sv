@@ -121,16 +121,25 @@ import vector_cache_pkg::*;
         for(genvar i=0;i<4;i=i+1)begin  
             assign east_data_out[i*2].data     = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in[i*2].data    :
                                                  (read_ram_cmd_vld_d1[i*2] && read_ram_cmd_d1[2*i].dest_ram_id.channel_id==1'b0) ? rd_data[i*2] : rd_data[i*2+1]                             ;
-            assign east_data_out[i*2].cmd_pld  = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in[i*2].cmd_pld :
-                                                 (read_ram_cmd_vld_d1[i*2] && read_ram_cmd_d1[2*i].dest_ram_id.channel_id==1'b0) ? read_ram_cmd_d1[i*2] : read_ram_cmd_d1[i*2+1]             ;
-            assign east_data_out_vld[i*2]      = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in_vld[i*2]     :    
-                                                 (read_ram_cmd_vld_d1[i*2] && read_ram_cmd_d1[2*i].dest_ram_id.channel_id==1'b0) ?  read_ram_cmd_vld_d1[i*2] : read_ram_cmd_vld_d1[i*2+1]    ;
             assign east_data_out[i*2+1].data   = (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in[i*2+1].data    : 
                                                  (read_ram_cmd_vld_d1[i*2+1] && read_ram_cmd_d1[i*2+1].dest_ram_id.channel_id==1'b1) ? rd_data[i*2+1] : rd_data[i*2]                         ;
+
+            //assign east_data_out[i*2].cmd_pld  = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in[i*2].cmd_pld :
+            //                                     (read_ram_cmd_vld_d1[i*2] && read_ram_cmd_d1[2*i].dest_ram_id.channel_id==1'b0) ? read_ram_cmd_d1[i*2] : read_ram_cmd_d1[i*2+1]             ;        
+            //assign east_data_out[i*2+1].cmd_pld= (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in[i*2+1].cmd_pld : 
+            //                                     (read_ram_cmd_vld_d1[i*2+1] && read_ram_cmd_d1[i*2+1].dest_ram_id.channel_id==1'b1) ? read_ram_cmd_d1[i*2+1] : read_ram_cmd_d1[i*2]         ;
+            //assign east_data_out_vld[i*2]      = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in_vld[i*2]     :    
+            //                                     (read_ram_cmd_vld_d1[i*2] && read_ram_cmd_d1[2*i].dest_ram_id.channel_id==1'b0) ?  read_ram_cmd_vld_d1[i*2] : read_ram_cmd_vld_d1[i*2+1]    ;
+            //assign east_data_out_vld[i*2+1]    = (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in_vld[i*2+1]     :
+            //                                     (read_ram_cmd_vld_d1[i*2+1] && read_ram_cmd_d1[i*2+1].dest_ram_id.channel_id==1'b1) ? read_ram_cmd_vld_d1[i*2+1] : read_ram_cmd_vld_d1[i*2] ;
+             assign east_data_out[i*2].cmd_pld  = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in[i*2].cmd_pld :
+                                                 (read_ram_cmd_vld_d1[i*2] ) ? read_ram_cmd_d1[i*2] : read_ram_cmd_d1[i*2+1]             ;        
             assign east_data_out[i*2+1].cmd_pld= (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in[i*2+1].cmd_pld : 
-                                                 (read_ram_cmd_vld_d1[i*2+1] && read_ram_cmd_d1[i*2+1].dest_ram_id.channel_id==1'b1) ? read_ram_cmd_d1[i*2+1] : read_ram_cmd_d1[i*2]         ;
+                                                 (read_ram_cmd_vld_d1[i*2+1]) ? read_ram_cmd_d1[i*2+1] : read_ram_cmd_d1[i*2]         ;
+            assign east_data_out_vld[i*2]      = (read_ram_cmd_vld_d1[i*2]==1'b0 ) ? west_data_in_vld[i*2]     :    
+                                                 read_ram_cmd_vld_d1[i*2]  ?  read_ram_cmd_vld_d1[i*2] : read_ram_cmd_vld_d1[i*2+1]    ;
             assign east_data_out_vld[i*2+1]    = (read_ram_cmd_vld_d1[i*2+1]==1'b0 ) ? west_data_in_vld[i*2+1]     :
-                                                 (read_ram_cmd_vld_d1[i*2+1] && read_ram_cmd_d1[i*2+1].dest_ram_id.channel_id==1'b1) ? read_ram_cmd_vld_d1[i*2+1] : read_ram_cmd_vld_d1[i*2] ;
+                                                 read_ram_cmd_vld_d1[i*2+1] ? read_ram_cmd_vld_d1[i*2+1] : read_ram_cmd_vld_d1[i*2] ;
         end
     endgenerate
 
@@ -159,10 +168,14 @@ import vector_cache_pkg::*;
             assign west_data_out[i*2].cmd_pld  = east_data_in[i*2].cmd_pld                                                                                                                  ;
             assign west_data_out[i*2+1].data   = east_data_in[i*2+1].data                                                                                                                   ;
             assign west_data_out[i*2+1].cmd_pld= east_data_in[i*2+1].cmd_pld                                                                                                                ;
+            //assign west_data_out_vld[i*2]      = (east_data_in[i*2].cmd_pld.dest_ram_id.block_id==BLOCK_ID && (east_data_in[i*2].cmd_pld.opcode==`VEC_CACHE_WRITE ||east_data_in[i*2].cmd_pld.opcode==`VEC_CACHE_LINEFILL )) 
+            //                                    ? 'b0 : east_data_in_vld[i*2];//写当前block
+            //assign west_data_out_vld[i*2+1]    = (east_data_in[i*2+1].cmd_pld.dest_ram_id.block_id==BLOCK_ID && (east_data_in[i*2+1].cmd_pld.opcode==`VEC_CACHE_WRITE ||east_data_in[i*2+1].cmd_pld.opcode==`VEC_CACHE_LINEFILL )) 
+            //                                    ? 'b0 : east_data_in_vld[i*2+1];
             assign west_data_out_vld[i*2]      = (east_data_in[i*2].cmd_pld.dest_ram_id.block_id==BLOCK_ID && (east_data_in[i*2].cmd_pld.opcode==`VEC_CACHE_WRITE ||east_data_in[i*2].cmd_pld.opcode==`VEC_CACHE_LINEFILL )) 
-                                                ? 'b0 : east_data_in_vld[i*2];//写当前block
-            assign west_data_out_vld[i*2+1]    = (east_data_in[i*2+1].cmd_pld.dest_ram_id.block_id==BLOCK_ID && (east_data_in[i*2].cmd_pld.opcode==`VEC_CACHE_WRITE ||east_data_in[i*2].cmd_pld.opcode==`VEC_CACHE_LINEFILL )) 
-                                                ? 'b0 : east_data_in_vld[i*2+1];
+                                                ? 'b0 : east_data_in_vld[i*2];//写当前block的情况不传递给west
+            assign west_data_out_vld[i*2+1]    = (east_data_in[i*2+1].cmd_pld.dest_ram_id.block_id==BLOCK_ID && ((east_data_in[i*2+1].cmd_pld.opcode==`VEC_CACHE_WRITE) || (east_data_in[i*2+1].cmd_pld.opcode==`VEC_CACHE_LINEFILL) )) 
+                                                ? 'b0 : east_data_in_vld[i*2+1];//写当前block的情况不传递给west
         end
     endgenerate
 
@@ -248,18 +261,16 @@ import vector_cache_pkg::*;
     //        end
     //    end
     //end
-//
-//
-//
-    //always_ff@(posedge clk)begin
-    //    for(int i=0;i<4;i=i+1)begin
-    //        if(west_read_cmd_vld_in[2*i] && west_read_cmd_vld_in[2*i+1])begin
-    //            if(west_read_cmd_pld_in[2*i].dest_ram_id== west_read_cmd_pld_in[2*i+1].dest_ram_id)begin
-    //                $error("Error: read req in one hash group conflict in one sram");
-    //            end
-    //        end
-    //    end
-    //end
+
+    always_ff@(posedge clk)begin
+        for(int i=0;i<4;i=i+1)begin
+            if(west_read_cmd_vld_in[2*i] && west_read_cmd_vld_in[2*i+1])begin
+                if(west_read_cmd_pld_in[2*i].dest_ram_id== west_read_cmd_pld_in[2*i+1].dest_ram_id)begin
+                    $error("Error: read req in one hash group conflict in one sram");
+                end
+            end
+        end
+    end
 
 endmodule
 

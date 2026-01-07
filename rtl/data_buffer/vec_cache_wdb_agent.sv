@@ -94,18 +94,19 @@ module vec_cache_wdb_agent
         end
     end
 
-    assign write_sram_pld.data.data               = data_out         ;
-    assign write_sram_pld.data.cmd_pld.addr       = {read_wdb_pld_d.index[INDEX_WIDTH-4:0],read_wdb_pld_d.way};
-    assign write_sram_pld.data.cmd_pld.txn_id     = read_wdb_pld_d.txn_id;
-    assign write_sram_pld.data.cmd_pld.dest_ram_id={read_wdb_pld_d.hash_id,read_wdb_pld_d.index[INDEX_WIDTH-1:INDEX_WIDTH-3]};
-    assign write_sram_pld.data.cmd_pld.mode       =read_wdb_pld_d.txn_id.mode;
-    assign write_sram_pld.data.cmd_pld.byte_sel   = read_wdb_pld_d.txn_id.byte_sel;
-    assign write_sram_pld.data.cmd_pld.opcode     = read_wdb_pld_d.opcode;
-    assign write_sram_pld.write_cmd.req_cmd_pld   = read_wdb_pld_d   ; //read WDB 然后将pld加上data再给到sram。这个req_cmd_pld可能还需要加上WDB到SRAM的delay//TODO：
-    assign write_sram_pld.write_cmd.last          = 1'b1;
-    assign write_sram_vld                         = read_wdb_vld_d   ;
-    assign write_done                             = delay_shift_reg[WRITE_DONE_DELAY-1];
-    assign write_done_idx                         = pld_shift_reg[WRITE_DONE_DELAY-1].rob_entry_id;
+    assign write_sram_pld.data.data               = data_out                                                                    ;
+    assign write_sram_pld.data.cmd_pld.addr       = {read_wdb_pld_d.index[INDEX_WIDTH-4:0],read_wdb_pld_d.way}                  ;
+    assign write_sram_pld.data.cmd_pld.txn_id     = read_wdb_pld_d.txn_id                                                       ;
+    assign write_sram_pld.data.cmd_pld.dest_ram_id={read_wdb_pld_d.hash_id,read_wdb_pld_d.index[INDEX_WIDTH-1:INDEX_WIDTH-3]}   ;
+    assign write_sram_pld.data.cmd_pld.mode       =read_wdb_pld_d.txn_id.mode                                                   ;
+    assign write_sram_pld.data.cmd_pld.byte_sel   = read_wdb_pld_d.txn_id.byte_sel                                              ;
+    assign write_sram_pld.data.cmd_pld.opcode     = read_wdb_pld_d.opcode                                                       ;
+    assign write_sram_pld.write_cmd.req_cmd_pld   = read_wdb_pld_d                                                              ; //read WDB 然后将pld加上data再给到sram。这个req_cmd_pld可能还需要加上WDB到SRAM的delay//TODO：
+    assign write_sram_pld.write_cmd.last          = 1'b1                                                                        ;
+    assign write_sram_pld.write_cmd.req_num       = 1'b1                                                                        ;
+    assign write_sram_vld                         = read_wdb_vld_d                                                              ;
+    assign write_done                             = delay_shift_reg[WRITE_DONE_DELAY-1]                                         ;
+    assign write_done_idx                         = pld_shift_reg[WRITE_DONE_DELAY-1].rob_entry_id                              ;
     
     //WDB ram
     toy_mem_model_bit #(

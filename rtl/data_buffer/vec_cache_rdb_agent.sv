@@ -280,7 +280,11 @@ module vec_cache_rdb_agent
                 idle_cnt = idle_cnt + 1'b1;
             end
         end
-        rdb_nfull = (idle_cnt >= READ_SRAM_DELAY/2);
+        //rdb_nfull = (idle_cnt >= READ_SRAM_DELAY/2);
+    end
+    always_ff@(posedge clk or negedge rst_n)begin
+        if(!rst_n) rdb_nfull <= 1'b0;
+        else       rdb_nfull <= (idle_cnt >= READ_SRAM_DELAY/2+1);
     end
     
     //to us data
