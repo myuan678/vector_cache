@@ -1,4 +1,4 @@
-module stage2_arbiter 
+module vec_cache_stage2_arbiter 
     import vector_cache_pkg::*; 
     #(
     parameter integer unsigned  CHANNEL_SHIFT_REG_WIDTH = 20,

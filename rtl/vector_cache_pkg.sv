@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 //`ifdef TOY_SIM
     `define VEC_CACHE_WEST   2'b00
     `define VEC_CACHE_EAST   2'b01
@@ -32,28 +34,28 @@ package vector_cache_pkg;
     //ctrl part
     localparam integer unsigned REQ_ADDR_WIDTH  = 64        ;
     localparam integer unsigned CACHE_SIZE      = 8192*1024 ; //8MBytes
-    localparam integer unsigned CACHE_LINE_SIZE = 512       ; //512 Bytes
+    localparam integer unsigned CACHE_LINE_SIZE = 512*8       ; //512 Bytes
     localparam integer unsigned WAY_NUM         = 4         ;
     localparam integer unsigned SET_NUM         = CACHE_SIZE/(CACHE_LINE_SIZE*WAY_NUM); //每个set的大小为512Byte，4way 
 
     localparam integer unsigned INDEX_WIDTH     = $clog2(SET_NUM/4)         ;//10bit，分4组
     localparam integer unsigned OFFSET_WIDTH    = $clog2(CACHE_LINE_SIZE)   ;//9bit
     localparam integer unsigned TAG_WIDTH       =  REQ_ADDR_WIDTH-INDEX_WIDTH-OFFSET_WIDTH;//43bit，
-    localparam integer unsigned BUS_WIDTH       = 128;
+    localparam integer unsigned BUS_WIDTH       = 128*8;//128Byte
     localparam integer unsigned DS_N            = CACHE_LINE_SIZE / BUS_WIDTH;  
     localparam integer unsigned TAG_RAM_WIDTH   = WAY_NUM*(TAG_WIDTH+2);
     
 
-    localparam integer unsigned MSHR_ENTRY_NUM  = 16;
+    localparam integer unsigned MSHR_ENTRY_NUM  = 64;
     localparam integer unsigned MSHR_ENTRY_IDX_WIDTH = $clog2(MSHR_ENTRY_NUM);
     localparam integer unsigned TXNID_WIDTH     = 5 ;
     localparam integer unsigned SIDEBAND_WIDTH  = 10;
     localparam integer unsigned OP_WIDTH        = 5;
     //localparam integer unsigned ICACHE_TAG_RAM_WIDTH = WAY_NUM*(TAG_WIDTH+2);
 
-    localparam integer unsigned LFDB_ENTRY_NUM  = 32;
-    localparam integer unsigned EVDB_ENTRY_NUM  = 32;
-    localparam integer unsigned RW_DB_ENTRY_NUM = 32;
+    localparam integer unsigned LFDB_ENTRY_NUM  = 64;
+    localparam integer unsigned EVDB_ENTRY_NUM  = 64;
+    localparam integer unsigned RW_DB_ENTRY_NUM = 64;
     localparam integer unsigned DB_ENTRY_IDX_WIDTH = $clog2(RW_DB_ENTRY_NUM);
 
     //request direction && master
@@ -217,9 +219,10 @@ package vector_cache_pkg;
 
     typedef struct packed{
         logic                               valid         ;
-        txnid_t                             txn_id         ;
+        txnid_t                             txn_id        ;
         logic [INDEX_WIDTH-1    :0]         index         ;
         logic [TAG_WIDTH-1      :0]         tag           ;
+        logic [$clog2(WAY_NUM)-1:0]         way           ;
         logic [TAG_WIDTH-1:0]               evict_tag     ;
     } hzd_mshr_pld_t;
 

@@ -47,7 +47,7 @@ module vec_cache_vr_2grant_arb (
 
     assign v_req_vld = {dataram_rd_in_vld_w,dataram_rd_in_vld_e,dataram_rd_in_vld_s,dataram_rd_in_vld_n,dataram_rd_in_vld_ev,
                         dataram_wr_in_vld_w,dataram_wr_in_vld_e,dataram_wr_in_vld_s,dataram_wr_in_vld_n,dataram_wr_in_vld_lf};
-    
+          
     // 查找第一优先级请求
     cmn_lead_one #(
         .ENTRY_NUM(10)
@@ -68,8 +68,6 @@ module vec_cache_vr_2grant_arb (
         .v_free_idx_bin (),
         .v_free_vld     ()
     );
-    
-
     assign v_grant_vld      = first_grant_oh | second_grant_oh;
     assign v_req_rdy        = v_grant_vld ;
     
